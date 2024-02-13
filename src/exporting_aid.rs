@@ -12,6 +12,8 @@ pub struct ExportingAid {
     stroke: &'static str,
     #[serde(rename = "@stroke-width")]
     stroke_width: &'static str,
+    #[serde(rename = "@opacity")]
+    opacity: &'static str,
 }
 
 impl Default for ExportingAid {
@@ -22,6 +24,7 @@ impl Default for ExportingAid {
             fill: "none",
             stroke: "#ff0000",
             stroke_width: "1",
+            opacity: "0",
         }
     }
 }
