@@ -23,6 +23,7 @@ static GROUP_DISTANCE: u16 = 120;
 static MARKER_PATH: &str = "M0,0 M0,0 V8 L8,4 Z";
 static MARKER_REFERENCE: &str = "url(#arrowHead)";
 static CONNECTION_LENGTH: u8 = 187;
+static FONT_SIZE: u16 = 16;
 
 #[derive(Serialize)]
 struct Defs {
@@ -94,7 +95,8 @@ impl From<&ManycoreSystem> for SVG {
 
         let width = (columns * UNIT_LENGTH) + ((columns - 1) * GROUP_DISTANCE);
         let height = (rows * UNIT_LENGTH) + ((rows - 1) * GROUP_DISTANCE);
-        ret.view_box.push_str(&format!("0 0 {} {}", width, height));
+        ret.view_box
+            .push_str(&format!("0 0 {} {}", width, height + FONT_SIZE));
 
         let mut r: u8 = 0;
 
