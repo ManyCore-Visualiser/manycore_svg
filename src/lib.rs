@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use manycore_parser::{ManycoreSystem, Neighbours};
+use quick_xml::DeError;
 use serde::{Serialize, Serializer};
 
 static PROCESSOR_PATH: &str = "l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z";
@@ -339,6 +340,14 @@ pub struct SVG {
     connections_group: ConnectionsParentGroup,
     #[serde(rename = "rect")]
     exporting_aid: ExportingAid,
+}
+
+impl TryFrom<SVG> for String {
+    type Error = DeError;
+
+    fn try_from(svg: SVG) -> Result<Self, Self::Error> {
+        quick_xml::se::to_string(&svg)
+    }
 }
 
 impl Default for SVG {
