@@ -26,7 +26,7 @@ dependencies = [
 
 [[package]]
 name = "manycore_svg"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "getset",
  "manycore_parser",

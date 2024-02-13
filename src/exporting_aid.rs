@@ -2,8 +2,6 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct ExportingAid {
-    #[serde(rename = "@id")]
-    id: &'static str,
     #[serde(rename = "@width")]
     width: &'static str,
     #[serde(rename = "@height")]
@@ -21,7 +19,6 @@ pub struct ExportingAid {
 impl Default for ExportingAid {
     fn default() -> Self {
         Self {
-            id: "exporting",
             width: "100%",
             height: "100%",
             fill: "none",
