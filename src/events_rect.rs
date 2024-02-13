@@ -1,7 +1,7 @@
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub struct ExportingAid {
+pub struct EventsRect {
     #[serde(rename = "@id")]
     id: &'static str,
     #[serde(rename = "@width")]
@@ -12,22 +12,16 @@ pub struct ExportingAid {
     fill: &'static str,
     #[serde(rename = "@stroke")]
     stroke: &'static str,
-    #[serde(rename = "@stroke-width")]
-    stroke_width: &'static str,
-    #[serde(rename = "@opacity")]
-    opacity: &'static str,
 }
 
-impl Default for ExportingAid {
+impl Default for EventsRect {
     fn default() -> Self {
         Self {
-            id: "exporting",
+            id: "events",
             width: "100%",
             height: "100%",
             fill: "none",
-            stroke: "#ff0000",
-            stroke_width: "1",
-            opacity: "0",
+            stroke: "none",
         }
     }
 }

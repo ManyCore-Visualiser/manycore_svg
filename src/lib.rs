@@ -1,9 +1,11 @@
 mod connections_group;
+mod events_rect;
 mod exporting_aid;
 mod marker;
 mod processing_group;
 
 use connections_group::*;
+use events_rect::EventsRect;
 use exporting_aid::*;
 use marker::*;
 use processing_group::*;
@@ -35,6 +37,7 @@ struct Root {
     processing_group: ProcessingParentGroup,
     #[serde(rename = "g")]
     connections_group: ConnectionsParentGroup,
+    rect: EventsRect,
 }
 
 #[derive(Serialize)]
@@ -79,6 +82,7 @@ impl Default for SVG {
             root: Root {
                 processing_group: ProcessingParentGroup::new(),
                 connections_group: ConnectionsParentGroup::new(),
+                rect: EventsRect::default(),
             },
             exporting_aid: ExportingAid::default(),
         }
