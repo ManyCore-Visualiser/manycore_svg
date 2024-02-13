@@ -342,11 +342,11 @@ pub struct SVG {
     exporting_aid: ExportingAid,
 }
 
-impl TryFrom<SVG> for String {
+impl TryFrom<&SVG> for String {
     type Error = DeError;
 
-    fn try_from(svg: SVG) -> Result<Self, Self::Error> {
-        quick_xml::se::to_string(&svg)
+    fn try_from(svg: &SVG) -> Result<Self, Self::Error> {
+        quick_xml::se::to_string(svg)
     }
 }
 
