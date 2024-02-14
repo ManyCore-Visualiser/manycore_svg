@@ -1,12 +1,16 @@
 mod connections_group;
 mod exporting_aid;
+mod information_layer;
 mod marker;
 mod processing_group;
+mod render_settings;
 
 use connections_group::*;
 use exporting_aid::*;
+use information_layer::*;
 use marker::*;
 use processing_group::*;
+pub use render_settings::*;
 
 use manycore_parser::ManycoreSystem;
 use quick_xml::DeError;

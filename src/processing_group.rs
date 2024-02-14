@@ -113,7 +113,7 @@ pub struct Core {
 }
 
 impl Core {
-    fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
+    pub fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
         let move_x = c * UNIT_LENGTH + if *c == 0 { 0 } else { c * GROUP_DISTANCE };
         let move_y = r * UNIT_LENGTH + ROUTER_OFFSET + if *r == 0 { 0 } else { r * GROUP_DISTANCE };
 
