@@ -1,61 +1,133 @@
+use std::collections::HashMap;
+
 use getset::Getters;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Getters)]
+#[derive(Serialize, Deserialize, Getters, PartialEq, Debug)]
 #[getset(get = "pub")]
-pub struct TemperatureColourSettings {
-    bounds: [u8; 4],
+pub struct ColourSettings {
+    bounds: [u64; 4],
     colours: [String; 4],
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum TemperatureSettings {
-    Hide,
-    Text,
-    Colour(TemperatureColourSettings),
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub enum FieldConfiguration {
+    Text(String),
+    ColouredText(String, ColourSettings),
+    Fill(ColourSettings),
 }
 
-#[derive(Serialize, Deserialize, Getters)]
-#[getset(get = "pub")]
+#[derive(Serialize, Deserialize, Getters, Default, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]
+#[getset(get = "pub")]
 pub struct Configuration {
-    core_temperature: TemperatureSettings,
-    core_age: bool,
-    core_ids: bool,
-    coordinates: bool,
-    computation_time: bool,
-    router_temperature: TemperatureSettings,
-    router_age: bool,
-    link_load: bool,
-    task_graph: bool,
-    task_ids: bool,
-    algorithm: String,
+    core_config: HashMap<String, FieldConfiguration>,
+    router_config: HashMap<String, FieldConfiguration>,
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{Configuration, TemperatureSettings};
+    use ::lazy_static::lazy_static;
+    use manycore_parser::ManycoreSystem;
+
+    use std::{collections::HashMap, fs::{self, read_to_string}};
+
+    use crate::{ColourSettings, Configuration, FieldConfiguration, SVG};
+
+    lazy_static! {
+        static ref EXPECTED_CONFIGURATION: Configuration = Configuration {
+            core_config: HashMap::from([
+                (
+                    "@id".to_string(),
+                    FieldConfiguration::Text("ID".to_string()),
+                ),
+                (
+                    "@coordinates".to_string(),
+                    FieldConfiguration::Text("".to_string()),
+                ),
+                (
+                    "@age".to_string(),
+                    FieldConfiguration::Fill(ColourSettings {
+                        bounds: [30, 100, 200, 300],
+                        colours: [
+                            "#22c55e".to_string(),
+                            "#eab308".to_string(),
+                            "#f97316".to_string(),
+                            "#dc2626".to_string(),
+                        ],
+                    }),
+                ),
+                (
+                    "@temperature".to_string(),
+                    FieldConfiguration::ColouredText(
+                        "Temp".to_string(),
+                        ColourSettings {
+                            bounds: [30, 31, 50, 75],
+                            colours: [
+                                "#22c55e".to_string(),
+                                "#eab308".to_string(),
+                                "#f97316".to_string(),
+                                "#dc2626".to_string(),
+                            ],
+                        },
+                    ),
+                ),
+            ]),
+            router_config: HashMap::from([
+                (
+                    "@age".to_string(),
+                    FieldConfiguration::Fill(ColourSettings {
+                        bounds: [30, 100, 200, 300],
+                        colours: [
+                            "#22c55e".to_string(),
+                            "#eab308".to_string(),
+                            "#f97316".to_string(),
+                            "#dc2626".to_string(),
+                        ],
+                    }),
+                ),
+                (
+                    "@temperature".to_string(),
+                    FieldConfiguration::ColouredText(
+                        "Temp".to_string(),
+                        ColourSettings {
+                            bounds: [30, 31, 50, 75],
+                            colours: [
+                                "#22c55e".to_string(),
+                                "#eab308".to_string(),
+                                "#f97316".to_string(),
+                                "#dc2626".to_string(),
+                            ],
+                        },
+                    ),
+                ),
+            ]),
+        };
+    }
 
     #[test]
     fn can_parse() {
-        let expected_configuration = Configuration {
-            core_temperature: TemperatureSettings::Hide,
-            core_age: true,
-            core_ids: true,
-            coordinates: true,
-            computation_time: false,
-            router_temperature: TemperatureSettings::Hide,
-            router_age: true,
-            link_load: false,
-            task_graph: false,
-            task_ids: false,
-            algorithm: String::from("RowFirst"),
-        };
+        let conf_file =
+            fs::File::open("tests/conf2.json").expect("Could not open \"tests/conf1.json\"");
+        let configuration: Configuration =
+            serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf1.json\"");
+        
+        assert_eq!(configuration, *EXPECTED_CONFIGURATION)
+    }
 
-        println!(
-            "{}",
-            serde_json::to_string(&expected_configuration).unwrap()
-        );
+    #[test]
+    fn can_generate_according_to_conf() {
+        let manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
+            .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
+
+        let svg = SVG::from_manycore_with_configuration(&manycore, &EXPECTED_CONFIGURATION);
+
+        let res =
+            quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        
+        let expected = read_to_string("tests/SVG2.svg")
+            .expect("Could not read input test file \"tests/SVG1.svg\"");
+        
+        assert_eq!(res, expected)
     }
 }

@@ -1,55 +1,15 @@
 use getset::{MutGetters, Setters};
 use serde::Serialize;
 
-use crate::{
-    GROUP_DISTANCE, HALF_SIDE_LENGTH, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH, SIDE_LENGTH,
-    UNIT_LENGTH,
-};
+pub static DEFAULT_FILL: &str = "#e5e5e5";
 
-#[derive(Serialize, Setters)]
-struct CoreText {
-    #[serde(rename = "@x")]
-    x: u16,
-    #[serde(rename = "@y")]
-    y: u16,
-    #[serde(rename = "@font-size")]
-    font_size: &'static str,
-    #[serde(rename = "@font-family")]
-    font_family: &'static str,
-    #[serde(rename = "@text-anchor")]
-    text_anchor: &'static str,
-    #[serde(rename = "@dominant-baseline")]
-    dominant_baseline: &'static str,
-    #[serde(rename = "$text")]
-    value: String,
-}
-
-impl CoreText {
-    fn get_coordinates_from_core(core_x: &u16, core_y: &u16) -> (u16, u16) {
-        (core_x + HALF_SIDE_LENGTH, core_y + SIDE_LENGTH)
-    }
-
-    fn new(r: &u16, c: &u16, value: String) -> Self {
-        let (core_x, core_y) = Core::get_move_coordinates(r, c);
-        let (x, y) = Self::get_coordinates_from_core(&core_x, &core_y);
-
-        Self {
-            x,
-            y,
-            font_size: "16px",
-            font_family: "Roboto Mono",
-            text_anchor: "middle",
-            dominant_baseline: "text-before-edge",
-            value,
-        }
-    }
-}
+use crate::{GROUP_DISTANCE, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH, UNIT_LENGTH};
 
 #[derive(Serialize, Setters)]
 pub struct CoreRouterCommon {
     #[serde(rename = "@fill")]
     #[getset(set = "pub")]
-    fill: &'static str,
+    fill: String,
     #[serde(rename = "@fill-rule")]
     fill_rule: &'static str,
     #[serde(rename = "@stroke")]
@@ -63,7 +23,7 @@ pub struct CoreRouterCommon {
 impl Default for CoreRouterCommon {
     fn default() -> Self {
         Self {
-            fill: "none",
+            fill: DEFAULT_FILL.to_string(),
             fill_rule: "evenodd",
             stroke: "black",
             stroke_linecap: "butt",
@@ -72,13 +32,14 @@ impl Default for CoreRouterCommon {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, MutGetters)]
 pub struct Router {
     #[serde(rename = "@id")]
     id: String,
     #[serde(rename = "@d")]
     d: String,
     #[serde(flatten)]
+    #[getset(get_mut = "pub")]
     attributes: CoreRouterCommon,
 }
 
@@ -102,13 +63,14 @@ impl Router {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, MutGetters)]
 pub struct Core {
     #[serde(rename = "@id")]
     id: String,
     #[serde(rename = "@d")]
     d: String,
     #[serde(flatten)]
+    #[getset(get_mut = "pub")]
     attributes: CoreRouterCommon,
 }
 
@@ -130,15 +92,16 @@ impl Core {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, MutGetters)]
 pub struct ProcessingGroup {
     #[serde(rename = "@id")]
     id: String,
     #[serde(rename = "path")]
+    #[getset(get_mut = "pub")]
     core: Core,
     #[serde(rename = "path")]
+    #[getset(get_mut = "pub")]
     router: Router,
-    text: CoreText,
 }
 
 impl ProcessingGroup {
@@ -147,7 +110,6 @@ impl ProcessingGroup {
             id: group_id.clone(),
             core: Core::new(r, c, &group_id),
             router: Router::new(r, c, &group_id),
-            text: CoreText::new(r, c, format!("({})", group_id)),
         }
     }
 }

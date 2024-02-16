@@ -13,7 +13,7 @@ struct MarkerPath {
 impl Default for MarkerPath {
     fn default() -> Self {
         let mut attributes = CoreRouterCommon::default();
-        attributes.set_fill("black");
+        attributes.set_fill("black".to_string());
 
         Self {
             d: crate::MARKER_PATH,

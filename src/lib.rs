@@ -4,6 +4,7 @@ mod information_layer;
 mod marker;
 mod processing_group;
 mod render_settings;
+mod text_background;
 
 use connections_group::*;
 use exporting_aid::*;
@@ -15,6 +16,7 @@ pub use render_settings::*;
 use manycore_parser::ManycoreSystem;
 use quick_xml::DeError;
 use serde::Serialize;
+use text_background::TextBackground;
 
 static PROCESSOR_PATH: &str = "l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z";
 static ROUTER_PATH: &str = "l0,-75 l100,0 l0,100 l-75,0 Z";
@@ -32,6 +34,8 @@ static FONT_SIZE_WITH_OFFSET: u16 = 18;
 #[derive(Serialize)]
 struct Defs {
     marker: Marker,
+    #[serde(rename = "filter")]
+    text_background: TextBackground,
 }
 
 #[derive(Serialize)]
@@ -40,6 +44,8 @@ struct Root {
     processing_group: ProcessingParentGroup,
     #[serde(rename = "g")]
     connections_group: ConnectionsParentGroup,
+    #[serde(rename = "g", skip_serializing_if = "Vec::is_empty")]
+    information_group: Vec<InformationLayer>,
 }
 
 #[derive(Serialize)]
@@ -80,18 +86,23 @@ impl Default for SVG {
             view_box: String::new(),
             defs: Defs {
                 marker: Marker::default(),
+                text_background: TextBackground::default(),
             },
             root: Root {
                 processing_group: ProcessingParentGroup::new(),
                 connections_group: ConnectionsParentGroup::new(),
+                information_group: Vec::new(),
             },
             exporting_aid: ExportingAid::default(),
         }
     }
 }
 
-impl From<&ManycoreSystem> for SVG {
-    fn from(manycore: &ManycoreSystem) -> Self {
+impl SVG {
+    pub fn from_manycore_with_configuration(
+        manycore: &ManycoreSystem,
+        configuration: &Configuration,
+    ) -> Self {
         let mut ret = SVG::default();
 
         let columns = u16::from(*manycore.columns());
@@ -103,6 +114,8 @@ impl From<&ManycoreSystem> for SVG {
             .push_str(&format!("0 0 {} {}", width, height + FONT_SIZE_WITH_OFFSET));
 
         let mut r: u8 = 0;
+        let empty_configuration =
+            configuration.core_config().is_empty() || configuration.router_config().is_empty();
 
         for i in 0..manycore.cores().list().len() {
             // This cast here might look a bit iffy as the result of the mod
@@ -129,6 +142,16 @@ impl From<&ManycoreSystem> for SVG {
                 &r16,
                 &c16,
             );
+
+            if !empty_configuration {
+                ret.root.information_group.push(InformationLayer::new(
+                    &r16,
+                    &c16,
+                    configuration,
+                    &manycore.cores().list()[i],
+                    &mut ret.root.processing_group.g_mut()[i],
+                ));
+            }
         }
 
         return ret;
@@ -141,6 +164,8 @@ mod tests {
 
     use manycore_parser::ManycoreSystem;
 
+    use crate::Configuration;
+
     use super::SVG;
 
     #[test]
@@ -148,10 +173,12 @@ mod tests {
         let manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let svg = SVG::from(&manycore);
+        let configuration = Configuration::default();
+
+        let svg = SVG::from_manycore_with_configuration(&manycore, &configuration);
 
         let res =
-            quick_xml::se::to_string(&svg).expect("Could not convert from ManycoreSystem to SVG");
+            quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG1.svg")
             .expect("Could not read input test file \"tests/SVG1.svg\"");
