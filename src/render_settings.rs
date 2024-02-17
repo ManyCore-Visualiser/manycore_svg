@@ -127,7 +127,7 @@ mod tests {
         
         let expected = read_to_string("tests/SVG2.svg")
             .expect("Could not read input test file \"tests/SVG1.svg\"");
-        
+
         assert_eq!(res, expected)
     }
 }

@@ -2,12 +2,14 @@ use const_format::concatcp;
 use serde::Serialize;
 
 use crate::{
-    text_background::TEXT_BACKGROUND_ID, Configuration, Core,
-    ProcessingGroup, Router, HALF_SIDE_LENGTH, ROUTER_OFFSET, SIDE_LENGTH,
+    text_background::TEXT_BACKGROUND_ID, Configuration, Core, ProcessingGroup, Router,
+    HALF_SIDE_LENGTH, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
 static TEXT_GROUP_FILTER: &str = concatcp!("url(#", TEXT_BACKGROUND_ID, ")");
+static CORE_CLIP: &str = "path('m0,0 l0,100 l98,0 l0,-75 l-25,-25 l-75,0 Z')";
+static ROUTER_CLIP: &str = "path('m0,0 l0,74 l25,25 l73,0 l0,-100 Z')";
 
 #[derive(Serialize)]
 struct TextInformation {
@@ -59,6 +61,8 @@ impl TextInformation {
 struct ProcessingInformation {
     #[serde(rename = "@filter", skip_serializing_if = "Option::is_none")]
     filter: Option<&'static str>,
+    #[serde(rename = "@clip-path")]
+    clip_path: &'static str,
     #[serde(rename = "text")]
     information: Vec<TextInformation>,
 }
@@ -143,11 +147,12 @@ impl InformationLayer {
             &mut ret.core_group,
             "start",
         );
+        ret.core_group.clip_path = CORE_CLIP;
 
         // Router
-        let (mut router_x, mut router_y) = Router::get_move_coordinates(r, c);
+        let (router_x, mut router_y) = Router::get_move_coordinates(r, c);
+        // Router x does not need offset
         router_y -= ROUTER_OFFSET;
-        router_x += SIDE_LENGTH - 2 * OFFSET_FROM_BORDER;
         generate(
             router_x,
             router_y,
@@ -155,8 +160,9 @@ impl InformationLayer {
             core.router(),
             processing_group.router_mut().attributes_mut(),
             &mut ret.router_group,
-            "end",
+            "start",
         );
+        ret.router_group.clip_path = ROUTER_CLIP;
 
         ret
     }
