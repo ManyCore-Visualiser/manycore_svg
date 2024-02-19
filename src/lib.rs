@@ -114,8 +114,8 @@ impl SVG {
             .push_str(&format!("0 0 {} {}", width, height + FONT_SIZE_WITH_OFFSET));
 
         let mut r: u8 = 0;
-        let empty_configuration =
-            configuration.core_config().is_empty() || configuration.router_config().is_empty();
+        let not_empty_configuration =
+            !configuration.core_config().is_empty() || !configuration.router_config().is_empty();
 
         for i in 0..manycore.cores().list().len() {
             // This cast here might look a bit iffy as the result of the mod
@@ -143,7 +143,7 @@ impl SVG {
                 &c16,
             );
 
-            if !empty_configuration {
+            if not_empty_configuration {
                 ret.root.information_group.push(InformationLayer::new(
                     &r16,
                     &c16,
