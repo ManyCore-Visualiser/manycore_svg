@@ -13,7 +13,7 @@ use marker::*;
 use processing_group::*;
 pub use render_settings::*;
 
-use manycore_parser::ManycoreSystem;
+use manycore_parser::{ConnectionUpdateError, ManycoreSystem};
 use quick_xml::DeError;
 use serde::Serialize;
 use text_background::TextBackground;
@@ -100,9 +100,9 @@ impl Default for SVG {
 
 impl SVG {
     pub fn from_manycore_with_configuration(
-        manycore: &ManycoreSystem,
+        manycore: &mut ManycoreSystem,
         configuration: &Configuration,
-    ) -> Self {
+    ) -> Result<Self, ConnectionUpdateError> {
         let mut ret = SVG::default();
 
         let columns = u16::from(*manycore.columns());
@@ -116,6 +116,11 @@ impl SVG {
         let mut r: u8 = 0;
         let not_empty_configuration =
             !configuration.core_config().is_empty() || !configuration.router_config().is_empty();
+
+        // Compute routing if requested
+        if let Some(algorithm) = configuration.routing_config() {
+            manycore.task_graph_route(algorithm)?;
+        }
 
         for i in 0..manycore.cores().list().len() {
             // This cast here might look a bit iffy as the result of the mod
@@ -141,6 +146,7 @@ impl SVG {
                 manycore.connections().get(&i),
                 &r16,
                 &c16,
+                &configuration.routing_config().as_ref(),
             );
 
             if not_empty_configuration {
@@ -154,7 +160,7 @@ impl SVG {
             }
         }
 
-        return ret;
+        Ok(ret)
     }
 }
 
@@ -170,15 +176,15 @@ mod tests {
 
     #[test]
     fn can_convert_from() {
-        let manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
+        let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
         let configuration = Configuration::default();
 
-        let svg = SVG::from_manycore_with_configuration(&manycore, &configuration);
+        let svg = SVG::from_manycore_with_configuration(&mut manycore, &configuration)
+            .expect("Could not generate SVG due to routing error.");
 
-        let res =
-            quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG1.svg")
             .expect("Could not read input test file \"tests/SVG1.svg\"");

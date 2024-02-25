@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use getset::Getters;
+use manycore_parser::RoutingAlgorithms;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Getters, PartialEq, Debug)]
@@ -23,6 +24,7 @@ pub enum FieldConfiguration {
 pub struct Configuration {
     core_config: HashMap<String, FieldConfiguration>,
     router_config: HashMap<String, FieldConfiguration>,
+    routing_config: Option<RoutingAlgorithms>,
 }
 
 #[cfg(test)]
@@ -30,7 +32,10 @@ mod tests {
     use ::lazy_static::lazy_static;
     use manycore_parser::ManycoreSystem;
 
-    use std::{collections::HashMap, fs::{self, read_to_string}};
+    use std::{
+        collections::HashMap,
+        fs::{self, read_to_string},
+    };
 
     use crate::{ColourSettings, Configuration, FieldConfiguration, SVG};
 
@@ -102,6 +107,7 @@ mod tests {
                     ),
                 ),
             ]),
+            routing_config: Some(manycore_parser::RoutingAlgorithms::RowFirst)
         };
     }
 
@@ -111,20 +117,20 @@ mod tests {
             fs::File::open("tests/conf2.json").expect("Could not open \"tests/conf1.json\"");
         let configuration: Configuration =
             serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf1.json\"");
-        
+
         assert_eq!(configuration, *EXPECTED_CONFIGURATION)
     }
 
     #[test]
     fn can_generate_according_to_conf() {
-        let manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
+        let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let svg = SVG::from_manycore_with_configuration(&manycore, &EXPECTED_CONFIGURATION);
+        let svg = SVG::from_manycore_with_configuration(&mut manycore, &EXPECTED_CONFIGURATION)
+            .expect("Could not generate SVG due to routing error.");
 
-        let res =
-            quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
-        
+        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+
         let expected = read_to_string("tests/SVG2.svg")
             .expect("Could not read input test file \"tests/SVG1.svg\"");
 
