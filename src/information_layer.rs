@@ -2,14 +2,16 @@ use const_format::concatcp;
 use serde::Serialize;
 
 use crate::{
-    text_background::TEXT_BACKGROUND_ID, Configuration, Core, ProcessingGroup, Router,
-    HALF_SIDE_LENGTH, ROUTER_OFFSET, SIDE_LENGTH,
+    text_background::TEXT_BACKGROUND_ID, Configuration, Core, FieldConfiguration, ProcessingGroup,
+    Router, HALF_SIDE_LENGTH, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
 static TEXT_GROUP_FILTER: &str = concatcp!("url(#", TEXT_BACKGROUND_ID, ")");
 static CORE_CLIP: &str = "path('m0,0 l0,100 l98,0 l0,-75 l-25,-25 l-75,0 Z')";
 static ROUTER_CLIP: &str = "path('m0,0 l0,74 l25,25 l73,0 l0,-100 Z')";
+const TOP_COORDINATES: &str = "T";
+const BOTTOM_COORDINATES: &str = "B";
 
 #[derive(Serialize)]
 struct TextInformation {
@@ -112,6 +114,7 @@ impl InformationLayer {
     }
 
     pub fn new(
+        total_rows: &u16,
         r: &u16,
         c: &u16,
         configuration: &Configuration,
@@ -124,16 +127,30 @@ impl InformationLayer {
         let (core_x, core_y) = Core::get_move_coordinates(r, c);
 
         // Coordinates are stored in the core config but apply to whole group
-        if let Some(_) = core_config.get("@coordinates") {
+        if let Some(order_config) = core_config.get("@coordinates") {
             let x = core_x + HALF_SIDE_LENGTH;
             let y = core_y + SIDE_LENGTH;
+
+            let (cx, cy) = match order_config {
+                FieldConfiguration::Text(order) => {
+                    match order.as_str() {
+                        BOTTOM_COORDINATES => (total_rows - r, c + 1),
+                        TOP_COORDINATES | _ => {
+                            // Top or anything else (malformeed input)
+                            (r + 1, c + 1)
+                        }
+                    }
+                }
+                _ => (r + 1, c + 1), // Don't know what happened. Wrong enum variant, default to top left.
+            };
+
             ret.coordinates = Some(TextInformation::new(
                 x,
                 y,
                 "middle",
                 "text-before-edge",
                 None,
-                format!("({},{})", r + 1, c + 1),
+                format!("({},{})", cx, cy),
             ));
         }
 

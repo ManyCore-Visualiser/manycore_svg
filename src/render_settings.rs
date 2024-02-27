@@ -48,7 +48,7 @@ mod tests {
                 ),
                 (
                     "@coordinates".to_string(),
-                    FieldConfiguration::Text("".to_string()),
+                    FieldConfiguration::Text("T".to_string()),
                 ),
                 (
                     "@age".to_string(),
@@ -114,9 +114,9 @@ mod tests {
     #[test]
     fn can_parse() {
         let conf_file =
-            fs::File::open("tests/conf2.json").expect("Could not open \"tests/conf1.json\"");
+            fs::File::open("tests/conf2.json").expect("Could not open \"tests/conf2.json\"");
         let configuration: Configuration =
-            serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf1.json\"");
+            serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf2.json\"");
 
         assert_eq!(configuration, *EXPECTED_CONFIGURATION)
     }
@@ -132,7 +132,28 @@ mod tests {
         let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG2.svg")
-            .expect("Could not read input test file \"tests/SVG1.svg\"");
+            .expect("Could not read input test file \"tests/SVG2.svg\"");
+
+        assert_eq!(res, expected)
+    }
+
+    #[test]
+    fn can_flip_coordinates() {
+        let conf_file =
+            fs::File::open("tests/conf3.json").expect("Could not open \"tests/conf3.json\"");
+        let configuration: Configuration =
+            serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf3.json\"");
+
+        let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
+            .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
+
+        let svg = SVG::from_manycore_with_configuration(&mut manycore, &configuration)
+            .expect("Could not generate SVG due to routing error.");
+
+        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+
+        let expected = read_to_string("tests/SVG3.svg")
+            .expect("Could not read input test file \"tests/SVG3.svg\"");
 
         assert_eq!(res, expected)
     }

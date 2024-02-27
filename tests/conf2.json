@@ -1,6 +1,6 @@
 {
   "coreConfig": {
-    "@coordinates": { "Text": "" },
+    "@coordinates": { "Text": "T" },
     "@id": { "Text": "ID" },
     "@age": {
       "Fill": {

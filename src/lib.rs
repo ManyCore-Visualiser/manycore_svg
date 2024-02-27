@@ -151,6 +151,7 @@ impl SVG {
 
             if not_empty_configuration {
                 ret.root.information_group.push(InformationLayer::new(
+                    &rows,
                     &r16,
                     &c16,
                     configuration,

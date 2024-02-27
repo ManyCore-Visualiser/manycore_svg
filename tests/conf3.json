@@ -1,0 +1,40 @@
+{
+    "coreConfig": {
+      "@coordinates": { "Text": "B" },
+      "@id": { "Text": "ID" },
+      "@age": {
+        "Fill": {
+          "bounds": [30, 100, 200, 300],
+          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
+        }
+      },
+      "@temperature": {
+        "ColouredText": [
+          "Temp",
+          {
+            "bounds": [30, 31, 50, 75],
+            "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
+          }
+        ]
+      }
+    },
+    "routerConfig": {
+      "@age": {
+        "Fill": {
+          "bounds": [30, 100, 200, 300],
+          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
+        }
+      },
+      "@temperature": {
+        "ColouredText": [
+          "Temp",
+          {
+            "bounds": [30, 31, 50, 75],
+            "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
+          }
+        ]
+      }
+    },
+    "routingConfig": "ColumnFirst"
+  }
+  
