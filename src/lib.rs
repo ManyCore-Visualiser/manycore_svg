@@ -119,7 +119,14 @@ impl SVG {
 
         // Compute routing if requested
         if let Some(algorithm) = configuration.routing_config() {
-            manycore.task_graph_route(algorithm)?;
+            match algorithm {
+                manycore_parser::RoutingAlgorithms::Observed => {
+                    let _ = manycore.observed_route()?;
+                }
+                _ => {
+                    let _ = manycore.task_graph_route(algorithm)?;
+                }
+            }
         }
 
         for i in 0..manycore.cores().list().len() {
