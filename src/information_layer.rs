@@ -2,7 +2,7 @@ use const_format::concatcp;
 use serde::Serialize;
 
 use crate::{
-    text_background::TEXT_BACKGROUND_ID, Configuration, Core, FieldConfiguration, ProcessingGroup,
+    text_background::TEXT_BACKGROUND_ID, Configuration, Core, FieldConfiguration,
     Router, HALF_SIDE_LENGTH, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
@@ -119,7 +119,7 @@ impl InformationLayer {
         c: &u16,
         configuration: &Configuration,
         core: &manycore_parser::Core,
-        processing_group: &mut ProcessingGroup,
+        css: &mut String,
     ) -> Self {
         let mut ret = InformationLayer::default();
         let core_config = configuration.core_config();
@@ -160,9 +160,9 @@ impl InformationLayer {
             core_y,
             configuration.core_config(),
             core,
-            processing_group.core_mut().attributes_mut(),
             &mut ret.core_group,
             "start",
+            css
         );
         ret.core_group.clip_path = CORE_CLIP;
 
@@ -175,9 +175,9 @@ impl InformationLayer {
             router_y,
             configuration.router_config(),
             core.router(),
-            processing_group.router_mut().attributes_mut(),
             &mut ret.router_group,
             "start",
+            css
         );
         ret.router_group.clip_path = ROUTER_CLIP;
 

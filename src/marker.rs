@@ -6,18 +6,18 @@ use crate::CoreRouterCommon;
 struct MarkerPath {
     #[serde(rename = "@d")]
     d: &'static str,
+    #[serde(rename = "@fill")]
+    fill: &'static str,
     #[serde(flatten)]
     attributes: CoreRouterCommon,
 }
 
 impl Default for MarkerPath {
     fn default() -> Self {
-        let mut attributes = CoreRouterCommon::default();
-        attributes.set_fill("black".to_string());
-
         Self {
             d: crate::MARKER_PATH,
-            attributes,
+            fill: "black",
+            attributes: CoreRouterCommon::default(),
         }
     }
 }

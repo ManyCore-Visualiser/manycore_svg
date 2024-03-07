@@ -5,21 +5,21 @@ use manycore_parser::WithXMLAttributes;
 use super::{
     InformationLayer, ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER,
 };
-use crate::{CoreRouterCommon, FieldConfiguration, FONT_SIZE_WITH_OFFSET};
+use crate::{FieldConfiguration, FONT_SIZE_WITH_OFFSET};
 
 pub fn generate<T: WithXMLAttributes>(
     mut base_x: u16,
     mut base_y: u16,
     configuration: &HashMap<String, FieldConfiguration>,
     target: &T,
-    target_svg_attributes: &mut CoreRouterCommon,
     group: &mut ProcessingInformation,
     text_anchor: &'static str,
+    css: &mut String,
 ) {
     base_x += OFFSET_FROM_BORDER;
     base_y += OFFSET_FROM_BORDER;
 
-    if let (Some(configuration), Some(id)) = (configuration.get("@id"), target.id()) {
+    if let Some(configuration) = configuration.get("@id") {
         match configuration {
             FieldConfiguration::Text(title) => {
                 group.information.push(TextInformation::new(
@@ -28,7 +28,7 @@ pub fn generate<T: WithXMLAttributes>(
                     text_anchor,
                     "text-before-edge",
                     None,
-                    format!("{}: {}", title, id),
+                    format!("{}: {}", title, target.id()),
                 ));
                 base_y += FONT_SIZE_WITH_OFFSET;
             }
@@ -63,8 +63,16 @@ pub fn generate<T: WithXMLAttributes>(
                                         InformationLayer::binary_search_left_insertion_point(
                                             bounds, value_num,
                                         );
-                                    target_svg_attributes
-                                        .set_fill(colour_config.colours()[fill_idx].clone());
+
+                                    css.push_str(
+                                        format!(
+                                            "\n#{}{} {{fill: {};}}",
+                                            target.variant(),
+                                            target.id(),
+                                            colour_config.colours()[fill_idx]
+                                        )
+                                        .as_str(),
+                                    );
 
                                     group.filter = Some(TEXT_GROUP_FILTER);
                                 }

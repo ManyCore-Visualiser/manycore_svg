@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::DEFAULT_FILL;
+use crate::style::DEFAULT_FILL;
 
 pub const TEXT_BACKGROUND_ID: &'static str = "textBackground";
 

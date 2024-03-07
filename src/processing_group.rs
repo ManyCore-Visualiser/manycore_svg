@@ -1,15 +1,15 @@
 use getset::{MutGetters, Setters};
 use serde::Serialize;
 
-pub static DEFAULT_FILL: &str = "#e5e5e5";
-
-use crate::{GROUP_DISTANCE, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH, UNIT_LENGTH};
+use crate::{
+    style::BASE_FILL_CLASS_NAME, GROUP_DISTANCE, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH,
+    UNIT_LENGTH,
+};
 
 #[derive(Serialize, Setters)]
 pub struct CoreRouterCommon {
-    #[serde(rename = "@fill")]
-    #[getset(set = "pub")]
-    fill: String,
+    #[serde(rename = "@class")]
+    class: &'static str,
     #[serde(rename = "@fill-rule")]
     fill_rule: &'static str,
     #[serde(rename = "@stroke")]
@@ -23,7 +23,7 @@ pub struct CoreRouterCommon {
 impl Default for CoreRouterCommon {
     fn default() -> Self {
         Self {
-            fill: DEFAULT_FILL.to_string(),
+            class: BASE_FILL_CLASS_NAME,
             fill_rule: "evenodd",
             stroke: "black",
             stroke_linecap: "butt",
@@ -44,11 +44,11 @@ pub struct Router {
 }
 
 impl Router {
-    pub fn new(r: &u16, c: &u16, group_id: &String) -> Self {
+    pub fn new(r: &u16, c: &u16, id: &u8) -> Self {
         let (move_x, move_y) = Self::get_move_coordinates(r, c);
 
         Self {
-            id: format!("{}r", group_id),
+            id: format!("r{}", id),
             d: format!("M{},{} {}", move_x, move_y, ROUTER_PATH),
             attributes: CoreRouterCommon::default(),
         }
@@ -81,11 +81,11 @@ impl Core {
 
         (move_x, move_y)
     }
-    fn new(r: &u16, c: &u16, group_id: &String) -> Self {
+    fn new(r: &u16, c: &u16, id: &u8) -> Self {
         let (move_x, move_y) = Self::get_move_coordinates(r, c);
 
         Self {
-            id: format!("{}c", group_id),
+            id: format!("c{}", id),
             d: format!("M{},{} {}", move_x, move_y, PROCESSOR_PATH),
             attributes: CoreRouterCommon::default(),
         }
@@ -95,7 +95,7 @@ impl Core {
 #[derive(Serialize, MutGetters)]
 pub struct ProcessingGroup {
     #[serde(rename = "@id")]
-    id: String,
+    id: u8,
     #[serde(rename = "path")]
     #[getset(get_mut = "pub")]
     core: Core,
@@ -105,11 +105,11 @@ pub struct ProcessingGroup {
 }
 
 impl ProcessingGroup {
-    pub fn new(r: &u16, c: &u16, group_id: &String) -> Self {
+    pub fn new(r: &u16, c: &u16, id: &u8) -> Self {
         Self {
-            id: group_id.clone(),
-            core: Core::new(r, c, &group_id),
-            router: Router::new(r, c, &group_id),
+            id: *id,
+            core: Core::new(r, c, id),
+            router: Router::new(r, c, id),
         }
     }
 }
