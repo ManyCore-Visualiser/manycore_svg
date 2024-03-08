@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::CoreRouterCommon;
+use crate::CommonAttributes;
 
 #[derive(Serialize)]
 struct MarkerPath {
@@ -9,7 +9,7 @@ struct MarkerPath {
     #[serde(rename = "@fill")]
     fill: &'static str,
     #[serde(flatten)]
-    attributes: CoreRouterCommon,
+    attributes: CommonAttributes,
 }
 
 impl Default for MarkerPath {
@@ -17,7 +17,7 @@ impl Default for MarkerPath {
         Self {
             d: crate::MARKER_PATH,
             fill: "black",
-            attributes: CoreRouterCommon::default(),
+            attributes: CommonAttributes::with_no_class(),
         }
     }
 }

@@ -7,9 +7,9 @@ use crate::{
 };
 
 #[derive(Serialize, Setters)]
-pub struct CoreRouterCommon {
-    #[serde(rename = "@class")]
-    class: &'static str,
+pub struct CommonAttributes {
+    #[serde(rename = "@class", skip_serializing_if = "Option::is_none")]
+    class: Option<&'static str>,
     #[serde(rename = "@fill-rule")]
     fill_rule: &'static str,
     #[serde(rename = "@stroke")]
@@ -20,10 +20,22 @@ pub struct CoreRouterCommon {
     stroke_width: &'static str,
 }
 
-impl Default for CoreRouterCommon {
+impl Default for CommonAttributes {
     fn default() -> Self {
         Self {
-            class: BASE_FILL_CLASS_NAME,
+            class: Some(BASE_FILL_CLASS_NAME),
+            fill_rule: "evenodd",
+            stroke: "black",
+            stroke_linecap: "butt",
+            stroke_width: "1",
+        }
+    }
+}
+
+impl CommonAttributes {
+    pub fn with_no_class() -> Self {
+        Self {
+            class: None,
             fill_rule: "evenodd",
             stroke: "black",
             stroke_linecap: "butt",
@@ -40,7 +52,7 @@ pub struct Router {
     d: String,
     #[serde(flatten)]
     #[getset(get_mut = "pub")]
-    attributes: CoreRouterCommon,
+    attributes: CommonAttributes,
 }
 
 impl Router {
@@ -50,7 +62,7 @@ impl Router {
         Self {
             id: format!("r{}", id),
             d: format!("M{},{} {}", move_x, move_y, ROUTER_PATH),
-            attributes: CoreRouterCommon::default(),
+            attributes: CommonAttributes::default(),
         }
     }
 
@@ -71,7 +83,7 @@ pub struct Core {
     d: String,
     #[serde(flatten)]
     #[getset(get_mut = "pub")]
-    attributes: CoreRouterCommon,
+    attributes: CommonAttributes,
 }
 
 impl Core {
@@ -87,7 +99,7 @@ impl Core {
         Self {
             id: format!("c{}", id),
             d: format!("M{},{} {}", move_x, move_y, PROCESSOR_PATH),
-            attributes: CoreRouterCommon::default(),
+            attributes: CommonAttributes::default(),
         }
     }
 }

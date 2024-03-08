@@ -126,16 +126,36 @@ mod tests {
         let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let svg = SVG::from_manycore_with_configuration(&mut manycore, &EXPECTED_CONFIGURATION)
-            .expect("Could not generate SVG due to routing error.");
+        let mut svg: SVG = (&manycore).into();
+        let _ = svg
+            .update_configurable_information(&mut manycore, &EXPECTED_CONFIGURATION)
+            .expect("Could not generate update based on configuration.");
 
         let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG2.svg")
             .expect("Could not read input test file \"tests/SVG2.svg\"");
 
-        // assert_eq!(res, expected)
-        println!("{}", res)
+        assert_eq!(res, expected)
+    }
+
+    #[test]
+    fn can_serialise_configuration_update() {
+        let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
+            .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
+
+        let mut svg: SVG = (&manycore).into();
+        let update = svg
+            .update_configurable_information(&mut manycore, &EXPECTED_CONFIGURATION)
+            .expect("Could not generate update based on configuration.");
+
+        let expected_style = read_to_string("tests/style_update.xml")
+            .expect("Could not open \"tests/style_update.xml\"");
+        let expected_information = read_to_string("tests/information_update.xml")
+            .expect("Could not open \"tests/information_update.xml\"");
+
+        assert_eq!(update.style, expected_style);
+        assert_eq!(update.information_group, expected_information);
     }
 
     #[test]
@@ -148,14 +168,14 @@ mod tests {
         let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let svg = SVG::from_manycore_with_configuration(&mut manycore, &configuration)
-            .expect("Could not generate SVG due to routing error.");
+        let mut svg: SVG = (&manycore).into();
+        let _ = svg.update_configurable_information(&mut manycore, &configuration);
 
         let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG3.svg")
             .expect("Could not read input test file \"tests/SVG3.svg\"");
 
-        // assert_eq!(res, expected)
+        assert_eq!(res, expected)
     }
 }

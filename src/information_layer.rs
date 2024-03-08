@@ -1,15 +1,20 @@
+use std::{collections::HashMap, error::Error, fmt::Display};
+
 use const_format::concatcp;
+use manycore_parser::{FIFODirection, Neighbours};
 use serde::Serialize;
 
 use crate::{
-    text_background::TEXT_BACKGROUND_ID, Configuration, Core, FieldConfiguration,
-    Router, HALF_SIDE_LENGTH, ROUTER_OFFSET, SIDE_LENGTH,
+    text_background::TEXT_BACKGROUND_ID, Configuration, Core, FieldConfiguration, Router,
+    HALF_SIDE_LENGTH, OUTPUT_LINK_OFFSET, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
 static TEXT_GROUP_FILTER: &str = concatcp!("url(#", TEXT_BACKGROUND_ID, ")");
 static CORE_CLIP: &str = "path('m0,0 l0,100 l98,0 l0,-75 l-25,-25 l-75,0 Z')";
 static ROUTER_CLIP: &str = "path('m0,0 l0,74 l25,25 l73,0 l0,-100 Z')";
+static LENGTH_ON_LINK: u16 = 175;
+static OFFSET_FROM_LINK: u16 = 5;
 const TOP_COORDINATES: &str = "T";
 const BOTTOM_COORDINATES: &str = "B";
 
@@ -57,6 +62,45 @@ impl TextInformation {
             value,
         }
     }
+
+    fn link_load(direction: &FIFODirection, router_x: u16, router_y: u16, link_cost: &u8) -> Self {
+        match direction {
+            FIFODirection::NorthOutput => TextInformation::new(
+                router_x + OUTPUT_LINK_OFFSET + OFFSET_FROM_LINK,
+                router_y - (HALF_SIDE_LENGTH + LENGTH_ON_LINK),
+                "start",
+                "text-before-edge",
+                None,
+                link_cost.to_string(),
+            ),
+
+            FIFODirection::EastOutput => TextInformation::new(
+                router_x + LENGTH_ON_LINK + HALF_SIDE_LENGTH,
+                router_y - OUTPUT_LINK_OFFSET,
+                "end",
+                "text-after-edge",
+                None,
+                link_cost.to_string(),
+            ),
+            FIFODirection::SouthOutput => TextInformation::new(
+                router_x - OFFSET_FROM_LINK,
+                router_y + LENGTH_ON_LINK + HALF_SIDE_LENGTH,
+                "end",
+                "text-after-edge",
+                None,
+                link_cost.to_string(),
+            ),
+            // TODO: Handle all directions properly. In an observed algorithm, input and output links do not necessarily match
+            FIFODirection::WestOutput | _ => TextInformation::new(
+                router_x - (HALF_SIDE_LENGTH + LENGTH_ON_LINK),
+                router_y,
+                "start",
+                "text-before-edge",
+                None,
+                link_cost.to_string(),
+            ),
+        }
+    }
 }
 
 #[derive(Serialize, Default)]
@@ -78,10 +122,25 @@ pub struct InformationLayer {
     router_group: ProcessingInformation,
     #[serde(rename = "text", skip_serializing_if = "Option::is_none")]
     coordinates: Option<TextInformation>,
+    #[serde(rename = "text", skip_serializing_if = "Vec::is_empty")]
+    links_load: Vec<TextInformation>,
 }
 
 mod utils;
 use utils::generate;
+
+#[derive(Debug)]
+pub struct InformationLayerError;
+
+impl Error for InformationLayerError {}
+impl Display for InformationLayerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Could not generate SVG information because a routing connection could not be found."
+        )
+    }
+}
 
 impl InformationLayer {
     fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) -> usize {
@@ -119,8 +178,11 @@ impl InformationLayer {
         c: &u16,
         configuration: &Configuration,
         core: &manycore_parser::Core,
+        core_index: &usize,
+        connections: &HashMap<usize, Neighbours>,
         css: &mut String,
-    ) -> Self {
+        core_loads: Option<&Vec<FIFODirection>>,
+    ) -> Result<Self, InformationLayerError> {
         let mut ret = InformationLayer::default();
         let core_config = configuration.core_config();
 
@@ -162,13 +224,12 @@ impl InformationLayer {
             core,
             &mut ret.core_group,
             "start",
-            css
+            css,
         );
         ret.core_group.clip_path = CORE_CLIP;
 
         // Router
-        let (router_x, mut router_y) = Router::get_move_coordinates(r, c);
-        // Router x does not need offset
+        let (mut router_x, mut router_y) = Router::get_move_coordinates(r, c);
         router_y -= ROUTER_OFFSET;
         generate(
             router_x,
@@ -177,10 +238,54 @@ impl InformationLayer {
             core.router(),
             &mut ret.router_group,
             "start",
-            css
+            css,
         );
         ret.router_group.clip_path = ROUTER_CLIP;
 
-        ret
+        // Link loads
+        if let Some(directions) = core_loads {
+            // Move router coordinates to centre
+            router_x += HALF_SIDE_LENGTH;
+            router_y += HALF_SIDE_LENGTH;
+
+            for direction in directions {
+                let link_cost = match direction {
+                    FIFODirection::NorthOutput => connections
+                        .get(core_index)
+                        .ok_or(InformationLayerError)?
+                        .top()
+                        .as_ref()
+                        .ok_or(InformationLayerError)?
+                        .link_cost(),
+                    FIFODirection::SouthOutput => connections
+                        .get(core_index)
+                        .ok_or(InformationLayerError)?
+                        .bottom()
+                        .as_ref()
+                        .ok_or(InformationLayerError)?
+                        .link_cost(),
+                    FIFODirection::WestOutput => connections
+                        .get(core_index)
+                        .ok_or(InformationLayerError)?
+                        .left()
+                        .as_ref()
+                        .ok_or(InformationLayerError)?
+                        .link_cost(),
+                    // TODO: Handle all directions properly
+                    FIFODirection::EastOutput | _ => connections
+                        .get(core_index)
+                        .ok_or(InformationLayerError)?
+                        .right()
+                        .as_ref()
+                        .ok_or(InformationLayerError)?
+                        .link_cost(),
+                };
+                ret.links_load.push(TextInformation::link_load(
+                    direction, router_x, router_y, link_cost,
+                ));
+            }
+        }
+
+        Ok(ret)
     }
 }
