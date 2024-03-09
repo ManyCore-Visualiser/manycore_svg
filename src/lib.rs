@@ -201,14 +201,11 @@ impl SVG {
         let not_empty_configuration = !configuration.core_config().is_empty()
             || !configuration.router_config().is_empty()
             || configuration.routing_config().is_some();
-
+        
         // Compute routing if requested
         let mut links_with_load = None;
         if let Some(algorithm) = configuration.routing_config() {
-            links_with_load = match algorithm {
-                manycore_parser::RoutingAlgorithms::Observed => Some(manycore.observed_route()?),
-                _ => Some(manycore.task_graph_route(algorithm)?),
-            }
+            links_with_load = Some(manycore.route(algorithm)?)
         }
 
         // Always reset CSS. If user deselects all options and clicks apply, they expect the base render to show.
@@ -273,6 +270,5 @@ mod tests {
             .expect("Could not read input test file \"tests/SVG1.svg\"");
 
         assert_eq!(res, expected)
-        // println!("{}", res)
     }
 }

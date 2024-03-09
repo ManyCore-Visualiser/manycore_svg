@@ -1,7 +1,7 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use const_format::concatcp;
-use manycore_parser::{FIFODirection, Neighbours};
+use manycore_parser::{FIFODirection, Neighbour, Neighbours};
 use serde::Serialize;
 
 use crate::{
@@ -13,7 +13,6 @@ static OFFSET_FROM_BORDER: u16 = 1;
 static TEXT_GROUP_FILTER: &str = concatcp!("url(#", TEXT_BACKGROUND_ID, ")");
 static CORE_CLIP: &str = "path('m0,0 l0,100 l98,0 l0,-75 l-25,-25 l-75,0 Z')";
 static ROUTER_CLIP: &str = "path('m0,0 l0,74 l25,25 l73,0 l0,-100 Z')";
-static LENGTH_ON_LINK: u16 = 175;
 static OFFSET_FROM_LINK: u16 = 5;
 const TOP_COORDINATES: &str = "T";
 const BOTTOM_COORDINATES: &str = "B";
@@ -67,35 +66,66 @@ impl TextInformation {
         match direction {
             FIFODirection::NorthOutput => TextInformation::new(
                 router_x + OUTPUT_LINK_OFFSET + OFFSET_FROM_LINK,
-                router_y - (HALF_SIDE_LENGTH + LENGTH_ON_LINK),
+                router_y - (HALF_SIDE_LENGTH + OFFSET_FROM_LINK),
                 "start",
-                "text-before-edge",
+                "text-after-edge",
                 None,
                 link_cost.to_string(),
             ),
-
-            FIFODirection::EastOutput => TextInformation::new(
-                router_x + LENGTH_ON_LINK + HALF_SIDE_LENGTH,
-                router_y - OUTPUT_LINK_OFFSET,
+            FIFODirection::NorthInput => TextInformation::new(
+                router_x - OFFSET_FROM_LINK,
+                router_y - (HALF_SIDE_LENGTH + OFFSET_FROM_LINK),
                 "end",
                 "text-after-edge",
+                None,
+                link_cost.to_string(),
+            ),
+            FIFODirection::EastOutput => TextInformation::new(
+                router_x + HALF_SIDE_LENGTH + 2 * OFFSET_FROM_LINK,
+                router_y - OUTPUT_LINK_OFFSET,
+                "start",
+                "text-after-edge",
+                None,
+                link_cost.to_string(),
+            ),
+            FIFODirection::EastInput => TextInformation::new(
+                router_x + HALF_SIDE_LENGTH + 2 * OFFSET_FROM_LINK,
+                router_y,
+                "start",
+                "text-before-edge",
                 None,
                 link_cost.to_string(),
             ),
             FIFODirection::SouthOutput => TextInformation::new(
                 router_x - OFFSET_FROM_LINK,
-                router_y + LENGTH_ON_LINK + HALF_SIDE_LENGTH,
+                router_y + HALF_SIDE_LENGTH + OFFSET_FROM_LINK,
                 "end",
-                "text-after-edge",
+                "text-before-edge",
                 None,
                 link_cost.to_string(),
             ),
-            // TODO: Handle all directions properly. In an observed algorithm, input and output links do not necessarily match
-            FIFODirection::WestOutput | _ => TextInformation::new(
-                router_x - (HALF_SIDE_LENGTH + LENGTH_ON_LINK),
-                router_y,
+            FIFODirection::SouthInput => TextInformation::new(
+                router_x + OUTPUT_LINK_OFFSET + OFFSET_FROM_LINK,
+                router_y + HALF_SIDE_LENGTH + OFFSET_FROM_LINK,
                 "start",
                 "text-before-edge",
+                None,
+                link_cost.to_string(),
+            ),
+            FIFODirection::WestOutput => TextInformation::new(
+                router_x - (HALF_SIDE_LENGTH + 2 * OFFSET_FROM_LINK),
+                router_y,
+                "end",
+                "text-before-edge",
+                None,
+                link_cost.to_string(),
+            ),
+            // Ignore local links, they are not taken into account when routing
+            FIFODirection::WestInput | _ => TextInformation::new(
+                router_x - (HALF_SIDE_LENGTH + 2 * OFFSET_FROM_LINK),
+                router_y - OUTPUT_LINK_OFFSET,
+                "end",
+                "text-after-edge",
                 None,
                 link_cost.to_string(),
             ),
@@ -248,38 +278,47 @@ impl InformationLayer {
             router_x += HALF_SIDE_LENGTH;
             router_y += HALF_SIDE_LENGTH;
 
+            let get_cost = |i: &usize,
+                            selector: &dyn Fn(&Neighbours) -> &Option<Neighbour>,
+                            accessor: &dyn Fn(&Neighbour) -> &u8|
+             -> Result<&u8, InformationLayerError> {
+                Ok(accessor(
+                    selector(connections.get(i).ok_or(InformationLayerError)?)
+                        .as_ref()
+                        .ok_or(InformationLayerError)?,
+                ))
+            };
+
             for direction in directions {
                 let link_cost = match direction {
-                    FIFODirection::NorthOutput => connections
-                        .get(core_index)
-                        .ok_or(InformationLayerError)?
-                        .top()
-                        .as_ref()
-                        .ok_or(InformationLayerError)?
-                        .link_cost(),
-                    FIFODirection::SouthOutput => connections
-                        .get(core_index)
-                        .ok_or(InformationLayerError)?
-                        .bottom()
-                        .as_ref()
-                        .ok_or(InformationLayerError)?
-                        .link_cost(),
-                    FIFODirection::WestOutput => connections
-                        .get(core_index)
-                        .ok_or(InformationLayerError)?
-                        .left()
-                        .as_ref()
-                        .ok_or(InformationLayerError)?
-                        .link_cost(),
-                    // TODO: Handle all directions properly
-                    FIFODirection::EastOutput | _ => connections
-                        .get(core_index)
-                        .ok_or(InformationLayerError)?
-                        .right()
-                        .as_ref()
-                        .ok_or(InformationLayerError)?
-                        .link_cost(),
+                    FIFODirection::NorthOutput => {
+                        get_cost(core_index, &Neighbours::top, &Neighbour::link_cost)?
+                    }
+                    FIFODirection::SouthOutput => {
+                        get_cost(core_index, &Neighbours::bottom, &Neighbour::link_cost)?
+                    }
+                    FIFODirection::WestOutput => {
+                        get_cost(core_index, &Neighbours::left, &Neighbour::link_cost)?
+                    }
+                    FIFODirection::EastOutput => {
+                        get_cost(core_index, &Neighbours::right, &Neighbour::link_cost)?
+                    }
+                    FIFODirection::NorthInput => {
+                        get_cost(core_index, &Neighbours::top, &Neighbour::input_link_cost)?
+                    }
+                    FIFODirection::SouthInput => {
+                        get_cost(core_index, &Neighbours::bottom, &Neighbour::input_link_cost)?
+                    }
+                    FIFODirection::WestInput => {
+                        get_cost(core_index, &Neighbours::left, &Neighbour::input_link_cost)?
+                    }
+                    FIFODirection::EastInput => {
+                        get_cost(core_index, &Neighbours::right, &Neighbour::input_link_cost)?
+                    }
+                    // Ignore local links
+                    _ => &0,
                 };
+
                 ret.links_load.push(TextInformation::link_load(
                     direction, router_x, router_y, link_cost,
                 ));

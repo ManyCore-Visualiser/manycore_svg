@@ -23,50 +23,235 @@
         <Core id="0" age="238" status="High" temperature="45">
             <Router age="30" status="Normal" temperature="30" />
             <FIFOs>
-                <FIFO direction="NorthInput" age="30" packets_transmitted="1" status="Normal"
-                    packet_index="0" bandwidth="400"/>
-                <FIFO direction="NorthOutput" age="30" packets_transmitted="0" status="Normal" bandwidth="400" />
-                <FIFO direction="SouthInput" age="30" packets_transmitted="0" status="Normal" bandwidth="400" />
-                <FIFO direction="SouthOutput" age="30" packets_transmitted="0" status="Normal" bandwidth="400" />
-                <FIFO direction="EastInput" age="30" packets_transmitted="0" status="Normal" bandwidth="400" />
-                <FIFO direction="EastOutput" age="30" packets_transmitted="0" status="Normal" bandwidth="400" />
-                <FIFO direction="WestInput" age="30" packets_transmitted="0" status="Normal" bandwidth="400"/>
-                <FIFO direction="WestOutput" age="30" packets_transmitted="0" status="Normal" bandwidth="400"/>
-                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal" bandwidth="400"/>
-                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal" bandwidth="400"/>
+                <FIFO direction="NorthInput" age="30" packets_transmitted="0" status="Normal"
+                    packet_index="0" bandwidth="400" />
+                <FIFO direction="NorthOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthInput" age="30" packets_transmitted="1" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthOutput" age="30" packets_transmitted="1" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastInput" age="30" packets_transmitted="1" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastOutput" age="30" packets_transmitted="1" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
             </FIFOs>
         </Core>
 
         <Core id="1" age="394" status="High" temperature="30" allocated_task="3">
             <Router age="30" status="Normal" temperature="30" />
+            <FIFOs>
+                <FIFO direction="NorthInput" age="30" packets_transmitted="0" status="Normal"
+                    packet_index="0" bandwidth="400" />
+                <FIFO direction="NorthOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthInput" age="30" packets_transmitted="2" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthOutput" age="30" packets_transmitted="2" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastInput" age="30" packets_transmitted="2" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastOutput" age="30" packets_transmitted="2" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestInput" age="30" packets_transmitted="2" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestOutput" age="30" packets_transmitted="2" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+            </FIFOs>
         </Core>
 
         <Core id="2" age="157" status="High" temperature="30">
             <Router age="30" status="Normal" temperature="30" />
+            <FIFOs>
+                <FIFO direction="NorthInput" age="30" packets_transmitted="0" status="Normal"
+                    packet_index="0" bandwidth="400" />
+                <FIFO direction="NorthOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthInput" age="30" packets_transmitted="3" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthOutput" age="30" packets_transmitted="3" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestInput" age="30" packets_transmitted="3" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestOutput" age="30" packets_transmitted="3" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+            </FIFOs>
         </Core>
 
         <Core id="3" age="225" status="High" temperature="30">
             <Router age="30" status="Normal" temperature="30" />
+            <FIFOs>
+                <FIFO direction="NorthInput" age="30" packets_transmitted="4" status="Normal"
+                    packet_index="0" bandwidth="400" />
+                <FIFO direction="NorthOutput" age="30" packets_transmitted="4" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthInput" age="30" packets_transmitted="4" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthOutput" age="30" packets_transmitted="4" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastInput" age="30" packets_transmitted="4" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastOutput" age="30" packets_transmitted="4" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+            </FIFOs>
         </Core>
 
         <Core id="4" age="478" status="High" temperature="30" allocated_task="1">
             <Router age="30" status="Normal" temperature="30" />
+            <FIFOs>
+                <FIFO direction="NorthInput" age="30" packets_transmitted="5" status="Normal"
+                    packet_index="0" bandwidth="400" />
+                <FIFO direction="NorthOutput" age="30" packets_transmitted="5" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthInput" age="30" packets_transmitted="5" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthOutput" age="30" packets_transmitted="5" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastInput" age="30" packets_transmitted="5" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastOutput" age="30" packets_transmitted="5" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestInput" age="30" packets_transmitted="5" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestOutput" age="30" packets_transmitted="5" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+            </FIFOs>
         </Core>
 
         <Core id="5" age="105" status="High" temperature="30">
             <Router age="30" status="Normal" temperature="30" />
+            <FIFOs>
+                <FIFO direction="NorthInput" age="30" packets_transmitted="6" status="Normal"
+                    packet_index="0" bandwidth="400" />
+                <FIFO direction="NorthOutput" age="30" packets_transmitted="6" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthInput" age="30" packets_transmitted="6" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthOutput" age="30" packets_transmitted="6" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestInput" age="30" packets_transmitted="6" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestOutput" age="30" packets_transmitted="6" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+            </FIFOs>
         </Core>
 
         <Core id="6" age="18" status="High" temperature="30" allocated_task="0">
             <Router age="30" status="Normal" temperature="30" />
+            <FIFOs>
+                <FIFO direction="NorthInput" age="30" packets_transmitted="7" status="Normal"
+                    packet_index="0" bandwidth="400" />
+                <FIFO direction="NorthOutput" age="30" packets_transmitted="7" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastInput" age="30" packets_transmitted="7" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastOutput" age="30" packets_transmitted="7" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+            </FIFOs>
         </Core>
 
         <Core id="7" age="15" status="High" temperature="30" allocated_task="2">
             <Router age="30" status="Normal" temperature="30" />
+            <FIFOs>
+                <FIFO direction="NorthInput" age="30" packets_transmitted="8" status="Normal"
+                    packet_index="0" bandwidth="400" />
+                <FIFO direction="NorthOutput" age="30" packets_transmitted="8" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastInput" age="30" packets_transmitted="8" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastOutput" age="30" packets_transmitted="8" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestInput" age="30" packets_transmitted="8" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestOutput" age="30" packets_transmitted="8" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+            </FIFOs>
         </Core>
 
         <Core id="8" age="10" status="High" temperature="30">
             <Router age="30" status="Normal" temperature="30" />
+            <FIFOs>
+                <FIFO direction="NorthInput" age="30" packets_transmitted="9" status="Normal"
+                    packet_index="0" bandwidth="400" />
+                <FIFO direction="NorthOutput" age="30" packets_transmitted="9" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="SouthOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="EastOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestInput" age="30" packets_transmitted="9" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="WestOutput" age="30" packets_transmitted="9" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+                <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"
+                    bandwidth="400" />
+            </FIFOs>
         </Core>
     </Cores>
 </ManycoreSystem>
