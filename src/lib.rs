@@ -212,6 +212,8 @@ impl SVG {
 
         // Always reset CSS. If user deselects all options and clicks apply, they expect the base render to show.
         self.style = Style::default();
+        // Also clear information groups. Clear will keep memory allocated, hopefully less heap allocation penalties.
+        self.root.information_group.groups.clear();
 
         if not_empty_configuration {
             for (i, core) in manycore.cores().list().iter().enumerate() {
