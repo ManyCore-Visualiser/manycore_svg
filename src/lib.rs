@@ -207,9 +207,10 @@ impl SVG {
             }
         }
 
+        // Always reset CSS. If user deselects all options and clicks apply, they expect the base render to show.
+        self.style = Style::default();
+
         if not_empty_configuration {
-            // Reset CSS
-            self.style = Style::default();
             for (i, core) in manycore.cores().list().iter().enumerate() {
                 let (r, c) = &self.coordinates_pairs.get(i).ok_or(ConnectionUpdateError)?;
 
