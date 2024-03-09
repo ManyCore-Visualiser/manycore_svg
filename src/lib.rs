@@ -198,8 +198,9 @@ impl SVG {
         manycore: &mut ManycoreSystem,
         configuration: &Configuration,
     ) -> Result<UpdateResult, Box<dyn Error>> {
-        let not_empty_configuration =
-            !configuration.core_config().is_empty() || !configuration.router_config().is_empty();
+        let not_empty_configuration = !configuration.core_config().is_empty()
+            || !configuration.router_config().is_empty()
+            || configuration.routing_config().is_some();
 
         // Compute routing if requested
         let mut links_with_load = None;
