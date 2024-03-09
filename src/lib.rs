@@ -67,6 +67,8 @@ impl InformationGroup {
 
 #[derive(Serialize)]
 struct Root {
+    #[serde(rename = "@id")]
+    id: &'static str,
     #[serde(rename = "g")]
     processing_group: ProcessingParentGroup,
     #[serde(rename = "g")]
@@ -129,6 +131,7 @@ impl Default for SVG {
             },
             style: Style::default(),
             root: Root {
+                id: "mainGroup",
                 processing_group: ProcessingParentGroup::new(),
                 connections_group: ConnectionsParentGroup::new(),
                 information_group: InformationGroup::default(),
