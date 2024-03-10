@@ -150,8 +150,8 @@ impl From<&ManycoreSystem> for SVG {
         let columns = u16::from(*manycore.columns());
         ret.rows = u16::from(*manycore.rows());
 
-        let width = (columns * UNIT_LENGTH) + ((columns - 1) * GROUP_DISTANCE);
-        let height = (ret.rows * UNIT_LENGTH) + ((ret.rows - 1) * GROUP_DISTANCE);
+        let width = (columns * UNIT_LENGTH) + ((columns - 1) * GROUP_DISTANCE) + TASK_CIRCLE_TOTAL_OFFSET;
+        let height = (ret.rows * UNIT_LENGTH) + ((ret.rows - 1) * GROUP_DISTANCE) + TASK_CIRCLE_TOTAL_OFFSET;
         ret.view_box
             .push_str(&format!("0 0 {} {}", width, height + FONT_SIZE_WITH_OFFSET));
 
@@ -175,14 +175,13 @@ impl From<&ManycoreSystem> for SVG {
             ret.root
                 .processing_group
                 .g_mut()
-                .push(ProcessingGroup::new(&r16, &c16, core.id()));
+                .push(ProcessingGroup::new(&r16, &c16, core.id(), core.allocated_task()));
 
             ret.root.connections_group.add_neighbours(
                 i,
                 manycore.connections().get(&i),
                 &r16,
                 &c16,
-                // &configuration.routing_config().as_ref(),
             );
 
             ret.coordinates_pairs.push((r16, c16));

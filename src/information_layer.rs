@@ -18,7 +18,7 @@ const TOP_COORDINATES: &str = "T";
 const BOTTOM_COORDINATES: &str = "B";
 
 #[derive(Serialize)]
-struct TextInformation {
+pub struct TextInformation {
     #[serde(rename = "@x")]
     x: u16,
     #[serde(rename = "@y")]
@@ -38,7 +38,7 @@ struct TextInformation {
 }
 
 impl TextInformation {
-    fn new(
+    pub fn new(
         x: u16,
         y: u16,
         text_anchor: &'static str,

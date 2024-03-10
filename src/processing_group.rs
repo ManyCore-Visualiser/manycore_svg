@@ -2,9 +2,17 @@ use getset::{MutGetters, Setters};
 use serde::Serialize;
 
 use crate::{
-    style::BASE_FILL_CLASS_NAME, GROUP_DISTANCE, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH,
+    style::{BASE_FILL_CLASS_NAME, DEFAULT_FILL},
+    TextInformation, GROUP_DISTANCE, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH, SIDE_LENGTH,
     UNIT_LENGTH,
 };
+
+static TASK_CIRCLE_OFFSET: u16 = 10;
+static TASK_CIRCLE_RADIUS: u16 = 20;
+static TASK_CIRCLE_STROKE: u16 = 1;
+
+pub static TASK_CIRCLE_TOTAL_OFFSET: u16 =
+    TASK_CIRCLE_OFFSET + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE;
 
 #[derive(Serialize, Setters)]
 pub struct CommonAttributes {
@@ -44,6 +52,78 @@ impl CommonAttributes {
     }
 }
 
+#[derive(Serialize)]
+struct Circle {
+    #[serde(rename = "@cx")]
+    cx: u16,
+    #[serde(rename = "@cy")]
+    cy: u16,
+    #[serde(rename = "@r")]
+    r: &'static str,
+    #[serde(rename = "@fill")]
+    fill: &'static str,
+    #[serde(rename = "@stroke")]
+    stroke: &'static str,
+    #[serde(rename = "@stroke-width")]
+    stroke_width: &'static str,
+}
+
+impl Circle {
+    fn new(cx: u16, cy: u16) -> Self {
+        Self {
+            cx,
+            cy,
+            r: "20",
+            fill: DEFAULT_FILL,
+            stroke: "black",
+            stroke_width: "1",
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct Task {
+    circle: Circle,
+    text: TextInformation,
+}
+
+impl Task {
+    fn new(r: &u16, c: &u16, task: &Option<u16>) -> Option<Self> {
+        match task {
+            Some(task) => {
+                let (cx, cy) = Self::get_centre_coordinates(r, c);
+                Some(Self {
+                    circle: Circle::new(cx, cy),
+                    text: TextInformation::new(
+                        cx,
+                        cy,
+                        "middle",
+                        "middle",
+                        None,
+                        format!("T{}", task),
+                    ),
+                })
+            }
+            None => None,
+        }
+    }
+
+    fn get_centre_coordinates(r: &u16, c: &u16) -> (u16, u16) {
+        let cx = c * UNIT_LENGTH
+            + TASK_CIRCLE_RADIUS
+            + TASK_CIRCLE_STROKE
+            + if *c == 0 { 0 } else { c * GROUP_DISTANCE };
+        let cy = r * UNIT_LENGTH
+            + ROUTER_OFFSET
+            + SIDE_LENGTH
+            + TASK_CIRCLE_OFFSET
+            + TASK_CIRCLE_STROKE
+            + if *r == 0 { 0 } else { r * GROUP_DISTANCE };
+
+        (cx, cy)
+    }
+}
+
 #[derive(Serialize, MutGetters)]
 pub struct Router {
     #[serde(rename = "@id")]
@@ -67,8 +147,10 @@ impl Router {
     }
 
     pub fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let move_x =
-            (c * UNIT_LENGTH) + ROUTER_OFFSET + if *c == 0 { 0 } else { c * GROUP_DISTANCE };
+        let move_x = (c * UNIT_LENGTH)
+            + ROUTER_OFFSET
+            + TASK_CIRCLE_TOTAL_OFFSET
+            + if *c == 0 { 0 } else { c * GROUP_DISTANCE };
         let move_y = r * UNIT_LENGTH + ROUTER_OFFSET + if *r == 0 { 0 } else { r * GROUP_DISTANCE };
 
         (move_x, move_y)
@@ -88,7 +170,9 @@ pub struct Core {
 
 impl Core {
     pub fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let move_x = c * UNIT_LENGTH + if *c == 0 { 0 } else { c * GROUP_DISTANCE };
+        let move_x = c * UNIT_LENGTH
+            + TASK_CIRCLE_TOTAL_OFFSET
+            + if *c == 0 { 0 } else { c * GROUP_DISTANCE };
         let move_y = r * UNIT_LENGTH + ROUTER_OFFSET + if *r == 0 { 0 } else { r * GROUP_DISTANCE };
 
         (move_x, move_y)
@@ -114,14 +198,17 @@ pub struct ProcessingGroup {
     #[serde(rename = "path")]
     #[getset(get_mut = "pub")]
     router: Router,
+    #[serde(rename = "g", skip_serializing_if = "Option::is_none")]
+    task: Option<Task>,
 }
 
 impl ProcessingGroup {
-    pub fn new(r: &u16, c: &u16, id: &u8) -> Self {
+    pub fn new(r: &u16, c: &u16, id: &u8, allocated_task: &Option<u16>) -> Self {
         Self {
             id: *id,
             core: Core::new(r, c, id),
             router: Router::new(r, c, id),
+            task: Task::new(r, c, allocated_task),
         }
     }
 }
