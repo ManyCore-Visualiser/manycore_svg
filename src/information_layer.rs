@@ -1,7 +1,7 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use const_format::concatcp;
-use manycore_parser::{FIFODirection, Neighbour, Neighbours};
+use manycore_parser::{FIFODirection, FIFOs, Neighbour, Neighbours};
 use serde::Serialize;
 
 use crate::{
@@ -16,6 +16,10 @@ static ROUTER_CLIP: &str = "path('m0,0 l0,74 l25,25 l73,0 l0,-100 Z')";
 static OFFSET_FROM_LINK: u16 = 5;
 const TOP_COORDINATES: &str = "T";
 const BOTTOM_COORDINATES: &str = "B";
+
+static LINK_LOAD_25: &str = "#84cc16";
+static LINK_LOAD_50: &str = "#f59e0b";
+static LINK_LOAD_75: &str = "#ef4444";
 
 #[derive(Serialize)]
 pub struct TextInformation {
@@ -62,14 +66,45 @@ impl TextInformation {
         }
     }
 
-    fn link_load(direction: &FIFODirection, router_x: u16, router_y: u16, link_cost: &u8) -> Self {
+    fn get_link_load_fill(
+        direction: &FIFODirection,
+        link_cost: &u8,
+        fifos: Option<&FIFOs>,
+    ) -> Option<String> {
+        if let Some(fifos) = fifos {
+            if let Some(fifo) = fifos.fifo().get(direction) {
+                // Multiply by 100 so we don't deal with floating point
+                let load_fraction = (u16::from(*link_cost) * 100) / fifo.bandwidth();
+
+                if load_fraction <= 25 {
+                    return Some(LINK_LOAD_25.into());
+                } else if load_fraction <= 50 {
+                    return Some(LINK_LOAD_50.into());
+                } else {
+                    return Some(LINK_LOAD_75.into());
+                }
+            }
+        }
+
+        None
+    }
+
+    fn link_load(
+        direction: &FIFODirection,
+        router_x: u16,
+        router_y: u16,
+        link_cost: &u8,
+        fifos: Option<&FIFOs>,
+    ) -> Self {
+        let fill = TextInformation::get_link_load_fill(direction, link_cost, fifos);
+
         match direction {
             FIFODirection::NorthOutput => TextInformation::new(
                 router_x + OUTPUT_LINK_OFFSET + OFFSET_FROM_LINK,
                 router_y - (HALF_SIDE_LENGTH + OFFSET_FROM_LINK),
                 "start",
                 "text-after-edge",
-                None,
+                fill.as_ref(),
                 link_cost.to_string(),
             ),
             FIFODirection::NorthInput => TextInformation::new(
@@ -77,7 +112,7 @@ impl TextInformation {
                 router_y - (HALF_SIDE_LENGTH + OFFSET_FROM_LINK),
                 "end",
                 "text-after-edge",
-                None,
+                fill.as_ref(),
                 link_cost.to_string(),
             ),
             FIFODirection::EastOutput => TextInformation::new(
@@ -85,7 +120,7 @@ impl TextInformation {
                 router_y - OUTPUT_LINK_OFFSET,
                 "start",
                 "text-after-edge",
-                None,
+                fill.as_ref(),
                 link_cost.to_string(),
             ),
             FIFODirection::EastInput => TextInformation::new(
@@ -93,7 +128,7 @@ impl TextInformation {
                 router_y,
                 "start",
                 "text-before-edge",
-                None,
+                fill.as_ref(),
                 link_cost.to_string(),
             ),
             FIFODirection::SouthOutput => TextInformation::new(
@@ -101,7 +136,7 @@ impl TextInformation {
                 router_y + HALF_SIDE_LENGTH + OFFSET_FROM_LINK,
                 "end",
                 "text-before-edge",
-                None,
+                fill.as_ref(),
                 link_cost.to_string(),
             ),
             FIFODirection::SouthInput => TextInformation::new(
@@ -109,7 +144,7 @@ impl TextInformation {
                 router_y + HALF_SIDE_LENGTH + OFFSET_FROM_LINK,
                 "start",
                 "text-before-edge",
-                None,
+                fill.as_ref(),
                 link_cost.to_string(),
             ),
             FIFODirection::WestOutput => TextInformation::new(
@@ -117,7 +152,7 @@ impl TextInformation {
                 router_y,
                 "end",
                 "text-before-edge",
-                None,
+                fill.as_ref(),
                 link_cost.to_string(),
             ),
             // Ignore local links, they are not taken into account when routing
@@ -126,7 +161,7 @@ impl TextInformation {
                 router_y - OUTPUT_LINK_OFFSET,
                 "end",
                 "text-after-edge",
-                None,
+                fill.as_ref(),
                 link_cost.to_string(),
             ),
         }
@@ -212,6 +247,7 @@ impl InformationLayer {
         connections: &HashMap<usize, Neighbours>,
         css: &mut String,
         core_loads: Option<&Vec<FIFODirection>>,
+        fifos: Option<&FIFOs>,
     ) -> Result<Self, InformationLayerError> {
         let mut ret = InformationLayer::default();
         let core_config = configuration.core_config();
@@ -320,7 +356,7 @@ impl InformationLayer {
                 };
 
                 ret.links_load.push(TextInformation::link_load(
-                    direction, router_x, router_y, link_cost,
+                    direction, router_x, router_y, link_cost, fifos,
                 ));
             }
         }

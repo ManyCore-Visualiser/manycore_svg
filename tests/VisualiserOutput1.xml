@@ -138,11 +138,11 @@
                 <FIFO direction="EastInput" age="30" packets_transmitted="5" status="Normal"
                     bandwidth="400" />
                 <FIFO direction="EastOutput" age="30" packets_transmitted="5" status="Normal"
-                    bandwidth="400" />
+                    bandwidth="10" />
                 <FIFO direction="WestInput" age="30" packets_transmitted="5" status="Normal"
                     bandwidth="400" />
                 <FIFO direction="WestOutput" age="30" packets_transmitted="5" status="Normal"
-                    bandwidth="400" />
+                    bandwidth="6" />
                 <FIFO direction="LocalInput" age="30" packets_transmitted="0" status="Normal"
                     bandwidth="400" />
                 <FIFO direction="LocalOutput" age="30" packets_transmitted="0" status="Normal"

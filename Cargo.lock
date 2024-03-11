@@ -48,8 +48,8 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "manycore_parser"
-version = "0.2.7"
-source = "git+https://github.com/joe2k01/manycore_parser.git#aca8ae6845cabc2f4ea5465cef06eaf7f8c71778"
+version = "0.2.8"
+source = "git+https://github.com/joe2k01/manycore_parser.git#6144e65d23bc1703e4d31968342707ec0759d6e7"
 dependencies = [
  "getset",
  "quick-xml",
@@ -58,7 +58,7 @@ dependencies = [
 
 [[package]]
 name = "manycore_svg"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "const_format",
  "getset",

@@ -227,6 +227,8 @@ impl SVG {
                     None => None,
                 };
 
+                let fifos = manycore.cores().list()[i].fifos().as_ref();
+
                 self.root
                     .information_group
                     .groups
@@ -240,6 +242,7 @@ impl SVG {
                         manycore.connections(),
                         self.style.css_mut(),
                         core_loads,
+                        fifos,
                     )?);
             }
         }
