@@ -11,6 +11,7 @@ use std::error::Error;
 
 use connections_group::*;
 use exporting_aid::*;
+use getset::Getters;
 use information_layer::*;
 use marker::*;
 use processing_group::*;
@@ -74,9 +75,15 @@ struct Root {
     information_group: InformationGroup,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Getters)]
 #[serde(rename = "svg")]
 pub struct SVG {
+    #[serde(skip)]
+    #[getset(get = "pub")]
+    width: u16,
+    #[serde(skip)]
+    #[getset(get = "pub")]
+    height: u16,
     #[serde(rename = "@xmlns:svg")]
     xmlns_svg: &'static str,
     #[serde(rename = "@xmlns")]
@@ -117,14 +124,15 @@ impl TryFrom<&SVG> for String {
 impl From<&ManycoreSystem> for SVG {
     fn from(manycore: &ManycoreSystem) -> Self {
         let columns = u16::from(*manycore.columns());
-        let mut ret = SVG::new(&manycore.cores().list().len(), u16::from(*manycore.rows()));
-
+        let rows = u16::from(*manycore.rows());
         let width =
             (columns * UNIT_LENGTH) + ((columns - 1) * GROUP_DISTANCE) + TASK_CIRCLE_TOTAL_OFFSET;
-        let height =
-            (ret.rows * UNIT_LENGTH) + ((ret.rows - 1) * GROUP_DISTANCE) + TASK_CIRCLE_TOTAL_OFFSET;
-        ret.view_box
-            .push_str(&format!("0 0 {} {}", width, height + FONT_SIZE_WITH_OFFSET));
+        let height = (rows * UNIT_LENGTH)
+            + ((rows - 1) * GROUP_DISTANCE)
+            + TASK_CIRCLE_TOTAL_OFFSET
+            + FONT_SIZE_WITH_OFFSET;
+
+        let mut ret = SVG::new(&manycore.cores().list().len(), rows, width, height);
 
         let mut r: u8 = 0;
 
@@ -165,13 +173,15 @@ impl From<&ManycoreSystem> for SVG {
 }
 
 impl SVG {
-    fn new(number_of_cores: &usize, rows: u16) -> Self {
+    fn new(number_of_cores: &usize, rows: u16, width: u16, height: u16) -> Self {
         Self {
+            width,
+            height,
             xmlns_svg: "http://www.w3.org/2000/svg",
             xmlns: "http://www.w3.org/2000/svg",
             preserve_aspect_ratio: "xMidYMid meet",
             class: String::from("w-full max-h-full"),
-            view_box: String::new(),
+            view_box: format!("0 0 {} {}", width, height),
             defs: Defs {
                 marker: Marker::default(),
                 text_background: TextBackground::default(),
