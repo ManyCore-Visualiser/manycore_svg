@@ -50,16 +50,13 @@ struct InformationGroup {
     id: &'static str,
 }
 
-impl Default for InformationGroup {
-    fn default() -> Self {
+impl InformationGroup {
+    fn new(number_of_cores: &usize) -> Self {
         Self {
-            groups: Vec::new(),
+            groups: Vec::with_capacity(*number_of_cores),
             id: "information",
         }
     }
-}
-
-impl InformationGroup {
     fn is_empty(&self) -> bool {
         self.groups.is_empty()
     }
@@ -117,41 +114,15 @@ impl TryFrom<&SVG> for String {
     }
 }
 
-impl Default for SVG {
-    fn default() -> Self {
-        Self {
-            xmlns_svg: "http://www.w3.org/2000/svg",
-            xmlns: "http://www.w3.org/2000/svg",
-            preserve_aspect_ratio: "xMidYMid meet",
-            class: String::from("w-full max-h-full"),
-            view_box: String::new(),
-            defs: Defs {
-                marker: Marker::default(),
-                text_background: TextBackground::default(),
-            },
-            style: Style::default(),
-            root: Root {
-                id: "mainGroup",
-                processing_group: ProcessingParentGroup::new(),
-                connections_group: ConnectionsParentGroup::new(),
-                information_group: InformationGroup::default(),
-            },
-            exporting_aid: ExportingAid::default(),
-            coordinates_pairs: Vec::new(),
-            rows: 0,
-        }
-    }
-}
-
 impl From<&ManycoreSystem> for SVG {
     fn from(manycore: &ManycoreSystem) -> Self {
-        let mut ret = SVG::default();
-
         let columns = u16::from(*manycore.columns());
-        ret.rows = u16::from(*manycore.rows());
+        let mut ret = SVG::new(&manycore.cores().list().len(), u16::from(*manycore.rows()));
 
-        let width = (columns * UNIT_LENGTH) + ((columns - 1) * GROUP_DISTANCE) + TASK_CIRCLE_TOTAL_OFFSET;
-        let height = (ret.rows * UNIT_LENGTH) + ((ret.rows - 1) * GROUP_DISTANCE) + TASK_CIRCLE_TOTAL_OFFSET;
+        let width =
+            (columns * UNIT_LENGTH) + ((columns - 1) * GROUP_DISTANCE) + TASK_CIRCLE_TOTAL_OFFSET;
+        let height =
+            (ret.rows * UNIT_LENGTH) + ((ret.rows - 1) * GROUP_DISTANCE) + TASK_CIRCLE_TOTAL_OFFSET;
         ret.view_box
             .push_str(&format!("0 0 {} {}", width, height + FONT_SIZE_WITH_OFFSET));
 
@@ -172,10 +143,12 @@ impl From<&ManycoreSystem> for SVG {
             let r16 = u16::from(r);
             let c16 = u16::from(c);
 
-            ret.root
-                .processing_group
-                .g_mut()
-                .push(ProcessingGroup::new(&r16, &c16, core.id(), core.allocated_task()));
+            ret.root.processing_group.g_mut().push(ProcessingGroup::new(
+                &r16,
+                &c16,
+                core.id(),
+                core.allocated_task(),
+            ));
 
             ret.root.connections_group.add_neighbours(
                 i,
@@ -192,6 +165,29 @@ impl From<&ManycoreSystem> for SVG {
 }
 
 impl SVG {
+    fn new(number_of_cores: &usize, rows: u16) -> Self {
+        Self {
+            xmlns_svg: "http://www.w3.org/2000/svg",
+            xmlns: "http://www.w3.org/2000/svg",
+            preserve_aspect_ratio: "xMidYMid meet",
+            class: String::from("w-full max-h-full"),
+            view_box: String::new(),
+            defs: Defs {
+                marker: Marker::default(),
+                text_background: TextBackground::default(),
+            },
+            style: Style::default(),
+            root: Root {
+                id: "mainGroup",
+                processing_group: ProcessingParentGroup::new(number_of_cores),
+                connections_group: ConnectionsParentGroup::new(),
+                information_group: InformationGroup::new(number_of_cores),
+            },
+            exporting_aid: ExportingAid::default(),
+            coordinates_pairs: Vec::with_capacity(*number_of_cores),
+            rows,
+        }
+    }
     pub fn update_configurable_information(
         &mut self,
         manycore: &mut ManycoreSystem,
@@ -200,7 +196,7 @@ impl SVG {
         let not_empty_configuration = !configuration.core_config().is_empty()
             || !configuration.router_config().is_empty()
             || configuration.routing_config().is_some();
-        
+
         // Compute routing if requested
         let mut links_with_load = None;
         if let Some(algorithm) = configuration.routing_config() {

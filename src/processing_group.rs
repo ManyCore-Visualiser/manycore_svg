@@ -220,7 +220,7 @@ pub struct ProcessingParentGroup {
 }
 
 impl ProcessingParentGroup {
-    pub fn new() -> Self {
-        Self { g: vec![] }
+    pub fn new(number_of_cores: &usize) -> Self {
+        Self { g: Vec::with_capacity(*number_of_cores) }
     }
 }
