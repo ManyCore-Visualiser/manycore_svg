@@ -46,13 +46,20 @@ impl ViewBox {
     }
 }
 
+impl From<&ViewBox> for String {
+    fn from(view_box: &ViewBox) -> Self {
+        format!(
+            "{} {} {} {}",
+            view_box.x, view_box.y, view_box.width, view_box.height
+        )
+    }
+}
+
 impl Serialize for ViewBox {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
-        let view_box_string = format!("{} {} {} {}", self.x, self.y, self.width, self.height);
-
-        serializer.serialize_str(view_box_string.as_str())
+        serializer.serialize_str(String::from(self).as_str())
     }
 }

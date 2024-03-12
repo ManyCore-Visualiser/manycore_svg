@@ -130,6 +130,8 @@ pub struct SVG {
 pub struct UpdateResult {
     style: String,
     information_group: String,
+    sinks_sources_group: String,
+    view_box: String,
 }
 
 impl TryFrom<&SVG> for String {
@@ -386,6 +388,11 @@ impl SVG {
                 "g",
                 &self.root.information_group,
             )?,
+            sinks_sources_group: quick_xml::se::to_string_with_root(
+                "g",
+                &self.root.sinks_sources_group,
+            )?,
+            view_box: String::from(&self.view_box),
         })
     }
 }
