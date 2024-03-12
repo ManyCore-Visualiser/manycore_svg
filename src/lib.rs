@@ -4,10 +4,12 @@ mod information_layer;
 mod marker;
 mod processing_group;
 mod render_settings;
+mod sinks_sources_layer;
 mod style;
 mod text_background;
+mod view_box;
 
-use std::error::Error;
+use std::{collections::BTreeSet, error::Error};
 
 use connections_group::*;
 use exporting_aid::*;
@@ -16,8 +18,15 @@ use information_layer::*;
 use marker::*;
 use processing_group::*;
 pub use render_settings::*;
+use sinks_sources_layer::{
+    SinkSource, SinkSourceVariant, SinksSourcesGroup, I_SINKS_SOURCES_GROUP_OFFSET,
+    SINKS_SOURCES_GROUP_OFFSET,
+};
+pub use view_box::*;
 
-use manycore_parser::{ConnectionUpdateError, ManycoreSystem, WithXMLAttributes};
+use manycore_parser::{
+    ConnectionUpdateError, ManycoreSystem, SinkSourceDirection, WithXMLAttributes,
+};
 use quick_xml::DeError;
 use serde::Serialize;
 use style::Style;
@@ -58,7 +67,7 @@ impl InformationGroup {
             id: "information",
         }
     }
-    fn is_empty(&self) -> bool {
+    fn should_serialise(&self) -> bool {
         self.groups.is_empty()
     }
 }
@@ -71,8 +80,16 @@ struct Root {
     processing_group: ProcessingParentGroup,
     #[serde(rename = "g")]
     connections_group: ConnectionsParentGroup,
-    #[serde(rename = "g", skip_serializing_if = "InformationGroup::is_empty")]
+    #[serde(
+        rename = "g",
+        skip_serializing_if = "InformationGroup::should_serialise"
+    )]
     information_group: InformationGroup,
+    #[serde(
+        rename = "g",
+        skip_serializing_if = "SinksSourcesGroup::should_serialise"
+    )]
+    sinks_sources_group: SinksSourcesGroup,
 }
 
 #[derive(Serialize, Getters)]
@@ -93,7 +110,7 @@ pub struct SVG {
     #[serde(rename = "@class")]
     class: String,
     #[serde(rename = "@viewBox")]
-    view_box: String,
+    view_box: ViewBox,
     defs: Defs,
     style: Style,
     #[serde(rename = "g")]
@@ -104,6 +121,8 @@ pub struct SVG {
     coordinates_pairs: Vec<(u16, u16)>,
     #[serde(skip)]
     rows: u16,
+    #[serde(skip)]
+    columns: u16,
 }
 
 #[derive(Serialize)]
@@ -132,7 +151,7 @@ impl From<&ManycoreSystem> for SVG {
             + TASK_CIRCLE_TOTAL_OFFSET
             + FONT_SIZE_WITH_OFFSET;
 
-        let mut ret = SVG::new(&manycore.cores().list().len(), rows, width, height);
+        let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height);
 
         let mut r: u8 = 0;
 
@@ -173,7 +192,7 @@ impl From<&ManycoreSystem> for SVG {
 }
 
 impl SVG {
-    fn new(number_of_cores: &usize, rows: u16, width: u16, height: u16) -> Self {
+    fn new(number_of_cores: &usize, rows: u16, columns: u16, width: u16, height: u16) -> Self {
         Self {
             width,
             height,
@@ -181,7 +200,7 @@ impl SVG {
             xmlns: "http://www.w3.org/2000/svg",
             preserve_aspect_ratio: "xMidYMid meet",
             class: String::from("w-full max-h-full"),
-            view_box: format!("0 0 {} {}", width, height),
+            view_box: ViewBox::new(width, height),
             defs: Defs {
                 marker: Marker::default(),
                 text_background: TextBackground::default(),
@@ -192,10 +211,12 @@ impl SVG {
                 processing_group: ProcessingParentGroup::new(number_of_cores),
                 connections_group: ConnectionsParentGroup::new(),
                 information_group: InformationGroup::new(number_of_cores),
+                sinks_sources_group: SinksSourcesGroup::new(rows, columns),
             },
             exporting_aid: ExportingAid::default(),
             coordinates_pairs: Vec::with_capacity(*number_of_cores),
             rows,
+            columns,
         }
     }
     pub fn update_configurable_information(
@@ -203,9 +224,11 @@ impl SVG {
         manycore: &mut ManycoreSystem,
         configuration: &Configuration,
     ) -> Result<UpdateResult, Box<dyn Error>> {
+        let show_sinks_sources = configuration.sinks_sources().is_some_and(|is_true| is_true);
         let not_empty_configuration = !configuration.core_config().is_empty()
             || !configuration.router_config().is_empty()
-            || configuration.routing_config().is_some();
+            || configuration.routing_config().is_some()
+            || show_sinks_sources;
 
         // Compute routing if requested
         let mut links_with_load = None;
@@ -215,11 +238,22 @@ impl SVG {
 
         // Always reset CSS. If user deselects all options and clicks apply, they expect the base render to show.
         self.style = Style::default();
-        // Also clear information groups. Clear will keep memory allocated, hopefully less heap allocation penalties.
+        // Clear information groups. Clear will keep memory allocated, hopefully less heap allocation penalties.
         self.root.information_group.groups.clear();
+        // Reset viewbox
+        self.view_box.reset(self.width, self.height);
+
+        // Expand viewBox if required (Sinks and Sources)
+        if show_sinks_sources {
+            self.view_box.extend_left_by(I_SINKS_SOURCES_GROUP_OFFSET);
+            self.view_box.extend_right_by(SINKS_SOURCES_GROUP_OFFSET);
+            self.view_box.extend_top_by(I_SINKS_SOURCES_GROUP_OFFSET);
+            self.view_box.extend_bottom_by(SINKS_SOURCES_GROUP_OFFSET);
+        }
 
         if not_empty_configuration {
             for (i, core) in manycore.cores().list().iter().enumerate() {
+                // Information group
                 let (r, c) = &self.coordinates_pairs.get(i).ok_or(ConnectionUpdateError)?;
 
                 let core_loads = match links_with_load.as_ref() {
@@ -244,6 +278,105 @@ impl SVG {
                         core_loads,
                         fifos,
                     )?);
+
+                // Sinks/Sources group
+                let is_on_the_edge =
+                    (*r == 0 || *r == (self.rows - 1)) || (*c == 0 || *c == (self.columns - 1));
+                if show_sinks_sources && is_on_the_edge {
+                    let (router_x, mut router_y) = Router::get_move_coordinates(r, c);
+                    router_y -= ROUTER_OFFSET;
+
+                    let mut edge_routers_expected_directions: BTreeSet<SinkSourceDirection>;
+
+                    // Determine set of expected directions
+                    if *c % (self.columns - 1) == 0 {
+                        // Top edge
+                        if *r == 0 {
+                            // Top Left corner
+                            if *c == 0 {
+                                edge_routers_expected_directions = BTreeSet::from([
+                                    SinkSourceDirection::North,
+                                    SinkSourceDirection::West,
+                                ]);
+                            }
+                            // Top right corner
+                            else {
+                                edge_routers_expected_directions = BTreeSet::from([
+                                    SinkSourceDirection::North,
+                                    SinkSourceDirection::East,
+                                ]);
+                            }
+                        }
+                        // Bottom edge
+                        else if *r == (self.rows - 1) {
+                            // Bottom left corner
+                            if *c == 0 {
+                                edge_routers_expected_directions = BTreeSet::from([
+                                    SinkSourceDirection::South,
+                                    SinkSourceDirection::West,
+                                ]);
+                            }
+                            // Bottom right corner
+                            else {
+                                edge_routers_expected_directions = BTreeSet::from([
+                                    SinkSourceDirection::South,
+                                    SinkSourceDirection::East,
+                                ]);
+                            }
+                        }
+                        // Left side
+                        else if *c == 0 {
+                            edge_routers_expected_directions =
+                                BTreeSet::from([SinkSourceDirection::West]);
+                        }
+                        // Right side
+                        else {
+                            edge_routers_expected_directions =
+                                BTreeSet::from([SinkSourceDirection::East]);
+                        }
+                    }
+                    // Top edge
+                    else if *r == 0 {
+                        edge_routers_expected_directions =
+                            BTreeSet::from([SinkSourceDirection::North]);
+                    }
+                    // Bottom edge
+                    else {
+                        edge_routers_expected_directions =
+                            BTreeSet::from([SinkSourceDirection::South]);
+                    }
+
+                    if let Some(sink) = manycore.sinks().get(&i) {
+                        self.root.sinks_sources_group.push(SinkSource::new(
+                            &router_x,
+                            &router_y,
+                            sink.direction(),
+                            SinkSourceVariant::Sink,
+                        ));
+
+                        edge_routers_expected_directions.remove(sink.direction());
+                    }
+
+                    if let Some(source) = manycore.sources().get(&i) {
+                        self.root.sinks_sources_group.push(SinkSource::new(
+                            &router_x,
+                            &router_y,
+                            source.direction(),
+                            SinkSourceVariant::Source,
+                        ));
+
+                        edge_routers_expected_directions.remove(source.direction());
+                    }
+
+                    for direction in edge_routers_expected_directions.iter() {
+                        self.root.sinks_sources_group.push(SinkSource::new(
+                            &router_x,
+                            &router_y,
+                            direction,
+                            SinkSourceVariant::None,
+                        ));
+                    }
+                }
             }
         }
 

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use getset::Getters;
 use manycore_parser::RoutingAlgorithms;
@@ -22,9 +22,10 @@ pub enum FieldConfiguration {
 #[serde(rename_all = "camelCase")]
 #[getset(get = "pub")]
 pub struct Configuration {
-    core_config: HashMap<String, FieldConfiguration>,
-    router_config: HashMap<String, FieldConfiguration>,
+    core_config: BTreeMap<String, FieldConfiguration>,
+    router_config: BTreeMap<String, FieldConfiguration>,
     routing_config: Option<RoutingAlgorithms>,
+    sinks_sources: Option<bool>,
 }
 
 #[cfg(test)]
@@ -33,7 +34,7 @@ mod tests {
     use manycore_parser::ManycoreSystem;
 
     use std::{
-        collections::HashMap,
+        collections::BTreeMap,
         fs::{self, read_to_string},
     };
 
@@ -41,7 +42,7 @@ mod tests {
 
     lazy_static! {
         static ref EXPECTED_CONFIGURATION: Configuration = Configuration {
-            core_config: HashMap::from([
+            core_config: BTreeMap::from([
                 (
                     "@id".to_string(),
                     FieldConfiguration::Text("ID".to_string()),
@@ -78,7 +79,7 @@ mod tests {
                     ),
                 ),
             ]),
-            router_config: HashMap::from([
+            router_config: BTreeMap::from([
                 (
                     "@age".to_string(),
                     FieldConfiguration::Fill(ColourSettings {
@@ -107,7 +108,8 @@ mod tests {
                     ),
                 ),
             ]),
-            routing_config: Some(manycore_parser::RoutingAlgorithms::RowFirst)
+            routing_config: Some(manycore_parser::RoutingAlgorithms::RowFirst),
+            sinks_sources: None
         };
     }
 

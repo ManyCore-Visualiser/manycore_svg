@@ -1,5 +1,6 @@
 {
   "coreConfig": {},
   "routerConfig": {},
-  "routingConfig": "Observed"
+  "routingConfig": "Observed",
+  "sinksSources": true
 }

@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use manycore_parser::WithXMLAttributes;
 
@@ -10,7 +10,7 @@ use crate::{FieldConfiguration, FONT_SIZE_WITH_OFFSET};
 pub fn generate<T: WithXMLAttributes>(
     mut base_x: u16,
     mut base_y: u16,
-    configuration: &HashMap<String, FieldConfiguration>,
+    configuration: &BTreeMap<String, FieldConfiguration>,
     target: &T,
     group: &mut ProcessingInformation,
     text_anchor: &'static str,

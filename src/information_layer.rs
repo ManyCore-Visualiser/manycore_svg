@@ -24,9 +24,9 @@ static LINK_LOAD_75: &str = "#ef4444";
 #[derive(Serialize)]
 pub struct TextInformation {
     #[serde(rename = "@x")]
-    x: u16,
+    x: i16,
     #[serde(rename = "@y")]
-    y: u16,
+    y: i16,
     #[serde(rename = "@font-size")]
     font_size: &'static str,
     #[serde(rename = "@font-family")]
@@ -42,9 +42,9 @@ pub struct TextInformation {
 }
 
 impl TextInformation {
-    pub fn new(
-        x: u16,
-        y: u16,
+    pub fn new_signed(
+        x: i16,
+        y: i16,
         text_anchor: &'static str,
         dominant_baseline: &'static str,
         fill: Option<&String>,
@@ -64,6 +64,25 @@ impl TextInformation {
             },
             value,
         }
+    }
+
+    pub fn new(
+        x: u16,
+        y: u16,
+        text_anchor: &'static str,
+        dominant_baseline: &'static str,
+        fill: Option<&String>,
+        value: String,
+    ) -> Self {
+        // TODO: Actually check conversions. This needs doing all over really.
+        Self::new_signed(
+            x as i16,
+            y as i16,
+            text_anchor,
+            dominant_baseline,
+            fill,
+            value,
+        )
     }
 
     fn get_link_load_fill(
