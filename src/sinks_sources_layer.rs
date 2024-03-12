@@ -143,6 +143,10 @@ impl SinksSourcesGroup {
         self.g.push(element)
     }
 
+    pub fn clear(&mut self) {
+        self.g.clear()
+    }
+
     pub fn should_serialise(&self) -> bool {
         self.g.is_empty()
     }

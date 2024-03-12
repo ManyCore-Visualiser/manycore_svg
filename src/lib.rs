@@ -244,6 +244,8 @@ impl SVG {
         self.root.information_group.groups.clear();
         // Reset viewbox
         self.view_box.reset(self.width, self.height);
+        // Clear sinks/sources group
+        self.root.sinks_sources_group.clear();
 
         // Expand viewBox if required (Sinks and Sources)
         if show_sinks_sources {
