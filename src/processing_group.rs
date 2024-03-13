@@ -216,11 +216,16 @@ impl ProcessingGroup {
 #[derive(Serialize, MutGetters)]
 #[getset(get_mut = "pub")]
 pub struct ProcessingParentGroup {
+    #[serde(rename = "@id")]
+    id: &'static str,
     g: Vec<ProcessingGroup>,
 }
 
 impl ProcessingParentGroup {
     pub fn new(number_of_cores: &usize) -> Self {
-        Self { g: Vec::with_capacity(*number_of_cores) }
+        Self {
+            id: "processingGroup",
+            g: Vec::with_capacity(*number_of_cores),
+        }
     }
 }
