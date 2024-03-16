@@ -1,14 +1,25 @@
 use manycore_parser::SinkSourceDirection;
 use serde::Serialize;
 
-use crate::{style::DEFAULT_FILL, TextInformation, ROUTER_OFFSET};
+use crate::{style::DEFAULT_FILL, TextInformation, ROUTER_OFFSET, SIDE_LENGTH};
 
-static SINKS_SOURCES_SIDE_LENGTH: &str = "100";
+static SINKS_SOURCES_SIDE_LENGTH: &str = "70";
 static SINKS_SOURCES_STROKE_WIDTH: &str = "1";
 static SINKS_SOURCES_RX: &str = "15";
-pub static SINKS_SOURCES_GROUP_OFFSET: u16 = 121;
-pub static I_SINKS_SOURCES_GROUP_OFFSET: i16 = 121;
-static I_SINKS_SOURCES_HALF_SIDE_LENGTH: i16 = 50;
+static SINKS_SOURCE_STROKE_WIDTH_VAL: u16 = 1;
+static SINKS_SOURCES_SIDE_LENGTH_VAL: u16 = 70;
+static SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: u16 = 30;
+pub static SINKS_SOURCES_GROUP_OFFSET: u16 = SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+    + SINKS_SOURCES_SIDE_LENGTH_VAL
+    + SINKS_SOURCE_STROKE_WIDTH_VAL;
+static I_SINKS_SOURCE_DRAWING_OFFSET: i16 =
+    0i16.wrapping_add_unsigned(SINKS_SOURCES_GROUP_OFFSET - SINKS_SOURCE_STROKE_WIDTH_VAL);
+static I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: i16 = 30;
+static I_SINKS_SOURCE_NORTH_SOUTH_X_OFFSET: i16 =
+    0i16.wrapping_add_unsigned(SIDE_LENGTH - SINKS_SOURCES_SIDE_LENGTH_VAL) / 2;
+pub static I_SINKS_SOURCES_GROUP_OFFSET: i16 =
+    0i16.wrapping_add_unsigned(SINKS_SOURCES_GROUP_OFFSET);
+static I_SINKS_SOURCES_HALF_SIDE_LENGTH: i16 = 35;
 static SINK_FILL: &str = "#fb923c";
 static SOURCE_FILL: &str = "#fbbf24";
 
@@ -100,16 +111,21 @@ impl SinkSource {
 
         match direction {
             SinkSourceDirection::North => {
-                delta_y -= I_SINKS_SOURCES_GROUP_OFFSET;
+                delta_y -= I_SINKS_SOURCE_DRAWING_OFFSET;
+                delta_x += I_SINKS_SOURCE_NORTH_SOUTH_X_OFFSET;
             }
             SinkSourceDirection::East => {
-                delta_x += I_SINKS_SOURCES_GROUP_OFFSET;
+                delta_x +=
+                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH.wrapping_add_unsigned(SIDE_LENGTH);
             }
             SinkSourceDirection::South => {
-                delta_y += I_SINKS_SOURCES_GROUP_OFFSET.wrapping_add_unsigned(ROUTER_OFFSET);
+                delta_y += I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                    .wrapping_add_unsigned(ROUTER_OFFSET)
+                    .wrapping_add_unsigned(SIDE_LENGTH);
+                delta_x += I_SINKS_SOURCE_NORTH_SOUTH_X_OFFSET;
             }
             SinkSourceDirection::West => {
-                delta_x -= I_SINKS_SOURCES_GROUP_OFFSET.wrapping_add_unsigned(ROUTER_OFFSET);
+                delta_x -= I_SINKS_SOURCE_DRAWING_OFFSET.wrapping_add_unsigned(ROUTER_OFFSET);
             }
         };
 
