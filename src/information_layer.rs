@@ -1,12 +1,12 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use const_format::concatcp;
-use manycore_parser::{FIFODirection, FIFOs, Neighbour, Neighbours};
+use manycore_parser::{Channels, Directions, Neighbour, Neighbours};
 use serde::Serialize;
 
 use crate::{
     text_background::TEXT_BACKGROUND_ID, Configuration, Core, FieldConfiguration, Router,
-    HALF_SIDE_LENGTH, OUTPUT_LINK_OFFSET, ROUTER_OFFSET, SIDE_LENGTH,
+    HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH, OUTPUT_LINK_OFFSET, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
@@ -86,14 +86,14 @@ impl TextInformation {
     }
 
     fn get_link_load_fill(
-        direction: &FIFODirection,
+        direction: &Directions,
         link_cost: &u8,
-        fifos: Option<&FIFOs>,
+        channels: Option<&Channels>,
     ) -> Option<String> {
-        if let Some(fifos) = fifos {
-            if let Some(fifo) = fifos.fifo().get(direction) {
+        if let Some(channels) = channels {
+            if let Some(channel) = channels.channel().get(direction) {
                 // Multiply by 100 so we don't deal with floating point
-                let load_fraction = (u16::from(*link_cost) * 100) / fifo.bandwidth();
+                let load_fraction = (u16::from(*link_cost) * 100) / channel.bandwidth();
 
                 if load_fraction <= 25 {
                     return Some(LINK_LOAD_25.into());
@@ -109,77 +109,44 @@ impl TextInformation {
     }
 
     fn link_load(
-        direction: &FIFODirection,
+        direction: &Directions,
         router_x: u16,
         router_y: u16,
         link_cost: &u8,
-        fifos: Option<&FIFOs>,
+        channels: Option<&Channels>,
     ) -> Self {
-        let fill = TextInformation::get_link_load_fill(direction, link_cost, fifos);
+        let fill = TextInformation::get_link_load_fill(direction, link_cost, channels);
 
         match direction {
-            FIFODirection::NorthOutput => TextInformation::new(
+            Directions::North => TextInformation::new(
                 router_x + OUTPUT_LINK_OFFSET + OFFSET_FROM_LINK,
-                router_y - (HALF_SIDE_LENGTH + OFFSET_FROM_LINK),
+                router_y - (HALF_SIDE_LENGTH + HALF_CONNECTION_LENGTH),
                 "start",
-                "text-after-edge",
+                "middle",
                 fill.as_ref(),
                 link_cost.to_string(),
             ),
-            FIFODirection::NorthInput => TextInformation::new(
+            Directions::East => TextInformation::new(
+                router_x + HALF_SIDE_LENGTH + HALF_CONNECTION_LENGTH,
+                router_y - (OUTPUT_LINK_OFFSET + OFFSET_FROM_LINK),
+                "middle",
+                "text-top",
+                fill.as_ref(),
+                link_cost.to_string(),
+            ),
+            Directions::South => TextInformation::new(
                 router_x - OFFSET_FROM_LINK,
-                router_y - (HALF_SIDE_LENGTH + OFFSET_FROM_LINK),
+                router_y + HALF_SIDE_LENGTH + HALF_CONNECTION_LENGTH,
                 "end",
-                "text-after-edge",
+                "middle",
                 fill.as_ref(),
                 link_cost.to_string(),
             ),
-            FIFODirection::EastOutput => TextInformation::new(
-                router_x + HALF_SIDE_LENGTH + 2 * OFFSET_FROM_LINK,
-                router_y - OUTPUT_LINK_OFFSET,
-                "start",
-                "text-after-edge",
-                fill.as_ref(),
-                link_cost.to_string(),
-            ),
-            FIFODirection::EastInput => TextInformation::new(
-                router_x + HALF_SIDE_LENGTH + 2 * OFFSET_FROM_LINK,
-                router_y,
-                "start",
-                "text-before-edge",
-                fill.as_ref(),
-                link_cost.to_string(),
-            ),
-            FIFODirection::SouthOutput => TextInformation::new(
-                router_x - OFFSET_FROM_LINK,
-                router_y + HALF_SIDE_LENGTH + OFFSET_FROM_LINK,
-                "end",
-                "text-before-edge",
-                fill.as_ref(),
-                link_cost.to_string(),
-            ),
-            FIFODirection::SouthInput => TextInformation::new(
-                router_x + OUTPUT_LINK_OFFSET + OFFSET_FROM_LINK,
-                router_y + HALF_SIDE_LENGTH + OFFSET_FROM_LINK,
-                "start",
-                "text-before-edge",
-                fill.as_ref(),
-                link_cost.to_string(),
-            ),
-            FIFODirection::WestOutput => TextInformation::new(
-                router_x - (HALF_SIDE_LENGTH + 2 * OFFSET_FROM_LINK),
-                router_y,
-                "end",
-                "text-before-edge",
-                fill.as_ref(),
-                link_cost.to_string(),
-            ),
-            // Ignore local links, they are not taken into account when routing
-            FIFODirection::WestInput | _ => TextInformation::new(
-                router_x - (HALF_SIDE_LENGTH + 2 * OFFSET_FROM_LINK),
-                router_y - OUTPUT_LINK_OFFSET,
-                "end",
-                "text-after-edge",
+            Directions::West => TextInformation::new(
+                router_x - (HALF_SIDE_LENGTH + HALF_CONNECTION_LENGTH),
+                router_y + OFFSET_FROM_LINK,
+                "middle",
+                "hanging",
                 fill.as_ref(),
                 link_cost.to_string(),
             ),
@@ -265,8 +232,8 @@ impl InformationLayer {
         core_index: &usize,
         connections: &HashMap<usize, Neighbours>,
         css: &mut String,
-        core_loads: Option<&Vec<FIFODirection>>,
-        fifos: Option<&FIFOs>,
+        core_loads: Option<&Vec<Directions>>,
+        channels: Option<&Channels>,
     ) -> Result<Self, InformationLayerError> {
         let mut ret = InformationLayer::default();
         let core_config = configuration.core_config();
@@ -334,48 +301,24 @@ impl InformationLayer {
             router_y += HALF_SIDE_LENGTH;
 
             let get_cost = |i: &usize,
-                            selector: &dyn Fn(&Neighbours) -> &Option<Neighbour>,
-                            accessor: &dyn Fn(&Neighbour) -> &u8|
+                            selector: &dyn Fn(&Neighbours) -> &Option<Neighbour>|
              -> Result<&u8, InformationLayerError> {
-                Ok(accessor(
-                    selector(connections.get(i).ok_or(InformationLayerError)?)
-                        .as_ref()
-                        .ok_or(InformationLayerError)?,
-                ))
+                Ok(selector(connections.get(i).ok_or(InformationLayerError)?)
+                    .as_ref()
+                    .ok_or(InformationLayerError)?
+                    .link_cost())
             };
 
             for direction in directions {
                 let link_cost = match direction {
-                    FIFODirection::NorthOutput => {
-                        get_cost(core_index, &Neighbours::top, &Neighbour::link_cost)?
-                    }
-                    FIFODirection::SouthOutput => {
-                        get_cost(core_index, &Neighbours::bottom, &Neighbour::link_cost)?
-                    }
-                    FIFODirection::WestOutput => {
-                        get_cost(core_index, &Neighbours::left, &Neighbour::link_cost)?
-                    }
-                    FIFODirection::EastOutput => {
-                        get_cost(core_index, &Neighbours::right, &Neighbour::link_cost)?
-                    }
-                    FIFODirection::NorthInput => {
-                        get_cost(core_index, &Neighbours::top, &Neighbour::input_link_cost)?
-                    }
-                    FIFODirection::SouthInput => {
-                        get_cost(core_index, &Neighbours::bottom, &Neighbour::input_link_cost)?
-                    }
-                    FIFODirection::WestInput => {
-                        get_cost(core_index, &Neighbours::left, &Neighbour::input_link_cost)?
-                    }
-                    FIFODirection::EastInput => {
-                        get_cost(core_index, &Neighbours::right, &Neighbour::input_link_cost)?
-                    }
-                    // Ignore local links
-                    _ => &0,
+                    Directions::North => get_cost(core_index, &Neighbours::top)?,
+                    Directions::South => get_cost(core_index, &Neighbours::bottom)?,
+                    Directions::West => get_cost(core_index, &Neighbours::left)?,
+                    Directions::East => get_cost(core_index, &Neighbours::right)?,
                 };
 
                 ret.links_load.push(TextInformation::link_load(
-                    direction, router_x, router_y, link_cost, fifos,
+                    direction, router_x, router_y, link_cost, channels,
                 ));
             }
         }

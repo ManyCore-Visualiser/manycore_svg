@@ -155,9 +155,15 @@ mod tests {
             .expect("Could not open \"tests/style_update.xml\"");
         let expected_information = read_to_string("tests/information_update.xml")
             .expect("Could not open \"tests/information_update.xml\"");
+        let expected_sinks_source = read_to_string("tests/sinks_sources_update.xml")
+            .expect("Could not open \"tests/sinks_sources_update.xml\"");
+        let expected_view_box = read_to_string("tests/view_box_update.txt")
+            .expect("Could not open \"tests/view_box_update.txt\"");
 
         assert_eq!(update.style, expected_style);
         assert_eq!(update.information_group, expected_information);
+        assert_eq!(update.sinks_sources_group, expected_sinks_source);
+        assert_eq!(update.view_box, expected_view_box);
     }
 
     #[test]

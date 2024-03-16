@@ -42,7 +42,9 @@ static ROUTER_OFFSET: u16 = 75;
 static GROUP_DISTANCE: u16 = 120;
 static MARKER_PATH: &str = "M0,0 M0,0 V8 L8,4 Z";
 static MARKER_REFERENCE: &str = "url(#arrowHead)";
-static CONNECTION_LENGTH: u8 = 187;
+static CONNECTION_LENGTH: u16 = 187;
+static MARKER_HEIGHT: u16 = 8;
+static HALF_CONNECTION_LENGTH: u16 = (CONNECTION_LENGTH + MARKER_HEIGHT) / 2;
 static FONT_SIZE_WITH_OFFSET: u16 = 18;
 
 #[derive(Serialize)]
@@ -265,7 +267,7 @@ impl SVG {
                     None => None,
                 };
 
-                let fifos = manycore.cores().list()[i].fifos().as_ref();
+                let channels = manycore.cores().list()[i].channels().as_ref();
 
                 self.root
                     .information_group
@@ -280,7 +282,7 @@ impl SVG {
                         manycore.connections(),
                         self.style.css_mut(),
                         core_loads,
-                        fifos,
+                        channels,
                     )?);
 
                 // Sinks/Sources group
