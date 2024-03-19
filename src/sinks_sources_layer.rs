@@ -1,25 +1,28 @@
 use manycore_parser::SinkSourceDirection;
 use serde::Serialize;
 
-use crate::{style::DEFAULT_FILL, TextInformation, ROUTER_OFFSET, SIDE_LENGTH};
+use crate::{
+    style::DEFAULT_FILL, Connection, TextInformation, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH,
+};
 
 static SINKS_SOURCES_SIDE_LENGTH: &str = "70";
 static SINKS_SOURCES_STROKE_WIDTH: &str = "1";
 static SINKS_SOURCES_RX: &str = "15";
 static SINKS_SOURCE_STROKE_WIDTH_VAL: u16 = 1;
 static SINKS_SOURCES_SIDE_LENGTH_VAL: u16 = 70;
-static SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: u16 = 30;
+static SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: u16 = 100;
 pub static SINKS_SOURCES_GROUP_OFFSET: u16 = SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
     + SINKS_SOURCES_SIDE_LENGTH_VAL
     + SINKS_SOURCE_STROKE_WIDTH_VAL;
 static I_SINKS_SOURCE_DRAWING_OFFSET: i16 =
     0i16.wrapping_add_unsigned(SINKS_SOURCES_GROUP_OFFSET - SINKS_SOURCE_STROKE_WIDTH_VAL);
-static I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: i16 = 30;
+static I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: i16 = 100;
 static I_SINKS_SOURCE_NORTH_SOUTH_X_OFFSET: i16 =
     0i16.wrapping_add_unsigned(SIDE_LENGTH - SINKS_SOURCES_SIDE_LENGTH_VAL) / 2;
 pub static I_SINKS_SOURCES_GROUP_OFFSET: i16 =
     0i16.wrapping_add_unsigned(SINKS_SOURCES_GROUP_OFFSET);
 static I_SINKS_SOURCES_HALF_SIDE_LENGTH: i16 = 35;
+static I_SINKS_SOURCE_CONNECTION_SPACING: i16 = 15;
 static SINK_FILL: &str = "#fb923c";
 static SOURCE_FILL: &str = "#fbbf24";
 
@@ -97,6 +100,7 @@ pub struct SinkSource {
     rect: Rect,
     #[serde(skip_serializing_if = "Option::is_none")]
     text: Option<TextInformation>,
+    path: [Connection; 2],
 }
 
 impl SinkSource {
@@ -132,9 +136,20 @@ impl SinkSource {
         let x = delta_x.wrapping_add_unsigned(*router_x);
         let y = delta_y.wrapping_add_unsigned(*router_y);
 
+        let input_connection = Connection::new(
+            None,
+            Connection::get_path_from_edge_router(&x, &y, true, direction),
+        );
+
+        let output_connection = Connection::new(
+            None,
+            Connection::get_path_from_edge_router(&x, &y, false, direction),
+        );
+
         SinkSource {
             rect: Rect::new(x, y, variant),
             text: TextInformation::sink_source_text(x, y, variant),
+            path: [input_connection, output_connection],
         }
     }
 }
@@ -165,5 +180,108 @@ impl SinksSourcesGroup {
 
     pub fn should_serialise(&self) -> bool {
         self.g.is_empty()
+    }
+}
+
+impl Connection {
+    fn get_path_from_edge_router(
+        x: &i16,
+        y: &i16,
+        is_input: bool,
+        direction: &SinkSourceDirection,
+    ) -> String {
+        let mut start_x = *x;
+        let mut start_y = *y;
+
+        let ret: String;
+
+        match direction {
+            SinkSourceDirection::North => {
+                start_x += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
+                let line_command;
+                if is_input {
+                    start_x += I_SINKS_SOURCE_CONNECTION_SPACING;
+                    start_y += I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH;
+                    line_command = "v-";
+                } else {
+                    start_x -= I_SINKS_SOURCE_CONNECTION_SPACING;
+                    line_command = "v";
+                }
+                start_y = start_y.wrapping_add_unsigned(SINKS_SOURCES_SIDE_LENGTH_VAL);
+
+                ret = format!(
+                    "M{},{} {}{}",
+                    start_x,
+                    start_y,
+                    line_command,
+                    SINKS_SOURCES_CONNECTION_EXTRA_LENGTH - MARKER_HEIGHT
+                );
+            }
+            SinkSourceDirection::East => {
+                start_y += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
+                let line_command;
+                if is_input {
+                    line_command = "h";
+                    start_y -= I_SINKS_SOURCE_CONNECTION_SPACING;
+                    start_x -= I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH;
+                } else {
+                    line_command = "h-";
+                    start_y += I_SINKS_SOURCE_CONNECTION_SPACING;
+                }
+
+                ret = format!(
+                    "M{},{} {}{}",
+                    start_x,
+                    start_y,
+                    line_command,
+                    SINKS_SOURCES_CONNECTION_EXTRA_LENGTH - MARKER_HEIGHT
+                );
+            }
+            SinkSourceDirection::South => {
+                start_x += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
+                let line_command;
+                if is_input {
+                    start_x -= I_SINKS_SOURCE_CONNECTION_SPACING;
+                    start_y -= I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                        .wrapping_add_unsigned(ROUTER_OFFSET);
+                    line_command = "v";
+                } else {
+                    start_x += I_SINKS_SOURCE_CONNECTION_SPACING;
+                    line_command = "v-";
+                }
+
+                ret = format!(
+                    "M{},{} {}{}",
+                    start_x,
+                    start_y,
+                    line_command,
+                    SINKS_SOURCES_CONNECTION_EXTRA_LENGTH + ROUTER_OFFSET - MARKER_HEIGHT
+                );
+            }
+            SinkSourceDirection::West => {
+                start_y += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
+                let line_command;
+                if is_input {
+                    line_command = "h-";
+                    start_y += I_SINKS_SOURCE_CONNECTION_SPACING;
+                    start_x += I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                        .wrapping_add_unsigned(ROUTER_OFFSET);
+                } else {
+                    line_command = "h";
+                    start_y -= I_SINKS_SOURCE_CONNECTION_SPACING;
+                }
+                start_x = start_x.wrapping_add_unsigned(SINKS_SOURCES_SIDE_LENGTH_VAL);
+
+                ret = format!(
+                    "M{},{} {}{}",
+                    start_x,
+                    start_y,
+                    line_command,
+                    SINKS_SOURCES_CONNECTION_EXTRA_LENGTH + ROUTER_OFFSET - MARKER_HEIGHT
+                );
+            }
+        }
+
+        ret
     }
 }

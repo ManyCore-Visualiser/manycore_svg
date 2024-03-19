@@ -11,8 +11,8 @@ use crate::{
 
 #[derive(Serialize)]
 pub struct Connection {
-    #[serde(rename = "@id")]
-    id: String,
+    #[serde(rename = "@id", skip_serializing_if = "Option::is_none")]
+    id: Option<String>,
     #[serde(rename = "@d")]
     d: String,
     #[serde(flatten)]
@@ -60,6 +60,15 @@ impl Connection {
 
         ret
     }
+
+    pub fn new(connection_id: Option<String>, path: String) -> Self {
+        Self {
+            id: connection_id,
+            d: path,
+            attributes: CommonAttributes::with_no_class(),
+            marker_end: MARKER_REFERENCE,
+        }
+    }
 }
 
 #[derive(Serialize, Getters)]
@@ -97,15 +106,8 @@ impl ConnectionsParentGroup {
     ) {
         let connection_id = format!("{}-{}", i, neighbour.id());
         let path = Connection::get_path(direction, &r, &c);
-        self.path.insert(
-            connection_id.clone(),
-            Connection {
-                id: connection_id,
-                d: path,
-                attributes: CommonAttributes::with_no_class(),
-                marker_end: MARKER_REFERENCE,
-            },
-        );
+        self.path
+            .insert(connection_id.clone(), Connection::new(Some(connection_id), path));
     }
 
     pub fn add_neighbours(
