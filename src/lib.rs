@@ -25,8 +25,9 @@ use sinks_sources_layer::{
 pub use view_box::*;
 
 use manycore_parser::{
-    ConnectionUpdateError, ManycoreSystem, SinkSourceDirection, WithXMLAttributes,
+    BTreeVectorKeys, ConnectionUpdateError, ManycoreSystem, SinkSourceDirection, WithXMLAttributes
 };
+
 use quick_xml::DeError;
 use serde::Serialize;
 use style::Style;
@@ -353,7 +354,7 @@ impl SVG {
                             BTreeSet::from([SinkSourceDirection::South]);
                     }
 
-                    if let Some(sink) = manycore.sinks().get(&i) {
+                    if let Some(sink) = manycore.borders().sinks().get(&BTreeVectorKeys::usize(i)) {
                         self.root.sinks_sources_group.push(SinkSource::new(
                             &router_x,
                             &router_y,
@@ -364,7 +365,9 @@ impl SVG {
                         edge_routers_expected_directions.remove(sink.direction());
                     }
 
-                    if let Some(source) = manycore.sources().get(&i) {
+                    if let Some(source) =
+                        manycore.borders().sources().get(&BTreeVectorKeys::usize(i))
+                    {
                         self.root.sinks_sources_group.push(SinkSource::new(
                             &router_x,
                             &router_y,
