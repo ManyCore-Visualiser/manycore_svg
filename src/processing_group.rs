@@ -1,5 +1,7 @@
-use getset::{MutGetters, Setters};
-use serde::Serialize;
+use std::collections::BTreeMap;
+
+use getset::{Getters, MutGetters, Setters};
+use serde::{Serialize, Serializer};
 
 use crate::{
     style::{BASE_FILL_CLASS_NAME, DEFAULT_FILL},
@@ -124,8 +126,12 @@ impl Task {
     }
 }
 
-#[derive(Serialize, MutGetters)]
+#[derive(Serialize, MutGetters, Getters)]
 pub struct Router {
+    /// Router coordinates, (x, y)
+    #[serde(skip)]
+    #[getset(get = "pub")]
+    move_coordinates: (u16, u16),
     #[serde(rename = "@id")]
     id: String,
     #[serde(rename = "@d")]
@@ -140,6 +146,7 @@ impl Router {
         let (move_x, move_y) = Self::get_move_coordinates(r, c);
 
         Self {
+            move_coordinates: (move_x, move_y),
             id: format!("r{}", id),
             d: format!("M{},{} {}", move_x, move_y, ROUTER_PATH),
             attributes: CommonAttributes::default(),
@@ -157,8 +164,12 @@ impl Router {
     }
 }
 
-#[derive(Serialize, MutGetters)]
+#[derive(Serialize, MutGetters, Getters)]
 pub struct Core {
+    /// Core coordinates, (x, y)
+    #[serde(skip)]
+    #[getset(get = "pub")]
+    move_coordinates: (u16, u16),
     #[serde(rename = "@id")]
     id: String,
     #[serde(rename = "@d")]
@@ -181,6 +192,7 @@ impl Core {
         let (move_x, move_y) = Self::get_move_coordinates(r, c);
 
         Self {
+            move_coordinates: (move_x, move_y),
             id: format!("c{}", id),
             d: format!("M{},{} {}", move_x, move_y, PROCESSOR_PATH),
             attributes: CommonAttributes::default(),
@@ -188,15 +200,19 @@ impl Core {
     }
 }
 
-#[derive(Serialize, MutGetters)]
+#[derive(Serialize, MutGetters, Getters)]
 pub struct ProcessingGroup {
+    #[serde(skip)]
+    #[getset(get = "pub")]
+    /// Coordinates (row, column)
+    coordinates: (u16, u16),
     #[serde(rename = "@id")]
     id: u8,
     #[serde(rename = "path")]
-    #[getset(get_mut = "pub")]
+    #[getset(get = "pub", get_mut = "pub")]
     core: Core,
     #[serde(rename = "path")]
-    #[getset(get_mut = "pub")]
+    #[getset(get_mut = "pub", get = "pub")]
     router: Router,
     #[serde(rename = "g", skip_serializing_if = "Option::is_none")]
     task: Option<Task>,
@@ -205,6 +221,7 @@ pub struct ProcessingGroup {
 impl ProcessingGroup {
     pub fn new(r: &u16, c: &u16, id: &u8, allocated_task: &Option<u16>) -> Self {
         Self {
+            coordinates: (*r, *c),
             id: *id,
             core: Core::new(r, c, id),
             router: Router::new(r, c, id),
@@ -213,19 +230,27 @@ impl ProcessingGroup {
     }
 }
 
-#[derive(Serialize, MutGetters)]
-#[getset(get_mut = "pub")]
+#[derive(Serialize, MutGetters, Getters)]
+#[getset(get_mut = "pub", get = "pub")]
 pub struct ProcessingParentGroup {
     #[serde(rename = "@id")]
     id: &'static str,
-    g: Vec<ProcessingGroup>,
+    #[serde(serialize_with = "ProcessingParentGroup::serialize_group")]
+    g: BTreeMap<u8, ProcessingGroup>,
 }
 
 impl ProcessingParentGroup {
-    pub fn new(number_of_cores: &usize) -> Self {
+    pub fn new() -> Self {
         Self {
             id: "processingGroup",
-            g: Vec::with_capacity(*number_of_cores),
+            g: BTreeMap::new(),
         }
+    }
+
+    fn serialize_group<S: Serializer>(
+        map: &BTreeMap<u8, ProcessingGroup>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.collect_seq(map.values())
     }
 }

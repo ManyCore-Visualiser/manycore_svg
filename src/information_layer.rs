@@ -1,12 +1,11 @@
 use std::{collections::HashMap, error::Error, fmt::Display};
 
 use const_format::concatcp;
-use manycore_parser::{Channels, Directions, Neighbour, Neighbours};
+use manycore_parser::{Channels, Directions};
 use serde::Serialize;
 
 use crate::{
-    text_background::TEXT_BACKGROUND_ID, Configuration, Core, FieldConfiguration, Router,
-    HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH, OUTPUT_LINK_OFFSET, ROUTER_OFFSET, SIDE_LENGTH,
+    processing_group::Core as Core, text_background::TEXT_BACKGROUND_ID, Configuration, FieldConfiguration, ProcessingGroup, Router, HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH, OUTPUT_LINK_OFFSET, ROUTER_OFFSET, SIDE_LENGTH
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
@@ -225,20 +224,19 @@ impl InformationLayer {
 
     pub fn new(
         total_rows: &u16,
-        r: &u16,
-        c: &u16,
         configuration: &Configuration,
         core: &manycore_parser::Core,
         core_index: &usize,
-        connections: &HashMap<usize, Neighbours>,
         css: &mut String,
         core_loads: Option<&Vec<Directions>>,
-        channels: Option<&Channels>,
+        channels: &Channels,
+        processing_group: &ProcessingGroup
     ) -> Result<Self, InformationLayerError> {
         let mut ret = InformationLayer::default();
         let core_config = configuration.core_config();
 
-        let (core_x, core_y) = Core::get_move_coordinates(r, c);
+        let (r, c) = processing_group.coordinates();
+        let (core_x, core_y) = processing_group.core().move_coordinates();
 
         // Coordinates are stored in the core config but apply to whole group
         if let Some(order_config) = core_config.get("@coordinates") {
@@ -270,8 +268,8 @@ impl InformationLayer {
 
         // Core
         generate(
-            core_x,
-            core_y,
+            *core_x,
+            *core_y,
             configuration.core_config(),
             core,
             &mut ret.core_group,
@@ -281,11 +279,10 @@ impl InformationLayer {
         ret.core_group.clip_path = CORE_CLIP;
 
         // Router
-        let (mut router_x, mut router_y) = Router::get_move_coordinates(r, c);
-        router_y -= ROUTER_OFFSET;
+        let (router_x, router_y) = processing_group.router().move_coordinates();
         generate(
-            router_x,
-            router_y,
+            *router_x,
+            router_y - ROUTER_OFFSET,
             configuration.router_config(),
             core.router(),
             &mut ret.router_group,
@@ -295,33 +292,33 @@ impl InformationLayer {
         ret.router_group.clip_path = ROUTER_CLIP;
 
         // Link loads
-        if let Some(directions) = core_loads {
-            // Move router coordinates to centre
-            router_x += HALF_SIDE_LENGTH;
-            router_y += HALF_SIDE_LENGTH;
+        // if let Some(directions) = core_loads {
+        //     // Move router coordinates to centre
+        //     router_x += HALF_SIDE_LENGTH;
+        //     router_y += HALF_SIDE_LENGTH;
 
-            let get_cost = |i: &usize,
-                            selector: &dyn Fn(&Neighbours) -> &Option<Neighbour>|
-             -> Result<&u8, InformationLayerError> {
-                Ok(selector(connections.get(i).ok_or(InformationLayerError)?)
-                    .as_ref()
-                    .ok_or(InformationLayerError)?
-                    .link_cost())
-            };
+        //     let get_cost = |i: &usize,
+        //                     selector: &dyn Fn(&Neighbours) -> &Option<Neighbour>|
+        //      -> Result<&u8, InformationLayerError> {
+        //         Ok(selector(connections.get(i).ok_or(InformationLayerError)?)
+        //             .as_ref()
+        //             .ok_or(InformationLayerError)?
+        //             .link_cost())
+        //     };
 
-            for direction in directions {
-                let link_cost = match direction {
-                    Directions::North => get_cost(core_index, &Neighbours::top)?,
-                    Directions::South => get_cost(core_index, &Neighbours::bottom)?,
-                    Directions::West => get_cost(core_index, &Neighbours::left)?,
-                    Directions::East => get_cost(core_index, &Neighbours::right)?,
-                };
+        //     for direction in directions {
+        //         let link_cost = match direction {
+        //             Directions::North => get_cost(core_index, &Neighbours::top)?,
+        //             Directions::South => get_cost(core_index, &Neighbours::bottom)?,
+        //             Directions::West => get_cost(core_index, &Neighbours::left)?,
+        //             Directions::East => get_cost(core_index, &Neighbours::right)?,
+        //         };
 
-                ret.links_load.push(TextInformation::link_load(
-                    direction, router_x, router_y, link_cost, channels,
-                ));
-            }
-        }
+        //         ret.links_load.push(TextInformation::link_load(
+        //             direction, router_x, router_y, link_cost, channels,
+        //         ));
+        //     }
+        // }
 
         Ok(ret)
     }

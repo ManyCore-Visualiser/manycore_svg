@@ -1,8 +1,9 @@
-use manycore_parser::SinkSourceDirection;
+use manycore_parser::{EdgePosition, SinkSourceDirection};
 use serde::Serialize;
 
 use crate::{
-    style::DEFAULT_FILL, Connection, TextInformation, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH,
+    style::DEFAULT_FILL, Connection, TextInformation, HALF_ROUTER_OFFSET, MARKER_HEIGHT,
+    ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static SINKS_SOURCES_SIDE_LENGTH: &str = "70";
@@ -21,33 +22,38 @@ static I_SINKS_SOURCE_NORTH_SOUTH_X_OFFSET: i16 =
     0i16.wrapping_add_unsigned(SIDE_LENGTH - SINKS_SOURCES_SIDE_LENGTH_VAL) / 2;
 pub static I_SINKS_SOURCES_GROUP_OFFSET: i16 =
     0i16.wrapping_add_unsigned(SINKS_SOURCES_GROUP_OFFSET);
-static I_SINKS_SOURCES_HALF_SIDE_LENGTH: i16 = 35;
+static I_SINKS_SOURCES_SIDE_LENGTH: i16 = 70;
+static I_SINKS_SOURCES_HALF_SIDE_LENGTH: i16 = I_SINKS_SOURCES_SIDE_LENGTH / 2;
 static I_SINKS_SOURCE_CONNECTION_SPACING: i16 = 15;
 static SINK_FILL: &str = "#fb923c";
 static SOURCE_FILL: &str = "#fbbf24";
 
-impl TextInformation {
-    fn sink_source_text(sink_x: i16, sink_y: i16, variant: SinkSourceVariant) -> Option<Self> {
-        let text = match variant {
-            SinkSourceVariant::Sink => Some(String::from("Sink")),
-            SinkSourceVariant::Source => Some(String::from("Source")),
-            SinkSourceVariant::None => None,
-        };
+pub const SINK_SOURCES_ID: &'static str = "sinksSources";
 
-        if let Some(text) = text {
-            return Some(TextInformation::new_signed(
-                sink_x + I_SINKS_SOURCES_HALF_SIDE_LENGTH,
-                sink_y + I_SINKS_SOURCES_HALF_SIDE_LENGTH,
-                "middle",
-                "middle",
-                None,
-                text,
-            ));
-        }
+// Comenting out the variant stuff as some could be both source/sinks so this doessn't really work
 
-        None
-    }
-}
+// impl TextInformation {
+//     fn sink_source_text(sink_x: i16, sink_y: i16, variant: SinkSourceVariant) -> Option<Self> {
+//         let text = match variant {
+//             SinkSourceVariant::Sink => Some(String::from("Sink")),
+//             SinkSourceVariant::Source => Some(String::from("Source")),
+//             SinkSourceVariant::None => None,
+//         };
+
+//         if let Some(text) = text {
+//             return Some(TextInformation::new_signed(
+//                 sink_x + I_SINKS_SOURCES_HALF_SIDE_LENGTH,
+//                 sink_y + I_SINKS_SOURCES_HALF_SIDE_LENGTH,
+//                 "middle",
+//                 "middle",
+//                 None,
+//                 text,
+//             ));
+//         }
+
+//         None
+//     }
+// }
 
 #[derive(Serialize)]
 struct Rect {
@@ -70,37 +76,68 @@ struct Rect {
 }
 
 impl Rect {
-    fn new(x: i16, y: i16, variant: SinkSourceVariant) -> Self {
+    fn new(x: i16, y: i16 /*, variant: SinkSourceVariant */) -> Self {
         Self {
             x,
             y,
             width: SINKS_SOURCES_SIDE_LENGTH,
             height: SINKS_SOURCES_SIDE_LENGTH,
             rx: SINKS_SOURCES_RX,
-            fill: match variant {
-                SinkSourceVariant::Source => SOURCE_FILL,
-                SinkSourceVariant::Sink => SINK_FILL,
-                SinkSourceVariant::None => DEFAULT_FILL,
-            },
+            fill: DEFAULT_FILL, /*match variant {
+                                    SinkSourceVariant::Source => SOURCE_FILL,
+                                    SinkSourceVariant::Sink => SINK_FILL,
+                                    SinkSourceVariant::None => DEFAULT_FILL,
+                                }*/
             stroke: "black",
             stroke_width: SINKS_SOURCES_STROKE_WIDTH,
         }
     }
 }
 
-#[derive(Clone, Copy)]
-pub enum SinkSourceVariant {
-    Sink,
-    Source,
-    None,
-}
+// #[derive(Clone, Copy)]
+// pub enum SinkSourceVariant {
+//     Sink,
+//     Source,
+//     None,
+// }
+
+static NORTH_DELTA_Y: i16 = 0i16
+    .wrapping_sub(I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH)
+    .wrapping_sub(I_SINKS_SOURCES_SIDE_LENGTH)
+    .wrapping_sub_unsigned(ROUTER_OFFSET)
+    .wrapping_sub_unsigned(MARKER_HEIGHT);
+
+static SOUTH_DELTA_Y: i16 = 0i16
+    .wrapping_add_unsigned(SIDE_LENGTH)
+    .wrapping_add(I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH)
+    .wrapping_add_unsigned(MARKER_HEIGHT);
+
+static NORTH_SOUTH_DELTA_X: i16 = 0i16
+    .wrapping_add_unsigned(SIDE_LENGTH)
+    .wrapping_sub_unsigned(HALF_ROUTER_OFFSET)
+    .wrapping_sub(I_SINKS_SOURCES_HALF_SIDE_LENGTH);
+
+static EAST_WEST_DELTA_Y: i16 = 0i16
+    .wrapping_sub_unsigned(ROUTER_OFFSET)
+    .wrapping_add_unsigned(HALF_ROUTER_OFFSET)
+    .wrapping_sub(I_SINKS_SOURCES_HALF_SIDE_LENGTH);
+
+static EAST_DELTA_X: i16 = 0i16
+    .wrapping_add(I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH)
+    .wrapping_add_unsigned(SIDE_LENGTH)
+    .wrapping_add_unsigned(MARKER_HEIGHT);
+
+static WEST_DELTA_X: i16 = 0i16
+    .wrapping_sub(I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH)
+    .wrapping_sub_unsigned(MARKER_HEIGHT)
+    .wrapping_sub_unsigned(ROUTER_OFFSET)
+    .wrapping_sub(I_SINKS_SOURCES_SIDE_LENGTH);
 
 #[derive(Serialize)]
 pub struct SinkSource {
     rect: Rect,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    text: Option<TextInformation>,
-    path: [Connection; 2],
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // text: Option<TextInformation>,
 }
 
 impl SinkSource {
@@ -108,48 +145,36 @@ impl SinkSource {
         router_x: &u16,
         router_y: &u16,
         direction: &SinkSourceDirection,
-        variant: SinkSourceVariant,
+        // variant: SinkSourceVariant,
     ) -> Self {
-        let mut delta_x = 0i16;
-        let mut delta_y = 0i16;
+        let delta_x;
+        let delta_y;
 
         match direction {
             SinkSourceDirection::North => {
-                delta_y -= I_SINKS_SOURCE_DRAWING_OFFSET;
-                delta_x += I_SINKS_SOURCE_NORTH_SOUTH_X_OFFSET;
+                delta_y = NORTH_DELTA_Y;
+                delta_x = NORTH_SOUTH_DELTA_X;
             }
             SinkSourceDirection::East => {
-                delta_x +=
-                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH.wrapping_add_unsigned(SIDE_LENGTH);
+                delta_y = EAST_WEST_DELTA_Y;
+                delta_x = EAST_DELTA_X;
             }
             SinkSourceDirection::South => {
-                delta_y += I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
-                    .wrapping_add_unsigned(ROUTER_OFFSET)
-                    .wrapping_add_unsigned(SIDE_LENGTH);
-                delta_x += I_SINKS_SOURCE_NORTH_SOUTH_X_OFFSET;
+                delta_y = SOUTH_DELTA_Y;
+                delta_x = NORTH_SOUTH_DELTA_X;
             }
             SinkSourceDirection::West => {
-                delta_x -= I_SINKS_SOURCE_DRAWING_OFFSET.wrapping_add_unsigned(ROUTER_OFFSET);
+                delta_y = EAST_WEST_DELTA_Y;
+                delta_x = WEST_DELTA_X;
             }
         };
 
         let x = delta_x.wrapping_add_unsigned(*router_x);
         let y = delta_y.wrapping_add_unsigned(*router_y);
 
-        let input_connection = Connection::new(
-            None,
-            Connection::get_path_from_edge_router(&x, &y, true, direction),
-        );
-
-        let output_connection = Connection::new(
-            None,
-            Connection::get_path_from_edge_router(&x, &y, false, direction),
-        );
-
         SinkSource {
-            rect: Rect::new(x, y, variant),
-            text: TextInformation::sink_source_text(x, y, variant),
-            path: [input_connection, output_connection],
+            rect: Rect::new(x, y), //, variant),
+                                   // text: TextInformation::sink_source_text(x, y, variant),
         }
     }
 }
@@ -164,124 +189,193 @@ pub struct SinksSourcesGroup {
 impl SinksSourcesGroup {
     pub fn new(rows: u16, columns: u16) -> Self {
         Self {
-            id: "sinksSources",
+            id: SINK_SOURCES_ID,
             // Formula worksout because we ignore the corners
             g: Vec::with_capacity(usize::from((rows + columns) * 2)),
         }
     }
 
-    pub fn push(&mut self, element: SinkSource) {
-        self.g.push(element)
-    }
-
-    pub fn clear(&mut self) {
-        self.g.clear()
-    }
-
-    pub fn should_serialise(&self) -> bool {
-        self.g.is_empty()
-    }
-}
-
-impl Connection {
-    fn get_path_from_edge_router(
-        x: &i16,
-        y: &i16,
-        is_input: bool,
-        direction: &SinkSourceDirection,
-    ) -> String {
-        let mut start_x = *x;
-        let mut start_y = *y;
-
-        let ret: String;
-
-        match direction {
-            SinkSourceDirection::North => {
-                start_x += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
-                let line_command;
-                if is_input {
-                    start_x += I_SINKS_SOURCE_CONNECTION_SPACING;
-                    start_y += I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH;
-                    line_command = "v-";
-                } else {
-                    start_x -= I_SINKS_SOURCE_CONNECTION_SPACING;
-                    line_command = "v";
-                }
-                start_y = start_y.wrapping_add_unsigned(SINKS_SOURCES_SIDE_LENGTH_VAL);
-
-                ret = format!(
-                    "M{},{} {}{}",
-                    start_x,
-                    start_y,
-                    line_command,
-                    SINKS_SOURCES_CONNECTION_EXTRA_LENGTH - MARKER_HEIGHT
-                );
+    pub fn insert(&mut self, edge_position: EdgePosition, router_x: &u16, router_y: &u16) {
+        match edge_position {
+            EdgePosition::Top => {
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::North,
+                ));
             }
-            SinkSourceDirection::East => {
-                start_y += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
-                let line_command;
-                if is_input {
-                    line_command = "h";
-                    start_y -= I_SINKS_SOURCE_CONNECTION_SPACING;
-                    start_x -= I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH;
-                } else {
-                    line_command = "h-";
-                    start_y += I_SINKS_SOURCE_CONNECTION_SPACING;
-                }
-
-                ret = format!(
-                    "M{},{} {}{}",
-                    start_x,
-                    start_y,
-                    line_command,
-                    SINKS_SOURCES_CONNECTION_EXTRA_LENGTH - MARKER_HEIGHT
-                );
+            EdgePosition::TopLeft => {
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::North,
+                ));
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::West,
+                ));
             }
-            SinkSourceDirection::South => {
-                start_x += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
-                let line_command;
-                if is_input {
-                    start_x -= I_SINKS_SOURCE_CONNECTION_SPACING;
-                    start_y -= I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
-                        .wrapping_add_unsigned(ROUTER_OFFSET);
-                    line_command = "v";
-                } else {
-                    start_x += I_SINKS_SOURCE_CONNECTION_SPACING;
-                    line_command = "v-";
-                }
-
-                ret = format!(
-                    "M{},{} {}{}",
-                    start_x,
-                    start_y,
-                    line_command,
-                    SINKS_SOURCES_CONNECTION_EXTRA_LENGTH + ROUTER_OFFSET - MARKER_HEIGHT
-                );
+            EdgePosition::TopRight => {
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::North,
+                ));
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::East,
+                ));
             }
-            SinkSourceDirection::West => {
-                start_y += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
-                let line_command;
-                if is_input {
-                    line_command = "h-";
-                    start_y += I_SINKS_SOURCE_CONNECTION_SPACING;
-                    start_x += I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
-                        .wrapping_add_unsigned(ROUTER_OFFSET);
-                } else {
-                    line_command = "h";
-                    start_y -= I_SINKS_SOURCE_CONNECTION_SPACING;
-                }
-                start_x = start_x.wrapping_add_unsigned(SINKS_SOURCES_SIDE_LENGTH_VAL);
-
-                ret = format!(
-                    "M{},{} {}{}",
-                    start_x,
-                    start_y,
-                    line_command,
-                    SINKS_SOURCES_CONNECTION_EXTRA_LENGTH + ROUTER_OFFSET - MARKER_HEIGHT
-                );
+            EdgePosition::Left => {
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::West,
+                ));
+            }
+            EdgePosition::Right => {
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::East,
+                ));
+            }
+            EdgePosition::Bottom => {
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::South,
+                ));
+            }
+            EdgePosition::BottomLeft => {
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::South,
+                ));
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::West,
+                ));
+            }
+            EdgePosition::BottomRight => {
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::South,
+                ));
+                self.g.push(SinkSource::new(
+                    router_x,
+                    router_y,
+                    &SinkSourceDirection::East,
+                ));
             }
         }
-
-        ret
     }
 }
+
+// impl Connection {
+//     fn get_path_from_edge_router(
+//         x: &i16,
+//         y: &i16,
+//         is_input: bool,
+//         direction: &SinkSourceDirection,
+//     ) -> String {
+//         let mut start_x = *x;
+//         let mut start_y = *y;
+
+//         let ret: String;
+
+//         match direction {
+//             SinkSourceDirection::North => {
+//                 start_x += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
+//                 let line_command;
+//                 if is_input {
+//                     start_x += I_SINKS_SOURCE_CONNECTION_SPACING;
+//                     start_y += I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH;
+//                     line_command = "v-";
+//                 } else {
+//                     start_x -= I_SINKS_SOURCE_CONNECTION_SPACING;
+//                     line_command = "v";
+//                 }
+//                 start_y = start_y.wrapping_add_unsigned(SINKS_SOURCES_SIDE_LENGTH_VAL);
+
+//                 ret = format!(
+//                     "M{},{} {}{}",
+//                     start_x,
+//                     start_y,
+//                     line_command,
+//                     SINKS_SOURCES_CONNECTION_EXTRA_LENGTH - MARKER_HEIGHT
+//                 );
+//             }
+//             SinkSourceDirection::East => {
+//                 start_y += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
+//                 let line_command;
+//                 if is_input {
+//                     line_command = "h";
+//                     start_y -= I_SINKS_SOURCE_CONNECTION_SPACING;
+//                     start_x -= I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH;
+//                 } else {
+//                     line_command = "h-";
+//                     start_y += I_SINKS_SOURCE_CONNECTION_SPACING;
+//                 }
+
+//                 ret = format!(
+//                     "M{},{} {}{}",
+//                     start_x,
+//                     start_y,
+//                     line_command,
+//                     SINKS_SOURCES_CONNECTION_EXTRA_LENGTH - MARKER_HEIGHT
+//                 );
+//             }
+//             SinkSourceDirection::South => {
+//                 start_x += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
+//                 let line_command;
+//                 if is_input {
+//                     start_x -= I_SINKS_SOURCE_CONNECTION_SPACING;
+//                     start_y -= I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+//                         .wrapping_add_unsigned(ROUTER_OFFSET);
+//                     line_command = "v";
+//                 } else {
+//                     start_x += I_SINKS_SOURCE_CONNECTION_SPACING;
+//                     line_command = "v-";
+//                 }
+
+//                 ret = format!(
+//                     "M{},{} {}{}",
+//                     start_x,
+//                     start_y,
+//                     line_command,
+//                     SINKS_SOURCES_CONNECTION_EXTRA_LENGTH + ROUTER_OFFSET - MARKER_HEIGHT
+//                 );
+//             }
+//             SinkSourceDirection::West => {
+//                 start_y += I_SINKS_SOURCES_HALF_SIDE_LENGTH;
+//                 let line_command;
+//                 if is_input {
+//                     line_command = "h-";
+//                     start_y += I_SINKS_SOURCE_CONNECTION_SPACING;
+//                     start_x += I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+//                         .wrapping_add_unsigned(ROUTER_OFFSET);
+//                 } else {
+//                     line_command = "h";
+//                     start_y -= I_SINKS_SOURCE_CONNECTION_SPACING;
+//                 }
+//                 start_x = start_x.wrapping_add_unsigned(SINKS_SOURCES_SIDE_LENGTH_VAL);
+
+//                 ret = format!(
+//                     "M{},{} {}{}",
+//                     start_x,
+//                     start_y,
+//                     line_command,
+//                     SINKS_SOURCES_CONNECTION_EXTRA_LENGTH + ROUTER_OFFSET - MARKER_HEIGHT
+//                 );
+//             }
+//         }
+
+//         ret
+//     }
+// }

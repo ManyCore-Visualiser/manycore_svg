@@ -9,7 +9,7 @@ mod style;
 mod text_background;
 mod view_box;
 
-use std::{collections::BTreeSet, error::Error};
+use std::error::Error;
 
 use connections_group::*;
 use exporting_aid::*;
@@ -19,14 +19,11 @@ use marker::*;
 use processing_group::*;
 pub use render_settings::*;
 use sinks_sources_layer::{
-    SinkSource, SinkSourceVariant, SinksSourcesGroup, I_SINKS_SOURCES_GROUP_OFFSET,
-    SINKS_SOURCES_GROUP_OFFSET,
+    SinksSourcesGroup, I_SINKS_SOURCES_GROUP_OFFSET, SINKS_SOURCES_GROUP_OFFSET,
 };
 pub use view_box::*;
 
-use manycore_parser::{
-    BTreeVectorKeys, ConnectionUpdateError, ManycoreSystem, SinkSourceDirection, WithXMLAttributes
-};
+use manycore_parser::{ManycoreSystem, WithXMLAttributes};
 
 use quick_xml::DeError;
 use serde::Serialize;
@@ -40,6 +37,7 @@ static SIDE_LENGTH: u16 = 100;
 static HALF_SIDE_LENGTH: u16 = 50;
 static OUTPUT_LINK_OFFSET: u16 = 25;
 static ROUTER_OFFSET: u16 = 75;
+static HALF_ROUTER_OFFSET: u16 = ROUTER_OFFSET / 2;
 static GROUP_DISTANCE: u16 = 120;
 static MARKER_PATH: &str = "M0,0 M0,0 V8 L8,4 Z";
 static MARKER_REFERENCE: &str = "url(#arrowHead)";
@@ -88,10 +86,7 @@ struct Root {
         skip_serializing_if = "InformationGroup::should_serialise"
     )]
     information_group: InformationGroup,
-    #[serde(
-        rename = "g",
-        skip_serializing_if = "SinksSourcesGroup::should_serialise"
-    )]
+    #[serde(rename = "g")]
     sinks_sources_group: SinksSourcesGroup,
 }
 
@@ -122,8 +117,6 @@ pub struct SVG {
     #[serde(rename = "rect")]
     exporting_aid: ExportingAid,
     #[serde(skip)]
-    coordinates_pairs: Vec<(u16, u16)>,
-    #[serde(skip)]
     rows: u16,
     #[serde(skip)]
     columns: u16,
@@ -148,16 +141,26 @@ impl TryFrom<&SVG> for String {
 
 impl From<&ManycoreSystem> for SVG {
     fn from(manycore: &ManycoreSystem) -> Self {
-        let columns = u16::from(*manycore.columns());
-        let rows = u16::from(*manycore.rows());
-        let width =
-            (columns * UNIT_LENGTH) + ((columns - 1) * GROUP_DISTANCE) + TASK_CIRCLE_TOTAL_OFFSET;
-        let height = (rows * UNIT_LENGTH)
-            + ((rows - 1) * GROUP_DISTANCE)
+        let columns = *manycore.columns();
+        let rows = *manycore.rows();
+
+        let columns_u16 = u16::from(columns);
+        let rows_u16 = u16::from(rows);
+        let width = (columns_u16 * UNIT_LENGTH)
+            + ((columns_u16 - 1) * GROUP_DISTANCE)
+            + TASK_CIRCLE_TOTAL_OFFSET;
+        let height = (rows_u16 * UNIT_LENGTH)
+            + ((rows_u16 - 1) * GROUP_DISTANCE)
             + TASK_CIRCLE_TOTAL_OFFSET
             + FONT_SIZE_WITH_OFFSET;
 
-        let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height);
+        let mut ret = SVG::new(
+            &manycore.cores().list().len(),
+            rows_u16,
+            columns_u16,
+            width,
+            height,
+        );
 
         let mut r: u8 = 0;
 
@@ -167,7 +170,7 @@ impl From<&ManycoreSystem> for SVG {
             // This cast here might look a bit iffy as the result of the mod
             // might not fit in 8 bits. However, since manycore.columns is 8 bits,
             // that should never happen.
-            let c = (i % usize::from(*manycore.columns())) as u8;
+            let c = (i % usize::from(columns)) as u8;
 
             if i > 0 && c == 0 {
                 r += 1;
@@ -176,21 +179,29 @@ impl From<&ManycoreSystem> for SVG {
             let r16 = u16::from(r);
             let c16 = u16::from(c);
 
-            ret.root.processing_group.g_mut().push(ProcessingGroup::new(
-                &r16,
-                &c16,
-                core.id(),
-                core.allocated_task(),
-            ));
+            // Generate processing group
+            let processing_group =
+                ProcessingGroup::new(&r16, &c16, core.id(), core.allocated_task());
 
-            ret.root.connections_group.add_neighbours(
-                i,
-                manycore.connections().get(&i),
-                &r16,
-                &c16,
-            );
+            // Generate connections group
+            ret.root
+                .connections_group
+                .add_connections(core, &r16, &c16, columns, rows);
 
-            ret.coordinates_pairs.push((r16, c16));
+            // Generate edge cconnections
+            if let Some(edge_position) = core.is_on_edge(columns, rows) {
+                let (router_x, router_y) = processing_group.router().move_coordinates();
+
+                ret.root
+                    .sinks_sources_group
+                    .insert(edge_position, router_x, router_y);
+            }
+
+            // Store processing group
+            ret.root
+                .processing_group
+                .g_mut()
+                .insert(*core.id(), processing_group);
         }
 
         ret
@@ -214,17 +225,17 @@ impl SVG {
             style: Style::default(),
             root: Root {
                 id: "mainGroup",
-                processing_group: ProcessingParentGroup::new(number_of_cores),
-                connections_group: ConnectionsParentGroup::new(),
+                processing_group: ProcessingParentGroup::new(),
+                connections_group: ConnectionsParentGroup::default(),
                 information_group: InformationGroup::new(number_of_cores),
                 sinks_sources_group: SinksSourcesGroup::new(rows, columns),
             },
             exporting_aid: ExportingAid::default(),
-            coordinates_pairs: Vec::with_capacity(*number_of_cores),
             rows,
             columns,
         }
     }
+
     pub fn update_configurable_information(
         &mut self,
         manycore: &mut ManycoreSystem,
@@ -242,151 +253,49 @@ impl SVG {
             links_with_load = Some(manycore.route(algorithm)?)
         }
 
-        // Always reset CSS. If user deselects all options and clicks apply, they expect the base render to show.
-        self.style = Style::default();
         // Clear information groups. Clear will keep memory allocated, hopefully less heap allocation penalties.
         self.root.information_group.groups.clear();
         // Reset viewbox
         self.view_box.reset(self.width, self.height);
-        // Clear sinks/sources group
-        self.root.sinks_sources_group.clear();
 
-        // Expand viewBox if required (Sinks and Sources)
+        // Expand viewBox and adjust css if required (Sinks and Sources)
+        // Always reset CSS. If user deselects all options and clicks apply, they expect the base render to show.
         if show_sinks_sources {
+            self.style = Style::base(); // CSS
+
             self.view_box.extend_left_by(I_SINKS_SOURCES_GROUP_OFFSET);
             self.view_box.extend_right_by(SINKS_SOURCES_GROUP_OFFSET);
             self.view_box.extend_top_by(I_SINKS_SOURCES_GROUP_OFFSET);
             self.view_box.extend_bottom_by(SINKS_SOURCES_GROUP_OFFSET);
+        } else {
+            self.style = Style::default(); // CSS
         }
 
         if not_empty_configuration {
             for (i, core) in manycore.cores().list().iter().enumerate() {
-                // Information group
-                let (r, c) = &self.coordinates_pairs.get(i).ok_or(ConnectionUpdateError)?;
+                // let core_loads = match links_with_load.as_ref() {
+                //     Some(links) => links.get(&i),
+                //     None => None,
+                // };
+                let core_loads = None;
 
-                let core_loads = match links_with_load.as_ref() {
-                    Some(links) => links.get(&i),
-                    None => None,
-                };
-
-                let channels = manycore.cores().list()[i].channels().as_ref();
+                let channels = manycore.cores().list()[i].channels();
+                let processing_group = self.root.processing_group.g().get(core.id()).unwrap();
+                let (r, c) = processing_group.coordinates();
 
                 self.root
                     .information_group
                     .groups
                     .push(InformationLayer::new(
                         &self.rows,
-                        r,
-                        c,
                         configuration,
                         core,
                         &i,
-                        manycore.connections(),
                         self.style.css_mut(),
                         core_loads,
                         channels,
+                        processing_group,
                     )?);
-
-                // Sinks/Sources group
-                let is_on_the_edge =
-                    (*r == 0 || *r == (self.rows - 1)) || (*c == 0 || *c == (self.columns - 1));
-                if show_sinks_sources && is_on_the_edge {
-                    let (router_x, mut router_y) = Router::get_move_coordinates(r, c);
-                    router_y -= ROUTER_OFFSET;
-
-                    let mut edge_routers_expected_directions: BTreeSet<SinkSourceDirection>;
-
-                    // Determine set of expected directions
-                    if *c % (self.columns - 1) == 0 {
-                        // Top edge
-                        if *r == 0 {
-                            // Top Left corner
-                            if *c == 0 {
-                                edge_routers_expected_directions = BTreeSet::from([
-                                    SinkSourceDirection::North,
-                                    SinkSourceDirection::West,
-                                ]);
-                            }
-                            // Top right corner
-                            else {
-                                edge_routers_expected_directions = BTreeSet::from([
-                                    SinkSourceDirection::North,
-                                    SinkSourceDirection::East,
-                                ]);
-                            }
-                        }
-                        // Bottom edge
-                        else if *r == (self.rows - 1) {
-                            // Bottom left corner
-                            if *c == 0 {
-                                edge_routers_expected_directions = BTreeSet::from([
-                                    SinkSourceDirection::South,
-                                    SinkSourceDirection::West,
-                                ]);
-                            }
-                            // Bottom right corner
-                            else {
-                                edge_routers_expected_directions = BTreeSet::from([
-                                    SinkSourceDirection::South,
-                                    SinkSourceDirection::East,
-                                ]);
-                            }
-                        }
-                        // Left side
-                        else if *c == 0 {
-                            edge_routers_expected_directions =
-                                BTreeSet::from([SinkSourceDirection::West]);
-                        }
-                        // Right side
-                        else {
-                            edge_routers_expected_directions =
-                                BTreeSet::from([SinkSourceDirection::East]);
-                        }
-                    }
-                    // Top edge
-                    else if *r == 0 {
-                        edge_routers_expected_directions =
-                            BTreeSet::from([SinkSourceDirection::North]);
-                    }
-                    // Bottom edge
-                    else {
-                        edge_routers_expected_directions =
-                            BTreeSet::from([SinkSourceDirection::South]);
-                    }
-
-                    if let Some(sink) = manycore.borders().sinks().get(&BTreeVectorKeys::usize(i)) {
-                        self.root.sinks_sources_group.push(SinkSource::new(
-                            &router_x,
-                            &router_y,
-                            sink.direction(),
-                            SinkSourceVariant::Sink,
-                        ));
-
-                        edge_routers_expected_directions.remove(sink.direction());
-                    }
-
-                    if let Some(source) =
-                        manycore.borders().sources().get(&BTreeVectorKeys::usize(i))
-                    {
-                        self.root.sinks_sources_group.push(SinkSource::new(
-                            &router_x,
-                            &router_y,
-                            source.direction(),
-                            SinkSourceVariant::Source,
-                        ));
-
-                        edge_routers_expected_directions.remove(source.direction());
-                    }
-
-                    for direction in edge_routers_expected_directions.iter() {
-                        self.root.sinks_sources_group.push(SinkSource::new(
-                            &router_x,
-                            &router_y,
-                            direction,
-                            SinkSourceVariant::None,
-                        ));
-                    }
-                }
             }
         }
 
