@@ -5,8 +5,8 @@ use manycore_parser::{Core, Directions, EdgePosition, WithXMLAttributes};
 use serde::Serialize;
 
 use crate::{
-    CommonAttributes, Router, CONNECTION_LENGTH, HALF_ROUTER_OFFSET, MARKER_HEIGHT,
-    MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH, SVG,
+    style::EDGE_DATA_CLASS_NAME, CommonAttributes, Router, CONNECTION_LENGTH, HALF_ROUTER_OFFSET,
+    MARKER_HEIGHT, MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH, SVG,
 };
 
 // static I_SINKS_SOURCE_CONNECTION_SPACING: i32 = 15;
@@ -249,6 +249,8 @@ pub struct Connections {
 pub struct EdgeConnections {
     #[serde(rename = "@id")]
     id: &'static str,
+    #[serde(rename = "@class")]
+    class: &'static str,
     #[getset(get = "pub")]
     path: Vec<Connection>,
 }
@@ -257,6 +259,7 @@ impl Default for EdgeConnections {
     fn default() -> Self {
         Self {
             id: EDGE_CONNECTIONS_ID,
+            class: EDGE_DATA_CLASS_NAME,
             path: Vec::new(),
         }
     }
@@ -310,7 +313,7 @@ impl ConnectionsParentGroup {
     fn add_inner_connection(&mut self, core_id: &u8, direction: &Directions, r: &u16, c: &u16) {
         let path = Connection::get_inner_path(direction, &r, &c);
         let current_size = self.connections.path.len();
-        
+
         self.connections.path.push(Connection::new(path));
 
         self.insert_in_map(core_id, direction, ConnectionType::Connection(current_size));

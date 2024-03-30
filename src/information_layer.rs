@@ -6,10 +6,10 @@ use serde::Serialize;
 
 use crate::{
     processing_group::Core, sinks_sources_layer::SINKS_SOURCES_CONNECTION_EXTRA_LENGTH,
-    text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionType, Connections,
-    ConnectionsParentGroup, FieldConfiguration, ProcessingGroup, Router, HALF_CONNECTION_LENGTH,
-    HALF_SIDE_LENGTH, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, OUTPUT_LINK_OFFSET,
-    ROUTER_OFFSET, SIDE_LENGTH,
+    style::EDGE_DATA_CLASS_NAME, text_background::TEXT_BACKGROUND_ID, Configuration,
+    ConnectionType, Connections, ConnectionsParentGroup, FieldConfiguration, ProcessingGroup,
+    Router, HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH,
+    MARKER_HEIGHT, OUTPUT_LINK_OFFSET, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
@@ -40,6 +40,8 @@ pub struct TextInformation {
     dominant_baseline: &'static str,
     #[serde(rename = "@fill")]
     fill: String,
+    #[serde(rename = "@class", skip_serializing_if = "Option::is_none")]
+    class: Option<&'static str>,
     #[serde(rename = "$text")]
     value: String,
 }
@@ -51,6 +53,7 @@ impl TextInformation {
         text_anchor: &'static str,
         dominant_baseline: &'static str,
         fill: Option<&String>,
+        class: Option<&'static str>,
         value: String,
     ) -> Self {
         Self {
@@ -65,6 +68,7 @@ impl TextInformation {
             } else {
                 "black".to_string()
             },
+            class,
             value,
         }
     }
@@ -75,6 +79,7 @@ impl TextInformation {
         text_anchor: &'static str,
         dominant_baseline: &'static str,
         fill: Option<&String>,
+        class: Option<&'static str>,
         value: String,
     ) -> Self {
         // TODO: Actually check conversions. This needs doing all over really.
@@ -84,6 +89,7 @@ impl TextInformation {
             text_anchor,
             dominant_baseline,
             fill,
+            class,
             value,
         )
     }
@@ -117,17 +123,23 @@ impl TextInformation {
         };
         let fill = TextInformation::get_link_load_fill(load_fraction.as_ref());
 
-        let relevant_delta: i32 = match edge {
+        let (relevant_delta, class): (i32, Option<&'static str>) = match edge {
             true => match direction {
-                Directions::North | Directions::East => I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
-                    .saturating_add(MARKER_HEIGHT.into())
-                    .div(2),
-                _ => I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
-                    .saturating_add(ROUTER_OFFSET.into())
-                    .saturating_add(MARKER_HEIGHT.into())
-                    .div(2),
+                Directions::North | Directions::East => (
+                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                        .saturating_add(MARKER_HEIGHT.into())
+                        .div(2),
+                    Some(EDGE_DATA_CLASS_NAME),
+                ),
+                _ => (
+                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                        .saturating_add(ROUTER_OFFSET.into())
+                        .saturating_add(MARKER_HEIGHT.into())
+                        .div(2),
+                    Some(EDGE_DATA_CLASS_NAME),
+                ),
             },
-            false => HALF_CONNECTION_LENGTH.into(),
+            false => (HALF_CONNECTION_LENGTH.into(), None),
         };
 
         match direction {
@@ -140,6 +152,7 @@ impl TextInformation {
                     "start",
                     "middle",
                     fill.as_ref(),
+                    class,
                     load.to_string(),
                 )
             }
@@ -152,6 +165,7 @@ impl TextInformation {
                     "middle",
                     "text-after-edge",
                     fill.as_ref(),
+                    class,
                     load.to_string(),
                 )
             }
@@ -164,6 +178,7 @@ impl TextInformation {
                     "end",
                     "middle",
                     fill.as_ref(),
+                    class,
                     load.to_string(),
                 )
             }
@@ -176,6 +191,7 @@ impl TextInformation {
                     "middle",
                     "text-before-edge",
                     fill.as_ref(),
+                    class,
                     load.to_string(),
                 )
             }
@@ -290,6 +306,7 @@ impl InformationLayer {
                 y,
                 "middle",
                 "text-before-edge",
+                None,
                 None,
                 format!("({},{})", cx, cy),
             ));

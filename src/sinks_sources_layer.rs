@@ -2,8 +2,8 @@ use manycore_parser::{EdgePosition, SinkSourceDirection};
 use serde::Serialize;
 
 use crate::{
-    style::DEFAULT_FILL, Connection, TextInformation, HALF_ROUTER_OFFSET, MARKER_HEIGHT,
-    ROUTER_OFFSET, SIDE_LENGTH,
+    style::{DEFAULT_FILL, EDGE_DATA_CLASS_NAME},
+    Connection, TextInformation, HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static SINKS_SOURCES_SIDE_LENGTH: &str = "70";
@@ -183,6 +183,8 @@ impl SinkSource {
 pub struct SinksSourcesGroup {
     #[serde(rename = "@id")]
     id: &'static str,
+    #[serde(rename = "@class")]
+    class: &'static str,
     g: Vec<SinkSource>,
 }
 
@@ -190,6 +192,7 @@ impl SinksSourcesGroup {
     pub fn new(rows: u16, columns: u16) -> Self {
         Self {
             id: SINK_SOURCES_ID,
+            class: EDGE_DATA_CLASS_NAME,
             // Formula worksout because we ignore the corners
             g: Vec::with_capacity(usize::from((rows + columns) * 2)),
         }

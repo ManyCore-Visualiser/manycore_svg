@@ -28,6 +28,7 @@ pub fn generate<T: WithXMLAttributes>(
                     text_anchor,
                     "text-before-edge",
                     None,
+                    None,
                     format!("{}: {}", title, target.id()),
                 ));
                 base_y += FONT_SIZE_WITH_OFFSET;
@@ -51,6 +52,7 @@ pub fn generate<T: WithXMLAttributes>(
                                     base_y,
                                     text_anchor,
                                     "text-before-edge",
+                                    None,
                                     None,
                                     format!("{}: {}", title, value),
                                 ));
@@ -95,6 +97,7 @@ pub fn generate<T: WithXMLAttributes>(
                                     text_anchor,
                                     "text-before-edge",
                                     fill,
+                                    None,
                                     format!("{}: {}", title, value),
                                 ));
                                 base_y += FONT_SIZE_WITH_OFFSET;
