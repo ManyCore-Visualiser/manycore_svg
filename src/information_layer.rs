@@ -1,11 +1,15 @@
-use std::{collections::HashMap, error::Error, fmt::Display};
+use std::{collections::HashMap, error::Error, fmt::Display, ops::Div};
 
 use const_format::concatcp;
-use manycore_parser::{Channels, Directions};
+use manycore_parser::{Channels, Directions, WithXMLAttributes};
 use serde::Serialize;
 
 use crate::{
-    processing_group::Core as Core, text_background::TEXT_BACKGROUND_ID, Configuration, FieldConfiguration, ProcessingGroup, Router, HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH, OUTPUT_LINK_OFFSET, ROUTER_OFFSET, SIDE_LENGTH
+    processing_group::Core, sinks_sources_layer::SINKS_SOURCES_CONNECTION_EXTRA_LENGTH,
+    text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionType, Connections,
+    ConnectionsParentGroup, FieldConfiguration, ProcessingGroup, Router, HALF_CONNECTION_LENGTH,
+    HALF_SIDE_LENGTH, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, OUTPUT_LINK_OFFSET,
+    ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
@@ -23,9 +27,9 @@ static LINK_LOAD_75: &str = "#ef4444";
 #[derive(Serialize)]
 pub struct TextInformation {
     #[serde(rename = "@x")]
-    x: i16,
+    x: i32,
     #[serde(rename = "@y")]
-    y: i16,
+    y: i32,
     #[serde(rename = "@font-size")]
     font_size: &'static str,
     #[serde(rename = "@font-family")]
@@ -42,8 +46,8 @@ pub struct TextInformation {
 
 impl TextInformation {
     pub fn new_signed(
-        x: i16,
-        y: i16,
+        x: i32,
+        y: i32,
         text_anchor: &'static str,
         dominant_baseline: &'static str,
         fill: Option<&String>,
@@ -75,8 +79,8 @@ impl TextInformation {
     ) -> Self {
         // TODO: Actually check conversions. This needs doing all over really.
         Self::new_signed(
-            x as i16,
-            y as i16,
+            x.into(),
+            y.into(),
             text_anchor,
             dominant_baseline,
             fill,
@@ -84,16 +88,10 @@ impl TextInformation {
         )
     }
 
-    fn get_link_load_fill(
-        direction: &Directions,
-        link_cost: &u8,
-        channels: Option<&Channels>,
-    ) -> Option<String> {
-        if let Some(channels) = channels {
-            if let Some(channel) = channels.channel().get(direction) {
-                // Multiply by 100 so we don't deal with floating point
-                let load_fraction = (u16::from(*link_cost) * 100) / channel.bandwidth();
-
+    fn get_link_load_fill(load_fraction: Option<&u16>) -> Option<String> {
+        match load_fraction.copied() {
+            None => Some(LINK_LOAD_75.into()),
+            Some(load_fraction) => {
                 if load_fraction <= 25 {
                     return Some(LINK_LOAD_25.into());
                 } else if load_fraction <= 50 {
@@ -103,52 +101,84 @@ impl TextInformation {
                 }
             }
         }
-
-        None
     }
 
     fn link_load(
         direction: &Directions,
-        router_x: u16,
-        router_y: u16,
-        link_cost: &u8,
-        channels: Option<&Channels>,
+        link_x: &i32,
+        link_y: &i32,
+        load: &u16,
+        bandwidth: &u16,
+        edge: bool,
     ) -> Self {
-        let fill = TextInformation::get_link_load_fill(direction, link_cost, channels);
+        let load_fraction = match *bandwidth {
+            0 => None,
+            b => Some(load.div(b).saturating_mul(100)),
+        };
+        let fill = TextInformation::get_link_load_fill(load_fraction.as_ref());
+
+        let relevant_delta: i32 = match edge {
+            true => match direction {
+                Directions::North | Directions::East => I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                    .saturating_add(MARKER_HEIGHT.into())
+                    .div(2),
+                _ => I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                    .saturating_add(ROUTER_OFFSET.into())
+                    .saturating_add(MARKER_HEIGHT.into())
+                    .div(2),
+            },
+            false => HALF_CONNECTION_LENGTH.into(),
+        };
 
         match direction {
-            Directions::North => TextInformation::new(
-                router_x + OUTPUT_LINK_OFFSET + OFFSET_FROM_LINK,
-                router_y - (HALF_SIDE_LENGTH + HALF_CONNECTION_LENGTH),
-                "start",
-                "middle",
-                fill.as_ref(),
-                link_cost.to_string(),
-            ),
-            Directions::East => TextInformation::new(
-                router_x + HALF_SIDE_LENGTH + HALF_CONNECTION_LENGTH,
-                router_y - (OUTPUT_LINK_OFFSET + OFFSET_FROM_LINK),
-                "middle",
-                "text-top",
-                fill.as_ref(),
-                link_cost.to_string(),
-            ),
-            Directions::South => TextInformation::new(
-                router_x - OFFSET_FROM_LINK,
-                router_y + HALF_SIDE_LENGTH + HALF_CONNECTION_LENGTH,
-                "end",
-                "middle",
-                fill.as_ref(),
-                link_cost.to_string(),
-            ),
-            Directions::West => TextInformation::new(
-                router_x - (HALF_SIDE_LENGTH + HALF_CONNECTION_LENGTH),
-                router_y + OFFSET_FROM_LINK,
-                "middle",
-                "hanging",
-                fill.as_ref(),
-                link_cost.to_string(),
-            ),
+            Directions::North => {
+                let delta_y = relevant_delta;
+
+                TextInformation::new_signed(
+                    link_x.saturating_add(OFFSET_FROM_LINK.into()),
+                    link_y.saturating_sub(delta_y),
+                    "start",
+                    "middle",
+                    fill.as_ref(),
+                    load.to_string(),
+                )
+            }
+            Directions::East => {
+                let delta_x = relevant_delta;
+
+                TextInformation::new_signed(
+                    link_x.saturating_add(delta_x),
+                    link_y.saturating_sub(OFFSET_FROM_LINK.into()),
+                    "middle",
+                    "text-after-edge",
+                    fill.as_ref(),
+                    load.to_string(),
+                )
+            }
+            Directions::South => {
+                let delta_y = relevant_delta;
+
+                TextInformation::new_signed(
+                    link_x.saturating_sub(OFFSET_FROM_LINK.into()),
+                    link_y.saturating_add(delta_y),
+                    "end",
+                    "middle",
+                    fill.as_ref(),
+                    load.to_string(),
+                )
+            }
+            Directions::West => {
+                let delta_x = relevant_delta;
+
+                TextInformation::new_signed(
+                    link_x.saturating_sub(delta_x),
+                    link_y.saturating_add(OFFSET_FROM_LINK.into()),
+                    "middle",
+                    "text-before-edge",
+                    fill.as_ref(),
+                    load.to_string(),
+                )
+            }
         }
     }
 }
@@ -213,7 +243,7 @@ impl InformationLayer {
         let corrected_l = std::cmp::max(std::cmp::min(l, max), 0) as usize;
 
         // We found the left most insertion point
-        // But we don't know if we are because we are the same as the next element
+        // But we don't know if we are here because we are the same as the next element
         // or greater than the previous but smaller than next
         if corrected_l > 0 && bounds[corrected_l] > val {
             corrected_l - 1
@@ -226,11 +256,10 @@ impl InformationLayer {
         total_rows: &u16,
         configuration: &Configuration,
         core: &manycore_parser::Core,
-        core_index: &usize,
         css: &mut String,
         core_loads: Option<&Vec<Directions>>,
-        channels: &Channels,
-        processing_group: &ProcessingGroup
+        processing_group: &ProcessingGroup,
+        connections_group: &ConnectionsParentGroup,
     ) -> Result<Self, InformationLayerError> {
         let mut ret = InformationLayer::default();
         let core_config = configuration.core_config();
@@ -292,33 +321,44 @@ impl InformationLayer {
         ret.router_group.clip_path = ROUTER_CLIP;
 
         // Link loads
-        // if let Some(directions) = core_loads {
-        //     // Move router coordinates to centre
-        //     router_x += HALF_SIDE_LENGTH;
-        //     router_y += HALF_SIDE_LENGTH;
+        if let Some(directions) = core_loads {
+            for direction in directions {
+                let connection_type = connections_group
+                    .core_connections_map()
+                    .get(core.id())
+                    .unwrap() // TODO: Replace with error
+                    .get(direction)
+                    .unwrap(); // TODO: Replace with error
 
-        //     let get_cost = |i: &usize,
-        //                     selector: &dyn Fn(&Neighbours) -> &Option<Neighbour>|
-        //      -> Result<&u8, InformationLayerError> {
-        //         Ok(selector(connections.get(i).ok_or(InformationLayerError)?)
-        //             .as_ref()
-        //             .ok_or(InformationLayerError)?
-        //             .link_cost())
-        //     };
+                // TODO: Handle unwraps
+                let (x, y, edge) = match connection_type {
+                    ConnectionType::Connection(idx) => {
+                        let connection = connections_group.connections().path().get(*idx).unwrap();
 
-        //     for direction in directions {
-        //         let link_cost = match direction {
-        //             Directions::North => get_cost(core_index, &Neighbours::top)?,
-        //             Directions::South => get_cost(core_index, &Neighbours::bottom)?,
-        //             Directions::West => get_cost(core_index, &Neighbours::left)?,
-        //             Directions::East => get_cost(core_index, &Neighbours::right)?,
-        //         };
+                        (connection.x(), connection.y(), false)
+                    }
+                    ConnectionType::EdgeConnection(idx) => {
+                        let connection = connections_group
+                            .edge_connections()
+                            .path()
+                            .get(*idx)
+                            .unwrap();
 
-        //         ret.links_load.push(TextInformation::link_load(
-        //             direction, router_x, router_y, link_cost, channels,
-        //         ));
-        //     }
-        // }
+                        (connection.x(), connection.y(), true)
+                    }
+                };
+
+                let channel = core.channels().channel().get(direction).unwrap();
+
+                let load = channel.current_load();
+
+                let bandwidth = channel.bandwidth();
+
+                ret.links_load.push(TextInformation::link_load(
+                    direction, x, y, load, bandwidth, edge,
+                ));
+            }
+        }
 
         Ok(ret)
     }

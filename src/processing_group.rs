@@ -1,11 +1,11 @@
 use std::collections::BTreeMap;
 
 use getset::{Getters, MutGetters, Setters};
-use serde::{Serialize, Serializer};
+use serde::Serialize;
 
 use crate::{
     style::{BASE_FILL_CLASS_NAME, DEFAULT_FILL},
-    TextInformation, GROUP_DISTANCE, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH, SIDE_LENGTH,
+    TextInformation, GROUP_DISTANCE, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH, SIDE_LENGTH, SVG,
     UNIT_LENGTH,
 };
 
@@ -16,7 +16,7 @@ static TASK_CIRCLE_STROKE: u16 = 1;
 pub static TASK_CIRCLE_TOTAL_OFFSET: u16 =
     TASK_CIRCLE_OFFSET + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE;
 
-#[derive(Serialize, Setters)]
+#[derive(Serialize, Setters, Debug)]
 pub struct CommonAttributes {
     #[serde(rename = "@class", skip_serializing_if = "Option::is_none")]
     class: Option<&'static str>,
@@ -235,7 +235,7 @@ impl ProcessingGroup {
 pub struct ProcessingParentGroup {
     #[serde(rename = "@id")]
     id: &'static str,
-    #[serde(serialize_with = "ProcessingParentGroup::serialize_group")]
+    #[serde(serialize_with = "SVG::serialise_btreemap")]
     g: BTreeMap<u8, ProcessingGroup>,
 }
 
@@ -245,12 +245,5 @@ impl ProcessingParentGroup {
             id: "processingGroup",
             g: BTreeMap::new(),
         }
-    }
-
-    fn serialize_group<S: Serializer>(
-        map: &BTreeMap<u8, ProcessingGroup>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error> {
-        serializer.collect_seq(map.values())
     }
 }

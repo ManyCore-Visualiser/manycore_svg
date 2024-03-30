@@ -13,12 +13,12 @@
         <Task id="2" computationCost="40" />
         <Task id="3" computationCost="80" />
         <Task id="4" computationCost="60" />
-        <!-- <Edge from="0" to="2" communicationCost="30" /> -->
-        <!-- <Edge from="1" to="2" communicationCost="20" /> -->
+        <Edge from="0" to="2" communicationCost="30" />
+        <Edge from="1" to="2" communicationCost="20" />
         <Edge from="2" to="3" communicationCost="50" />
         <Edge from="3" to="4" communicationCost="100" />
-        <!-- <Edge from="3" to="5" communicationCost="50" /> -->
-        <!-- <Edge from="4" to="5" communicationCost="30" /> -->
+        <Edge from="3" to="5" communicationCost="50" />
+        <Edge from="4" to="5" communicationCost="30" />
     </TaskGraph>
 
     <Cores>
@@ -155,6 +155,6 @@
     <Borders>
         <Source coreID="1" direction="North" taskid="0" />
         <Source coreID="0" direction="West" taskid="1" />
-        <Sink coreID="6" direction="East" taskid="5" />
+        <Sink coreID="6" direction="West" taskid="5" />
     </Borders>
 </ManycoreSystem>
