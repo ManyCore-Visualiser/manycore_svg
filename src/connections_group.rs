@@ -1,4 +1,7 @@
-use std::collections::{BTreeMap, HashMap};
+use std::{
+    collections::{BTreeMap, HashMap},
+    fmt::Display,
+};
 
 use getset::Getters;
 use manycore_parser::{Core, Directions, EdgePosition, WithXMLAttributes};
@@ -251,8 +254,12 @@ pub struct EdgeConnections {
     id: &'static str,
     #[serde(rename = "@class")]
     class: &'static str,
+    #[serde(rename = "path")]
     #[getset(get = "pub")]
-    path: Vec<Connection>,
+    source: Vec<Connection>,
+    #[serde(rename = "path")]
+    #[getset(get = "pub")]
+    sink: Vec<Connection>,
 }
 
 impl Default for EdgeConnections {
@@ -260,7 +267,8 @@ impl Default for EdgeConnections {
         Self {
             id: EDGE_CONNECTIONS_ID,
             class: EDGE_DATA_CLASS_NAME,
-            path: Vec::new(),
+            source: Vec::new(),
+            sink: Vec::new(),
         }
     }
 }
@@ -268,6 +276,21 @@ impl Default for EdgeConnections {
 pub enum ConnectionType {
     EdgeConnection(usize),
     Connection(usize),
+}
+
+#[derive(Hash, PartialEq, Eq)]
+pub enum DirectionType {
+    Out(Directions),
+    Source(Directions),
+}
+
+impl Display for DirectionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DirectionType::Out(direction) => write!(f, "DirectionType(Out({}))", direction),
+            DirectionType::Source(direction) => write!(f, "DirectionType(Source({}))", direction),
+        }
+    }
 }
 
 #[derive(Serialize, Getters, Default)]
@@ -278,35 +301,35 @@ pub struct ConnectionsParentGroup {
     #[serde(rename = "g")]
     edge_connections: EdgeConnections,
     #[serde(skip)]
-    core_connections_map: HashMap<u8, HashMap<Directions, ConnectionType>>,
+    core_connections_map: HashMap<u8, HashMap<DirectionType, ConnectionType>>,
 }
 
 impl ConnectionsParentGroup {
-    fn insert_in_map(&mut self, core_id: &u8, direction: &Directions, element: ConnectionType) {
+    fn insert_in_map(&mut self, core_id: &u8, direction: DirectionType, element: ConnectionType) {
         // Each core has 4 connections
         self.core_connections_map
             .entry(*core_id)
             .or_insert(HashMap::with_capacity(4))
-            .insert(*direction, element);
+            .insert(direction, element);
     }
 
     fn add_edge_connection(&mut self, core_id: &u8, direction: &Directions, r: &u16, c: &u16) {
         let EdgePath { input, output } = Connection::get_edge_paths(direction, r, c);
-        let current_size = self.edge_connections.path.len();
+        let current_source_size = self.edge_connections.source.len();
+        let current_sink_size = self.edge_connections.sink.len();
 
-        self.edge_connections.path.push(Connection::new(input));
-        self.edge_connections.path.push(Connection::new(output));
+        self.edge_connections.source.push(Connection::new(input));
+        self.edge_connections.sink.push(Connection::new(output));
 
-        // TMP: Iggnoring input
-        // self.insert_in_map(
-        //     core_id,
-        //     direction,
-        //     ConnectionType::EdgeConnection(current_size),
-        // );
         self.insert_in_map(
             core_id,
-            direction,
-            ConnectionType::EdgeConnection(current_size + 1),
+            DirectionType::Source(*direction),
+            ConnectionType::EdgeConnection(current_source_size),
+        );
+        self.insert_in_map(
+            core_id,
+            DirectionType::Out(*direction),
+            ConnectionType::EdgeConnection(current_sink_size),
         );
     }
 
@@ -316,7 +339,11 @@ impl ConnectionsParentGroup {
 
         self.connections.path.push(Connection::new(path));
 
-        self.insert_in_map(core_id, direction, ConnectionType::Connection(current_size));
+        self.insert_in_map(
+            core_id,
+            DirectionType::Out(*direction),
+            ConnectionType::Connection(current_size),
+        );
     }
 
     pub fn add_connections(&mut self, core: &Core, r: &u16, c: &u16, columns: u8, rows: u8) {

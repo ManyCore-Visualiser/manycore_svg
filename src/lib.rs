@@ -8,6 +8,7 @@ mod sinks_sources_layer;
 mod style;
 mod text_background;
 mod view_box;
+mod error;
 
 use std::{
     collections::{BTreeMap, HashMap},
@@ -26,6 +27,7 @@ use sinks_sources_layer::{
     SinksSourcesGroup, I_SINKS_SOURCES_GROUP_OFFSET, SINKS_SOURCES_GROUP_OFFSET,
 };
 pub use view_box::*;
+pub use error::*;
 
 use manycore_parser::{ManycoreSystem, RoutingTarget, WithXMLAttributes};
 
@@ -256,10 +258,10 @@ impl SVG {
             || show_sinks_sources;
 
         // Compute routing if requested
-        let mut links_with_load = None;
-        if let Some(algorithm) = configuration.routing_config() {
-            links_with_load = Some(manycore.route(algorithm)?)
-        }
+        let links_with_load = match configuration.routing_config() {
+            Some(algorithm) => Some(manycore.route(algorithm)?),
+            None => None,
+        };
 
         // Clear information groups. Clear will keep memory allocated, hopefully less heap allocation penalties.
         self.root.information_group.groups.clear();
@@ -317,10 +319,12 @@ impl SVG {
                         &self.rows,
                         configuration,
                         core,
+                        manycore.borders().core_source_map().get(&i),
+                        manycore.borders().sources(),
                         self.style.css_mut(),
                         core_loads.as_ref(),
                         processing_group,
-                        &self.root.connections_group
+                        &self.root.connections_group,
                     )?);
             }
         }

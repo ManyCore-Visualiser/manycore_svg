@@ -1,15 +1,21 @@
-use std::{collections::HashMap, error::Error, fmt::Display, ops::Div};
+use std::{
+    collections::{BTreeMap, HashMap},
+    error::Error,
+    fmt::Display,
+    ops::Div,
+};
 
 use const_format::concatcp;
-use manycore_parser::{Channels, Directions, WithXMLAttributes};
+use manycore_parser::{source::Source, Channels, Directions, WithXMLAttributes};
 use serde::Serialize;
 
 use crate::{
     processing_group::Core, sinks_sources_layer::SINKS_SOURCES_CONNECTION_EXTRA_LENGTH,
     style::EDGE_DATA_CLASS_NAME, text_background::TEXT_BACKGROUND_ID, Configuration,
-    ConnectionType, Connections, ConnectionsParentGroup, FieldConfiguration, ProcessingGroup,
-    Router, HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH,
-    MARKER_HEIGHT, OUTPUT_LINK_OFFSET, ROUTER_OFFSET, SIDE_LENGTH,
+    ConnectionType, Connections, ConnectionsParentGroup, DirectionType, FieldConfiguration,
+    ProcessingGroup, Router, SVGError, SVGErrorKind, HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH,
+    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, OUTPUT_LINK_OFFSET, ROUTER_OFFSET,
+    SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
@@ -109,38 +115,20 @@ impl TextInformation {
         }
     }
 
-    fn link_load(
-        direction: &Directions,
+    fn common_load(
         link_x: &i32,
         link_y: &i32,
+        direction: &Directions,
+        relevant_delta: i32,
+        class: Option<&'static str>,
         load: &u16,
         bandwidth: &u16,
-        edge: bool,
     ) -> Self {
         let load_fraction = match *bandwidth {
             0 => None,
             b => Some(load.div(b).saturating_mul(100)),
         };
         let fill = TextInformation::get_link_load_fill(load_fraction.as_ref());
-
-        let (relevant_delta, class): (i32, Option<&'static str>) = match edge {
-            true => match direction {
-                Directions::North | Directions::East => (
-                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
-                        .saturating_add(MARKER_HEIGHT.into())
-                        .div(2),
-                    Some(EDGE_DATA_CLASS_NAME),
-                ),
-                _ => (
-                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
-                        .saturating_add(ROUTER_OFFSET.into())
-                        .saturating_add(MARKER_HEIGHT.into())
-                        .div(2),
-                    Some(EDGE_DATA_CLASS_NAME),
-                ),
-            },
-            false => (HALF_CONNECTION_LENGTH.into(), None),
-        };
 
         match direction {
             Directions::North => {
@@ -197,6 +185,72 @@ impl TextInformation {
             }
         }
     }
+
+    fn source_load(
+        direction: &Directions,
+        link_x: &i32,
+        link_y: &i32,
+        load: &u16,
+        bandwidth: &u16,
+    ) -> Self {
+        let relevant_delta: i32 = match direction {
+            Directions::South | Directions::West => I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                .saturating_add(MARKER_HEIGHT.into())
+                .div(2),
+            _ => I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                .saturating_add(ROUTER_OFFSET.into())
+                .saturating_add(MARKER_HEIGHT.into())
+                .div(2),
+        };
+
+        TextInformation::common_load(
+            link_x,
+            link_y,
+            direction,
+            relevant_delta,
+            Some(EDGE_DATA_CLASS_NAME),
+            load,
+            bandwidth,
+        )
+    }
+
+    fn link_load(
+        direction: &Directions,
+        link_x: &i32,
+        link_y: &i32,
+        load: &u16,
+        bandwidth: &u16,
+        edge: bool,
+    ) -> Self {
+        let (relevant_delta, class): (i32, Option<&'static str>) = match edge {
+            true => match direction {
+                Directions::North | Directions::East => (
+                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                        .saturating_add(MARKER_HEIGHT.into())
+                        .div(2),
+                    Some(EDGE_DATA_CLASS_NAME),
+                ),
+                _ => (
+                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                        .saturating_add(ROUTER_OFFSET.into())
+                        .saturating_add(MARKER_HEIGHT.into())
+                        .div(2),
+                    Some(EDGE_DATA_CLASS_NAME),
+                ),
+            },
+            false => (HALF_CONNECTION_LENGTH.into(), None),
+        };
+
+        TextInformation::common_load(
+            link_x,
+            link_y,
+            direction,
+            relevant_delta,
+            class,
+            load,
+            bandwidth,
+        )
+    }
 }
 
 #[derive(Serialize, Default)]
@@ -225,17 +279,25 @@ pub struct InformationLayer {
 mod utils;
 use utils::generate;
 
-#[derive(Debug)]
-pub struct InformationLayerError;
+fn missing_connection(idx: &usize) -> SVGError {
+    SVGError::new(SVGErrorKind::ConnectionError(format!(
+        "Could not grab SVG connection path for Core {}",
+        idx
+    )))
+}
 
-impl Error for InformationLayerError {}
-impl Display for InformationLayerError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Could not generate SVG information because a routing connection could not be found."
-        )
-    }
+fn missing_source(task_id: &u16) -> SVGError {
+    SVGError::new(SVGErrorKind::ManycoreMismatch(format!(
+        "Could not retrieve Source for Task {}",
+        task_id
+    )))
+}
+
+fn missing_channel(core_id: &u8, direction: &Directions) -> SVGError {
+    SVGError::new(SVGErrorKind::ManycoreMismatch(format!(
+        "Could not retrieve {} channel for Core {}",
+        direction, core_id
+    )))
 }
 
 impl InformationLayer {
@@ -268,15 +330,36 @@ impl InformationLayer {
         }
     }
 
+    fn get_connection_type<'a>(
+        connections_group: &'a ConnectionsParentGroup,
+        direction_type: &'a DirectionType,
+        core_id: &'a u8,
+    ) -> Result<&'a ConnectionType, SVGError> {
+        connections_group
+            .core_connections_map()
+            .get(core_id)
+            .ok_or(SVGError::new(SVGErrorKind::ConnectionError(format!(
+                "Could not get connections for Core {}",
+                core_id
+            ))))?
+            .get(direction_type)
+            .ok_or(SVGError::new(SVGErrorKind::ConnectionError(format!(
+                "Could not get connection {} for Core {}",
+                direction_type, core_id
+            ))))
+    }
+
     pub fn new(
         total_rows: &u16,
         configuration: &Configuration,
         core: &manycore_parser::Core,
+        sources_ids: Option<&Vec<u16>>,
+        sources: &BTreeMap<u16, Source>,
         css: &mut String,
         core_loads: Option<&Vec<Directions>>,
         processing_group: &ProcessingGroup,
         connections_group: &ConnectionsParentGroup,
-    ) -> Result<Self, InformationLayerError> {
+    ) -> Result<Self, SVGError> {
         let mut ret = InformationLayer::default();
         let core_config = configuration.core_config();
 
@@ -340,32 +423,40 @@ impl InformationLayer {
         // Link loads
         if let Some(directions) = core_loads {
             for direction in directions {
-                let connection_type = connections_group
-                    .core_connections_map()
-                    .get(core.id())
-                    .unwrap() // TODO: Replace with error
-                    .get(direction)
-                    .unwrap(); // TODO: Replace with error
+                let direction_type = DirectionType::Out(*direction);
 
-                // TODO: Handle unwraps
+                let connection_type = InformationLayer::get_connection_type(
+                    connections_group,
+                    &direction_type,
+                    core.id(),
+                )?;
+
                 let (x, y, edge) = match connection_type {
                     ConnectionType::Connection(idx) => {
-                        let connection = connections_group.connections().path().get(*idx).unwrap();
+                        let connection = connections_group
+                            .connections()
+                            .path()
+                            .get(*idx)
+                            .ok_or(missing_connection(idx))?;
 
                         (connection.x(), connection.y(), false)
                     }
                     ConnectionType::EdgeConnection(idx) => {
                         let connection = connections_group
                             .edge_connections()
-                            .path()
+                            .sink()
                             .get(*idx)
-                            .unwrap();
+                            .ok_or(missing_connection(idx))?;
 
                         (connection.x(), connection.y(), true)
                     }
                 };
 
-                let channel = core.channels().channel().get(direction).unwrap();
+                let channel = core
+                    .channels()
+                    .channel()
+                    .get(direction)
+                    .ok_or(missing_channel(core.id(), &direction))?;
 
                 let load = channel.current_load();
 
@@ -374,6 +465,53 @@ impl InformationLayer {
                 ret.links_load.push(TextInformation::link_load(
                     direction, x, y, load, bandwidth, edge,
                 ));
+            }
+        }
+
+        // Source loads
+        if let Some(sources_ids) = sources_ids {
+            for task_id in sources_ids {
+                let source = sources.get(&task_id).ok_or(missing_source(task_id))?;
+                let mut direction = Directions::from(source.direction());
+                let load = source.current_load();
+
+                let connection_type = InformationLayer::get_connection_type(
+                    connections_group,
+                    &DirectionType::Source(direction.clone()),
+                    core.id(),
+                )?;
+
+                if let ConnectionType::EdgeConnection(idx) = connection_type {
+                    let connection = connections_group
+                        .edge_connections()
+                        .source()
+                        .get(*idx)
+                        .ok_or(missing_connection(idx))?;
+
+                    let channel = core
+                        .channels()
+                        .channel()
+                        .get(&direction)
+                        .ok_or(missing_channel(core.id(), &direction))?;
+
+                    // Flip direction, source notation is inverted
+                    direction = match direction {
+                        Directions::North => Directions::South,
+                        Directions::South => Directions::North,
+                        Directions::East => Directions::West,
+                        Directions::West => Directions::East,
+                    };
+
+                    ret.links_load.push(TextInformation::source_load(
+                        &direction,
+                        connection.x(),
+                        connection.y(),
+                        load,
+                        channel.bandwidth(),
+                    ));
+                } else {
+                    panic!("Not supposed to be this");
+                }
             }
         }
 

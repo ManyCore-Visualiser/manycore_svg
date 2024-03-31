@@ -49,9 +49,10 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "manycore_parser"
 version = "0.4.1"
-source = "git+https://github.com/joe2k01/manycore_parser.git#a686f6384370703f5dd3e035356926b829d0a06c"
+source = "git+https://github.com/joe2k01/manycore_parser.git#9c809b3864f931f6214fe68b19131a5daac492e4"
 dependencies = [
  "getset",
+ "manycore_utils",
  "quick-xml",
  "serde",
  "serde_json",
@@ -65,9 +66,18 @@ dependencies = [
  "getset",
  "lazy_static",
  "manycore_parser",
+ "manycore_utils",
  "quick-xml",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "manycore_utils"
+version = "0.1.0"
+source = "git+https://github.com/joe2k01/manycore_utils.git#dc0545de73d71f8e12b4cdd96006975ce8951df3"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
