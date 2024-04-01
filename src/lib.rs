@@ -74,8 +74,18 @@ impl InformationGroup {
             id: "information",
         }
     }
-    fn should_serialise(&self) -> bool {
-        self.groups.is_empty()
+
+    pub fn update_string(&self) -> Result<String, DeError> {
+        let dummy_xml = quick_xml::se::to_string_with_root("g", &self.groups)?;
+        // 0-2+1...dummy_xml.len() - 4
+        // <g>...</g>
+        // e.g <g>hello</g> = 3..8
+        // Start is inclusive, end is exclusive
+        let inner_content = &dummy_xml[3..(dummy_xml.len() - 4)];
+
+        // We must return a string here because without allocation the string slice would be dropped.
+
+        Ok(String::from(inner_content))
     }
 }
 
@@ -87,10 +97,7 @@ struct Root {
     processing_group: ProcessingParentGroup,
     #[serde(rename = "g")]
     connections_group: ConnectionsParentGroup,
-    #[serde(
-        rename = "g",
-        skip_serializing_if = "InformationGroup::should_serialise"
-    )]
+    #[serde(rename = "g")]
     information_group: InformationGroup,
     #[serde(rename = "g")]
     sinks_sources_group: SinksSourcesGroup,
@@ -321,10 +328,7 @@ impl SVG {
 
         Ok(UpdateResult {
             style: self.style.css().clone(),
-            information_group: quick_xml::se::to_string_with_root(
-                "g",
-                &self.root.information_group,
-            )?,
+            information_group: self.root.information_group.update_string()?,
             view_box: String::from(&self.view_box),
         })
     }
