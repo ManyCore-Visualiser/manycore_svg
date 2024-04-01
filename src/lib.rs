@@ -321,7 +321,7 @@ impl SVG {
         }
 
         Ok(UpdateResult {
-            style: quick_xml::se::to_string_with_root("style", &self.style)?,
+            style: self.style.css().clone(),
             information_group: quick_xml::se::to_string_with_root(
                 "g",
                 &self.root.information_group,

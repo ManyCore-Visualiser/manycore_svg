@@ -1,5 +1,5 @@
 use const_format::concatcp;
-use getset::MutGetters;
+use getset::{Getters, MutGetters};
 use serde::Serialize;
 
 pub const DEFAULT_FILL: &str = "#e5e5e5";
@@ -18,10 +18,10 @@ static DEFAULT_STYLE: &str = concatcp!(
 
 static BASE_STYLE: &str = concatcp!(".", BASE_FILL_CLASS_NAME, "{fill: ", DEFAULT_FILL, ";}");
 
-#[derive(Serialize, MutGetters)]
+#[derive(Serialize, MutGetters, Getters)]
 pub struct Style {
     #[serde(rename = "$text")]
-    #[getset(get_mut = "pub")]
+    #[getset(get_mut = "pub", get = "pub")]
     css: String,
 }
 
