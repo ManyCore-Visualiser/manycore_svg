@@ -131,11 +131,11 @@ impl Connection {
 
                 // Input
                 let input_x = start_x + connection_length;
-                let input_y = start_y - I_CONNECTION_GAP;
+                let input_y = start_y + I_CONNECTION_GAP;
                 let input_s = format!("M{},{} h-{}", input_x, input_y, render_length);
 
                 // Output
-                let output_y = start_y + I_CONNECTION_GAP;
+                let output_y = start_y - I_CONNECTION_GAP;
                 let output_s = format!("M{},{} h{}", start_x, output_y, render_length);
 
                 (
