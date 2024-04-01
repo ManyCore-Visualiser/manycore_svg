@@ -81,7 +81,14 @@ impl InformationGroup {
         // <g>...</g>
         // e.g <g>hello</g> = 3..8
         // Start is inclusive, end is exclusive
-        let inner_content = &dummy_xml[3..(dummy_xml.len() - 4)];
+        let dummy_len = dummy_xml.len();
+        let inner_content;
+
+        if dummy_len > 6 {
+            inner_content = &dummy_xml[3..(dummy_xml.len() - 4)];
+        } else {
+            inner_content = "";
+        }
 
         // We must return a string here because without allocation the string slice would be dropped.
 
