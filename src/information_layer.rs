@@ -1,21 +1,19 @@
 use std::{
     collections::{BTreeMap, HashMap},
-    error::Error,
-    fmt::Display,
     ops::Div,
 };
 
 use const_format::concatcp;
-use manycore_parser::{source::Source, Channels, Directions, WithXMLAttributes};
+use manycore_parser::{
+    source::Source, Directions, EdgePosition, SinkSourceDirection, WithXMLAttributes,
+};
 use serde::Serialize;
 
 use crate::{
-    processing_group::Core, sinks_sources_layer::SINKS_SOURCES_CONNECTION_EXTRA_LENGTH,
     style::EDGE_DATA_CLASS_NAME, text_background::TEXT_BACKGROUND_ID, Configuration,
-    ConnectionType, Connections, ConnectionsParentGroup, DirectionType, FieldConfiguration,
-    ProcessingGroup, Router, SVGError, SVGErrorKind, HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH,
-    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, OUTPUT_LINK_OFFSET, ROUTER_OFFSET,
-    SIDE_LENGTH,
+    ConnectionType, ConnectionsParentGroup, DirectionType, FieldConfiguration, ProcessingGroup,
+    SVGError, SVGErrorKind, HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH,
+    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
@@ -350,10 +348,11 @@ impl InformationLayer {
     }
 
     pub fn new(
-        total_rows: &u16,
+        rows: u8,
+        columns: u8,
         configuration: &Configuration,
         core: &manycore_parser::Core,
-        sources_ids: Option<&Vec<u16>>,
+        sources_ids: Option<&HashMap<SinkSourceDirection, Vec<u16>>>,
         sources: &BTreeMap<u16, Source>,
         css: &mut String,
         core_loads: Option<&Vec<Directions>>,
@@ -374,7 +373,7 @@ impl InformationLayer {
             let (cx, cy) = match order_config {
                 FieldConfiguration::Text(order) => {
                     match order.as_str() {
-                        BOTTOM_COORDINATES => (total_rows - r, c + 1),
+                        BOTTOM_COORDINATES => (u16::from(rows) - r, c + 1),
                         TOP_COORDINATES | _ => {
                             // Top or anything else (malformeed input)
                             (r + 1, c + 1)
@@ -470,48 +469,61 @@ impl InformationLayer {
 
         // Source loads
         if let Some(sources_ids) = sources_ids {
-            for task_id in sources_ids {
-                let source = sources.get(&task_id).ok_or(missing_source(task_id))?;
-                let mut direction = Directions::from(source.direction());
-                let load = source.current_load();
+            if let Some(edge_position) = core.is_on_edge(columns, rows).as_ref() {
+                let keys: Vec<SinkSourceDirection> = edge_position.into();
 
-                let connection_type = InformationLayer::get_connection_type(
-                    connections_group,
-                    &DirectionType::Source(direction.clone()),
-                    core.id(),
-                )?;
+                for source_direction in keys {
+                    if let Some(tasks) = sources_ids.get(&source_direction) {
+                        let mut load = 0;
 
-                if let ConnectionType::EdgeConnection(idx) = connection_type {
-                    let connection = connections_group
-                        .edge_connections()
-                        .source()
-                        .get(*idx)
-                        .ok_or(missing_connection(idx))?;
+                        for task_id in tasks {
+                            let source = sources.get(&task_id).ok_or(missing_source(task_id))?;
+                            load += source.current_load();
+                        }
 
-                    let channel = core
-                        .channels()
-                        .channel()
-                        .get(&direction)
-                        .ok_or(missing_channel(core.id(), &direction))?;
+                        let mut direction: Directions = (&source_direction).into();
+                        let direction_type = DirectionType::Source(direction.clone());
+                        let connection_type = InformationLayer::get_connection_type(
+                            connections_group,
+                            &direction_type,
+                            core.id(),
+                        )?;
 
-                    // Flip direction, source notation is inverted
-                    direction = match direction {
-                        Directions::North => Directions::South,
-                        Directions::South => Directions::North,
-                        Directions::East => Directions::West,
-                        Directions::West => Directions::East,
-                    };
+                        if let ConnectionType::EdgeConnection(idx) = connection_type {
+                            let connection = connections_group
+                                .edge_connections()
+                                .source()
+                                .get(*idx)
+                                .ok_or(missing_connection(idx))?;
 
-                    ret.links_load.push(TextInformation::source_load(
-                        &direction,
-                        connection.x(),
-                        connection.y(),
-                        load,
-                        channel.bandwidth(),
-                    ));
-                } else {
-                    panic!("Not supposed to be this");
+                            let channel = core
+                                .channels()
+                                .channel()
+                                .get(&direction)
+                                .ok_or(missing_channel(core.id(), &direction))?;
+
+                            // Flip direction, source notation is inverted
+                            direction = match direction {
+                                Directions::North => Directions::South,
+                                Directions::South => Directions::North,
+                                Directions::East => Directions::West,
+                                Directions::West => Directions::East,
+                            };
+
+                            ret.links_load.push(TextInformation::source_load(
+                                &direction,
+                                connection.x(),
+                                connection.y(),
+                                &load,
+                                channel.bandwidth(),
+                            ));
+                        } else {
+                            panic!("Not supposed to be this");
+                        }
+                    }
                 }
+            } else {
+                panic!("Core must be on edge for source ids")
             }
         }
 

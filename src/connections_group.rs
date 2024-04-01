@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, HashMap},
-    fmt::Display,
-};
+use std::{collections::HashMap, fmt::Display};
 
 use getset::Getters;
 use manycore_parser::{Core, Directions, EdgePosition, WithXMLAttributes};
@@ -9,7 +6,7 @@ use serde::Serialize;
 
 use crate::{
     style::EDGE_DATA_CLASS_NAME, CommonAttributes, Router, CONNECTION_LENGTH, HALF_ROUTER_OFFSET,
-    MARKER_HEIGHT, MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH, SVG,
+    MARKER_HEIGHT, MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 // static I_SINKS_SOURCE_CONNECTION_SPACING: i32 = 15;
@@ -37,13 +34,6 @@ pub struct Connection {
     #[getset(get = "pub")]
     y: i32,
 }
-
-// pub enum ConnectionDirection {
-//     TOP,
-//     RIGHT,
-//     BOTTOM,
-//     LEFT,
-// }
 
 struct ConnectionPath {
     path: String,

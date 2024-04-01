@@ -1,4 +1,5 @@
 mod connections_group;
+mod error;
 mod exporting_aid;
 mod information_layer;
 mod marker;
@@ -8,15 +9,11 @@ mod sinks_sources_layer;
 mod style;
 mod text_background;
 mod view_box;
-mod error;
 
-use std::{
-    collections::{BTreeMap, HashMap},
-    error::Error,
-    ops::{Div, Sub},
-};
+use std::collections::BTreeMap;
 
 use connections_group::*;
+pub use error::*;
 use exporting_aid::*;
 use getset::Getters;
 use information_layer::*;
@@ -27,7 +24,6 @@ use sinks_sources_layer::{
     SinksSourcesGroup, I_SINKS_SOURCES_GROUP_OFFSET, SINKS_SOURCES_GROUP_OFFSET,
 };
 pub use view_box::*;
-pub use error::*;
 
 use manycore_parser::{ManycoreSystem, RoutingTarget, WithXMLAttributes};
 
@@ -127,9 +123,9 @@ pub struct SVG {
     #[serde(rename = "rect")]
     exporting_aid: ExportingAid,
     #[serde(skip)]
-    rows: u16,
+    rows: u8,
     #[serde(skip)]
-    columns: u16,
+    columns: u8,
 }
 
 #[derive(Serialize)]
@@ -164,13 +160,7 @@ impl From<&ManycoreSystem> for SVG {
             + TASK_CIRCLE_TOTAL_OFFSET
             + FONT_SIZE_WITH_OFFSET;
 
-        let mut ret = SVG::new(
-            &manycore.cores().list().len(),
-            rows_u16,
-            columns_u16,
-            width,
-            height,
-        );
+        let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height);
 
         let mut r: u8 = 0;
 
@@ -219,7 +209,7 @@ impl From<&ManycoreSystem> for SVG {
 }
 
 impl SVG {
-    fn new(number_of_cores: &usize, rows: u16, columns: u16, width: u16, height: u16) -> Self {
+    fn new(number_of_cores: &usize, rows: u8, columns: u8, width: u16, height: u16) -> Self {
         Self {
             width,
             height,
@@ -250,7 +240,7 @@ impl SVG {
         &mut self,
         manycore: &mut ManycoreSystem,
         configuration: &Configuration,
-    ) -> Result<UpdateResult, Box<dyn Error>> {
+    ) -> Result<UpdateResult, SVGError> {
         let show_sinks_sources = configuration.sinks_sources().is_some_and(|is_true| is_true);
         let not_empty_configuration = !configuration.core_config().is_empty()
             || !configuration.router_config().is_empty()
@@ -316,7 +306,8 @@ impl SVG {
                     .information_group
                     .groups
                     .push(InformationLayer::new(
-                        &self.rows,
+                        self.rows,
+                        self.columns,
                         configuration,
                         core,
                         manycore.borders().core_source_map().get(&i),

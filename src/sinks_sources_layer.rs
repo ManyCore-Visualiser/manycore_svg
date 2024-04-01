@@ -189,7 +189,7 @@ pub struct SinksSourcesGroup {
 }
 
 impl SinksSourcesGroup {
-    pub fn new(rows: u16, columns: u16) -> Self {
+    pub fn new(rows: u8, columns: u8) -> Self {
         Self {
             id: SINK_SOURCES_ID,
             class: EDGE_DATA_CLASS_NAME,

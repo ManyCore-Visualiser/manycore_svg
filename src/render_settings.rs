@@ -35,7 +35,7 @@ mod tests {
 
     use std::{
         collections::BTreeMap,
-        fs::{self, read_to_string},
+        fs::read_to_string,
     };
 
     use crate::{ColourSettings, Configuration, FieldConfiguration, SVG};
