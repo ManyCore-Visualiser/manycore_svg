@@ -97,7 +97,7 @@ impl InformationGroup {
 }
 
 #[derive(Serialize, Setters)]
-struct Root {
+pub struct Root {
     #[serde(rename = "@id")]
     id: &'static str,
     #[serde(rename = "@style", skip_serializing_if = "Option::is_none")]
