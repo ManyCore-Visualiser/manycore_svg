@@ -13,6 +13,7 @@ struct Polygon {
 
 #[derive(Serialize)]
 pub struct ClipPath {
+    #[serde(rename = "@id")]
     id: &'static str,
     polygon: Polygon,
 }
