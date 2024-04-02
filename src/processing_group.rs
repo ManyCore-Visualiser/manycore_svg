@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 
 use getset::{Getters, MutGetters, Setters};
 use serde::Serialize;
+use manycore_utils::serialise_btreemap;
 
 use crate::{
     style::{BASE_FILL_CLASS_NAME, DEFAULT_FILL},
@@ -236,7 +237,7 @@ impl ProcessingGroup {
 pub struct ProcessingParentGroup {
     #[serde(rename = "@id")]
     id: &'static str,
-    #[serde(serialize_with = "SVG::serialise_btreemap")]
+    #[serde(serialize_with = "serialise_btreemap")]
     g: BTreeMap<u8, ProcessingGroup>,
 }
 

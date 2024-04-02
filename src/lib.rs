@@ -1,3 +1,4 @@
+mod clip_path;
 mod connections_group;
 mod error;
 mod exporting_aid;
@@ -12,6 +13,7 @@ mod view_box;
 
 use std::collections::BTreeMap;
 
+pub use clip_path::*;
 use connections_group::*;
 pub use error::*;
 use exporting_aid::*;
@@ -100,9 +102,8 @@ impl InformationGroup {
 pub struct Root {
     #[serde(rename = "@id")]
     id: &'static str,
-    #[serde(rename = "@style", skip_serializing_if = "Option::is_none")]
-    #[getset(set = "pub")]
-    style: Option<String>,
+    #[serde(rename = "@clip-path", skip_serializing_if = "Option::is_none")]
+    clip_path: Option<&'static str>,
     #[serde(rename = "g")]
     processing_group: ProcessingParentGroup,
     #[serde(rename = "g")]
@@ -135,6 +136,8 @@ pub struct SVG {
     view_box: ViewBox,
     defs: Defs,
     style: Style,
+    #[serde(rename = "clipPath", skip_serializing_if = "Option::is_none")]
+    clip_path: Option<ClipPath>,
     #[serde(rename = "g")]
     #[getset(get_mut = "pub")]
     root: Root,
@@ -240,9 +243,10 @@ impl SVG {
                 text_background: TextBackground::default(),
             },
             style: Style::default(),
+            clip_path: None,
             root: Root {
                 id: "mainGroup",
-                style: None,
+                clip_path: None,
                 processing_group: ProcessingParentGroup::new(),
                 connections_group: ConnectionsParentGroup::default(),
                 information_group: InformationGroup::new(number_of_cores),
@@ -345,11 +349,14 @@ impl SVG {
         })
     }
 
-    pub fn serialise_btreemap<S: Serializer, K, V: Serialize>(
-        map: &BTreeMap<K, V>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error> {
-        serializer.collect_seq(map.values())
+    pub fn add_clip_path(&mut self, polygon_points: String) {
+        self.clip_path = Some(ClipPath::new(polygon_points));
+        self.root.clip_path = Some(USE_CLIP_PATH);
+    }
+
+    pub fn clear_clip_path(&mut self) {
+        self.clip_path = None;
+        self.root.clip_path = None;
     }
 }
 
