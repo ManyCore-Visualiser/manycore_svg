@@ -1,8 +1,8 @@
-use getset::Getters;
+use getset::{Getters, Setters};
 use serde::Serialize;
 
-#[derive(Getters)]
-#[getset(get = "pub")]
+#[derive(Getters, Setters)]
+#[getset(get = "pub", set = "pub")]
 pub struct ViewBox {
     x: i16,
     y: i16,

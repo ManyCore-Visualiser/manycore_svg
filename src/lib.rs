@@ -131,7 +131,7 @@ pub struct SVG {
     #[serde(rename = "@class")]
     class: String,
     #[serde(rename = "@viewBox")]
-    #[getset(get = "pub")]
+    #[getset(get = "pub", get_mut = "pub")]
     view_box: ViewBox,
     defs: Defs,
     style: Style,
