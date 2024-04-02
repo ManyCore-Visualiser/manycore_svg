@@ -1,7 +1,7 @@
 use getset::{Getters, Setters};
 use serde::Serialize;
 
-#[derive(Getters, Setters)]
+#[derive(Getters, Setters, Clone, Copy)]
 #[getset(get = "pub", set = "pub")]
 pub struct ViewBox {
     x: i16,
@@ -18,6 +18,21 @@ impl ViewBox {
             width,
             height,
         }
+    }
+
+    pub fn swap(&mut self, x: i16, y: i16, width: u16, height: u16) -> Self {
+        let old = self.clone();
+
+        self.x = x;
+        self.y = y;
+        self.width = width;
+        self.height = height;
+
+        old
+    }
+
+    pub fn restore_from(&mut self, from: &ViewBox) {
+        *self = *from;
     }
 
     pub fn reset(&mut self, width: u16, height: u16) {
