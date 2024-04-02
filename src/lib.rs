@@ -15,7 +15,7 @@ use std::collections::BTreeMap;
 use connections_group::*;
 pub use error::*;
 use exporting_aid::*;
-use getset::Getters;
+use getset::{Getters, MutGetters, Setters};
 use information_layer::*;
 use marker::*;
 use processing_group::*;
@@ -96,10 +96,13 @@ impl InformationGroup {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Setters)]
 struct Root {
     #[serde(rename = "@id")]
     id: &'static str,
+    #[serde(rename = "@style", skip_serializing_if = "Option::is_none")]
+    #[getset(set = "pub")]
+    style: Option<String>,
     #[serde(rename = "g")]
     processing_group: ProcessingParentGroup,
     #[serde(rename = "g")]
@@ -110,7 +113,7 @@ struct Root {
     sinks_sources_group: SinksSourcesGroup,
 }
 
-#[derive(Serialize, Getters)]
+#[derive(Serialize, Getters, MutGetters)]
 #[serde(rename = "svg")]
 pub struct SVG {
     #[serde(skip)]
@@ -133,6 +136,7 @@ pub struct SVG {
     defs: Defs,
     style: Style,
     #[serde(rename = "g")]
+    #[getset(get_mut = "pub")]
     root: Root,
     #[serde(rename = "rect")]
     exporting_aid: ExportingAid,
@@ -238,6 +242,7 @@ impl SVG {
             style: Style::default(),
             root: Root {
                 id: "mainGroup",
+                style: None,
                 processing_group: ProcessingParentGroup::new(),
                 connections_group: ConnectionsParentGroup::default(),
                 information_group: InformationGroup::new(number_of_cores),
