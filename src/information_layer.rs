@@ -4,16 +4,15 @@ use std::{
 };
 
 use const_format::concatcp;
-use manycore_parser::{
-    source::Source, Directions, EdgePosition, SinkSourceDirection, WithXMLAttributes,
-};
+use manycore_parser::{source::Source, Directions, SinkSourceDirection, WithID, COORDINATES_KEY};
 use serde::Serialize;
 
 use crate::{
     style::EDGE_DATA_CLASS_NAME, text_background::TEXT_BACKGROUND_ID, Configuration,
-    ConnectionType, ConnectionsParentGroup, DirectionType, FieldConfiguration, ProcessingGroup,
-    SVGError, SVGErrorKind, HALF_CONNECTION_LENGTH, HALF_SIDE_LENGTH,
-    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH,
+    ConnectionType, ConnectionsParentGroup, CoordinatesOrientation, DirectionType,
+    FieldConfiguration, ProcessingGroup, SVGError, SVGErrorKind, HALF_CONNECTION_LENGTH,
+    HALF_SIDE_LENGTH, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET,
+    SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
@@ -275,7 +274,7 @@ pub struct InformationLayer {
 }
 
 mod utils;
-use utils::generate;
+use utils::generate_with_id;
 
 fn missing_connection(idx: &usize) -> SVGError {
     SVGError::new(SVGErrorKind::ConnectionError(format!(
@@ -366,20 +365,15 @@ impl InformationLayer {
         let (core_x, core_y) = processing_group.core().move_coordinates();
 
         // Coordinates are stored in the core config but apply to whole group
-        if let Some(order_config) = core_config.get("@coordinates") {
+        if let Some(order_config) = core_config.get(COORDINATES_KEY) {
             let x = core_x + HALF_SIDE_LENGTH;
             let y = core_y + SIDE_LENGTH;
 
             let (cx, cy) = match order_config {
-                FieldConfiguration::Text(order) => {
-                    match order.as_str() {
-                        BOTTOM_COORDINATES => (u16::from(rows) - r, c + 1),
-                        TOP_COORDINATES | _ => {
-                            // Top or anything else (malformeed input)
-                            (r + 1, c + 1)
-                        }
-                    }
-                }
+                FieldConfiguration::Coordinates(order) => match order {
+                    CoordinatesOrientation::B => (u16::from(rows) - r, c + 1),
+                    CoordinatesOrientation::T => (r + 1, c + 1),
+                },
                 _ => (r + 1, c + 1), // Don't know what happened. Wrong enum variant, default to top left.
             };
 
@@ -395,7 +389,7 @@ impl InformationLayer {
         }
 
         // Core
-        generate(
+        generate_with_id(
             *core_x,
             *core_y,
             configuration.core_config(),
@@ -408,7 +402,7 @@ impl InformationLayer {
 
         // Router
         let (router_x, router_y) = processing_group.router().move_coordinates();
-        generate(
+        generate_with_id(
             *router_x,
             router_y - ROUTER_OFFSET,
             configuration.router_config(),

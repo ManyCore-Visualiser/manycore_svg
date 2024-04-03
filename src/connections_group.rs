@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use getset::Getters;
-use manycore_parser::{Core, Directions, EdgePosition, WithXMLAttributes};
+use manycore_parser::{Core, Directions, EdgePosition, WithID};
 use serde::Serialize;
 
 use crate::{

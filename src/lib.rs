@@ -11,8 +11,6 @@ mod style;
 mod text_background;
 mod view_box;
 
-use std::collections::BTreeMap;
-
 pub use clip_path::*;
 use connections_group::*;
 pub use error::*;
@@ -27,10 +25,10 @@ use sinks_sources_layer::{
 };
 pub use view_box::*;
 
-use manycore_parser::{ManycoreSystem, RoutingTarget, WithXMLAttributes};
+use manycore_parser::{ManycoreSystem, RoutingTarget, WithID};
 
 use quick_xml::DeError;
-use serde::{Serialize, Serializer};
+use serde::Serialize;
 use style::Style;
 use text_background::TextBackground;
 
@@ -147,6 +145,9 @@ pub struct SVG {
     rows: u8,
     #[serde(skip)]
     columns: u8,
+    #[serde(skip)]
+    #[getset(get = "pub")]
+    configurable_attributes: SVGConfigurableAttributes,
 }
 
 #[derive(Serialize)]
@@ -180,7 +181,14 @@ impl From<&ManycoreSystem> for SVG {
             + TASK_CIRCLE_TOTAL_OFFSET
             + FONT_SIZE_WITH_OFFSET;
 
-        let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height);
+        let mut ret = SVG::new(
+            &manycore.cores().list().len(),
+            rows,
+            columns,
+            width,
+            height,
+            SVG::derive_configurable_attributes(&manycore),
+        );
 
         let mut r: u8 = 0;
 
@@ -229,7 +237,14 @@ impl From<&ManycoreSystem> for SVG {
 }
 
 impl SVG {
-    fn new(number_of_cores: &usize, rows: u8, columns: u8, width: u16, height: u16) -> Self {
+    fn new(
+        number_of_cores: &usize,
+        rows: u8,
+        columns: u8,
+        width: u16,
+        height: u16,
+        configurable_attributes: SVGConfigurableAttributes,
+    ) -> Self {
         Self {
             width,
             height,
@@ -255,6 +270,7 @@ impl SVG {
             exporting_aid: ExportingAid::default(),
             rows,
             columns,
+            configurable_attributes,
         }
     }
 

@@ -48,8 +48,8 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "manycore_parser"
-version = "0.4.1"
-source = "git+https://github.com/joe2k01/manycore_parser.git#2827540baef1396b7a87559c0e7fadfebc99b173"
+version = "0.4.2"
+source = "git+https://github.com/joe2k01/manycore_parser.git#f539d011a23a6225bd03a2d0644ce037c8914e43"
 dependencies = [
  "getset",
  "manycore_utils",
@@ -161,7 +161,7 @@ checksum = "7eb0b34b42edc17f6b7cac84a52a1c5f0e1bb2227e997ca9011ea3dd34e8610b"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.57",
+ "syn 2.0.58",
 ]
 
 [[package]]
@@ -188,9 +188,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.57"
+version = "2.0.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11a6ae1e52eb25aab8f3fb9fca13be982a373b8f1157ca14b897a825ba4a2d35"
+checksum = "44cfb93f38070beee36b3fef7d4f5a16f27751d94b187b666a5cc5e9b0d30687"
 dependencies = [
  "proc-macro2",
  "quote",

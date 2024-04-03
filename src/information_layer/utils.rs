@@ -1,13 +1,13 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, fmt::Display};
 
-use manycore_parser::WithXMLAttributes;
+use manycore_parser::{WithID, WithXMLAttributes, COORDINATES_KEY, ID_KEY};
 
 use super::{
     InformationLayer, ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER,
 };
 use crate::{FieldConfiguration, FONT_SIZE_WITH_OFFSET};
 
-pub fn generate<T: WithXMLAttributes>(
+pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
     mut base_x: u16,
     mut base_y: u16,
     configuration: &BTreeMap<String, FieldConfiguration>,
@@ -19,7 +19,7 @@ pub fn generate<T: WithXMLAttributes>(
     base_x += OFFSET_FROM_BORDER;
     base_y += OFFSET_FROM_BORDER;
 
-    if let Some(configuration) = configuration.get("@id") {
+    if let Some(configuration) = configuration.get(ID_KEY) {
         match configuration {
             FieldConfiguration::Text(title) => {
                 group.information.push(TextInformation::new(
@@ -40,7 +40,9 @@ pub fn generate<T: WithXMLAttributes>(
     if let Some(map) = target.other_attributes() {
         for k in configuration.keys() {
             match k.as_str() {
-                "@id" | "@coordinates" => {}
+                id_coordinates if id_coordinates == ID_KEY || id_coordinates == COORDINATES_KEY => {
+                    // These have been handled
+                }
                 valid_key => {
                     if let (Some(field_configuration), Some(value)) =
                         (configuration.get(valid_key), map.get(k))
@@ -101,6 +103,9 @@ pub fn generate<T: WithXMLAttributes>(
                                     format!("{}: {}", title, value),
                                 ));
                                 base_y += FONT_SIZE_WITH_OFFSET;
+                            }
+                            FieldConfiguration::Coordinates(_) => {
+                                // This is handled before this function is called
                             }
                         }
                     }
