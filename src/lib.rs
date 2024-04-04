@@ -145,9 +145,6 @@ pub struct SVG {
     rows: u8,
     #[serde(skip)]
     columns: u8,
-    #[serde(skip)]
-    #[getset(get = "pub")]
-    configurable_attributes: SVGConfigurableAttributes,
 }
 
 #[derive(Serialize)]
@@ -181,14 +178,7 @@ impl From<&ManycoreSystem> for SVG {
             + TASK_CIRCLE_TOTAL_OFFSET
             + FONT_SIZE_WITH_OFFSET;
 
-        let mut ret = SVG::new(
-            &manycore.cores().list().len(),
-            rows,
-            columns,
-            width,
-            height,
-            SVG::derive_configurable_attributes(&manycore),
-        );
+        let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height);
 
         let mut r: u8 = 0;
 
@@ -237,14 +227,7 @@ impl From<&ManycoreSystem> for SVG {
 }
 
 impl SVG {
-    fn new(
-        number_of_cores: &usize,
-        rows: u8,
-        columns: u8,
-        width: u16,
-        height: u16,
-        configurable_attributes: SVGConfigurableAttributes,
-    ) -> Self {
+    fn new(number_of_cores: &usize, rows: u8, columns: u8, width: u16, height: u16) -> Self {
         Self {
             width,
             height,
@@ -270,7 +253,6 @@ impl SVG {
             exporting_aid: ExportingAid::default(),
             rows,
             columns,
-            configurable_attributes,
         }
     }
 
