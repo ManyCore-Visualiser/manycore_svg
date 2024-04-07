@@ -25,7 +25,7 @@ use sinks_sources_layer::{
 };
 pub use view_box::*;
 
-use manycore_parser::{ManycoreSystem, RoutingTarget, WithID};
+use manycore_parser::{ManycoreSystem, RoutingTarget, WithID, BORDER_ROUTERS_KEY, ROUTING_KEY};
 
 use quick_xml::DeError;
 use serde::Serialize;
@@ -259,19 +259,25 @@ impl SVG {
     pub fn update_configurable_information(
         &mut self,
         manycore: &mut ManycoreSystem,
-        configuration: &Configuration,
+        configuration: &mut Configuration,
     ) -> Result<UpdateResult, SVGError> {
-        let show_sinks_sources = configuration.sinks_sources().is_some_and(|is_true| is_true);
+        // let show_sinks_sources = configuration.sinks_sources().is_some_and(|is_true| is_true);
         let not_empty_configuration = !configuration.core_config().is_empty()
             || !configuration.router_config().is_empty()
-            || configuration.routing_config().is_some()
-            || show_sinks_sources;
+            || !configuration.channel_config().is_empty();
 
         // Compute routing if requested
-        let links_with_load = match configuration.routing_config() {
-            Some(algorithm) => Some(manycore.route(algorithm)?),
-            None => None,
-        };
+        let (links_with_load, routing_configuration) =
+            match configuration.channel_config_mut().remove(ROUTING_KEY) {
+                Some(configuration) => match configuration {
+                    FieldConfiguration::Routing(routing_configuration) => (
+                        Some(manycore.route(routing_configuration.algorithm())?),
+                        Some(routing_configuration),
+                    ),
+                    _ => (None, None), // Invalid configuration option
+                },
+                None => (None, None),
+            };
 
         // Clear information groups. Clear will keep memory allocated, hopefully less heap allocation penalties.
         self.root.information_group.groups.clear();
@@ -280,13 +286,27 @@ impl SVG {
 
         // Expand viewBox and adjust css if required (Sinks and Sources)
         // Always reset CSS. If user deselects all options and clicks apply, they expect the base render to show.
-        if show_sinks_sources {
-            self.style = Style::base(); // CSS
+        if let Some(border_routers_configuration) = configuration
+            .channel_config_mut()
+            .remove(BORDER_ROUTERS_KEY)
+        {
+            match border_routers_configuration {
+                FieldConfiguration::Boolean(show_border_routers) => {
+                    if show_border_routers {
+                        self.style = Style::base(); // CSS
 
-            self.view_box.extend_left_by(I_SINKS_SOURCES_GROUP_OFFSET);
-            self.view_box.extend_right_by(SINKS_SOURCES_GROUP_OFFSET);
-            self.view_box.extend_top_by(I_SINKS_SOURCES_GROUP_OFFSET);
-            self.view_box.extend_bottom_by(SINKS_SOURCES_GROUP_OFFSET);
+                        self.view_box.extend_left_by(I_SINKS_SOURCES_GROUP_OFFSET);
+                        self.view_box.extend_right_by(SINKS_SOURCES_GROUP_OFFSET);
+                        self.view_box.extend_top_by(I_SINKS_SOURCES_GROUP_OFFSET);
+                        self.view_box.extend_bottom_by(SINKS_SOURCES_GROUP_OFFSET);
+                    } else {
+                        self.style = Style::default(); // CSS
+                    }
+                }
+                _ => {
+                    self.style = Style::default(); // CSS
+                }
+            }
         } else {
             self.style = Style::default(); // CSS
         }
@@ -336,6 +356,7 @@ impl SVG {
                         core_loads.as_ref(),
                         processing_group,
                         &self.root.connections_group,
+                        routing_configuration.as_ref(),
                     )?);
             }
         }
