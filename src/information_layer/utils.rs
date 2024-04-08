@@ -2,9 +2,7 @@ use std::{collections::BTreeMap, fmt::Display};
 
 use manycore_parser::{Directions, WithID, WithXMLAttributes, COORDINATES_KEY, ID_KEY};
 
-use super::{
-    InformationLayer, ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER,
-};
+use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER};
 use crate::{
     ConnectionType, ConnectionsParentGroup, DirectionType, FieldConfiguration, SVGError,
     SVGErrorKind, FONT_SIZE_WITH_OFFSET,

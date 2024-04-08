@@ -11,6 +11,8 @@ mod style;
 mod text_background;
 mod view_box;
 
+use std::collections::BTreeSet;
+
 pub use clip_path::*;
 use connections_group::*;
 pub use error::*;
@@ -37,7 +39,6 @@ static ROUTER_PATH: &str = "l0,-75 l100,0 l0,100 l-75,0 Z";
 static UNIT_LENGTH: u16 = 175;
 static SIDE_LENGTH: u16 = 100;
 static HALF_SIDE_LENGTH: u16 = 50;
-static OUTPUT_LINK_OFFSET: u16 = 25;
 static ROUTER_OFFSET: u16 = 75;
 static HALF_ROUTER_OFFSET: u16 = ROUTER_OFFSET.div_ceil(2);
 // static GROUP_DISTANCE: u16 = 120;
@@ -314,7 +315,7 @@ impl SVG {
         // Closure to get core loads
         let get_core_loads = |i: &usize| {
             if let Some(links_loads) = links_with_load.as_ref() {
-                let mut ret = Vec::new();
+                let mut ret = BTreeSet::new();
 
                 let core_key = RoutingTarget::Core(*i);
                 let sink_key = RoutingTarget::Sink(*i);
@@ -387,19 +388,18 @@ mod tests {
 
     use super::SVG;
 
-    // #[test]
-    // fn can_convert_from() {
-    //     let manycore: ManycoreSystem = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
-    //         .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
+    #[test]
+    fn can_convert_from() {
+        let manycore: ManycoreSystem = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
+            .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-    //     let svg: SVG = (&manycore).into();
+        let svg: SVG = (&manycore).into();
 
-    //     let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
 
-    //     let expected = read_to_string("tests/SVG1.svg")
-    //         .expect("Could not read input test file \"tests/SVG1.svg\"");
+        let expected = read_to_string("tests/SVG1.svg")
+            .expect("Could not read input test file \"tests/SVG1.svg\"");
 
-    //     // assert_eq!(res, expected)
-    //     // println!("{res}")
-    // }
+        assert_eq!(res, expected)
+    }
 }

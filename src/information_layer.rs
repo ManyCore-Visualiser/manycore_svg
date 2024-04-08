@@ -1,15 +1,12 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use const_format::concatcp;
-use manycore_parser::{
-    source::Source, Directions, SinkSourceDirection, WithID, WithXMLAttributes, COORDINATES_KEY,
-};
+use manycore_parser::{source::Source, Directions, SinkSourceDirection, WithID, WithXMLAttributes};
 use serde::Serialize;
 
 use crate::{
     text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionType, ConnectionsParentGroup,
-    CoordinatesOrientation, DirectionType, FieldConfiguration, ProcessingGroup,
-    RoutingConfiguration, SVGError, HALF_SIDE_LENGTH, ROUTER_OFFSET, SIDE_LENGTH,
+    DirectionType, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET,
 };
 
 static OFFSET_FROM_BORDER: u16 = 1;
@@ -86,7 +83,7 @@ impl InformationLayer {
         sources_ids: Option<&HashMap<SinkSourceDirection, Vec<u16>>>,
         sources: &BTreeMap<u16, Source>,
         css: &mut String,
-        core_loads: Option<&Vec<Directions>>,
+        core_loads: Option<&BTreeSet<Directions>>,
         processing_group: &ProcessingGroup,
         connections_group: &ConnectionsParentGroup,
         routing_configuration: Option<&RoutingConfiguration>,
@@ -132,7 +129,7 @@ impl InformationLayer {
         );
         ret.router_group.clip_path = ROUTER_CLIP;
 
-        let mut remaining_directions: HashSet<&Directions> =
+        let mut remaining_directions: BTreeSet<&Directions> =
             core.channels().channel().keys().collect();
 
         // Link loads

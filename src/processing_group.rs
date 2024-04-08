@@ -1,12 +1,12 @@
 use std::collections::BTreeMap;
 
 use getset::{Getters, MutGetters, Setters};
-use serde::Serialize;
 use manycore_utils::serialise_btreemap;
+use serde::Serialize;
 
 use crate::{
     style::{BASE_FILL_CLASS_NAME, DEFAULT_FILL},
-    TextInformation, GROUP_DISTANCE, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH, SIDE_LENGTH, SVG,
+    TextInformation, GROUP_DISTANCE, PROCESSOR_PATH, ROUTER_OFFSET, ROUTER_PATH, SIDE_LENGTH,
     UNIT_LENGTH,
 };
 

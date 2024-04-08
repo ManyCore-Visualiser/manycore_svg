@@ -1,4 +1,4 @@
-use std::{fmt::format, ops::Div};
+use std::ops::Div;
 
 use manycore_parser::Directions;
 use serde::Serialize;

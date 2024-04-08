@@ -1,6 +1,6 @@
 {
     "coreConfig": {
-      "@coordinates": { "Text": "B" },
+      "@coordinates": { "Coordinates": "B" },
       "@id": { "Text": "ID" },
       "@age": {
         "Fill": {
@@ -35,6 +35,27 @@
         ]
       }
     },
-    "routingConfig": "ColumnFirst"
+    "channelConfig": {
+      "@age": {
+        "ColouredText": [
+          "Age",
+          {
+            "bounds": [30, 100, 200, 300],
+            "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
+          }
+        ]
+      },
+      "@borderRouters": { "Boolean": true },
+      "@routingAlgorithm": {
+        "Routing": {
+          "algorithm": "RowFirst",
+          "loadConfiguration": "Percentage",
+          "loadColours": {
+            "bounds": [0, 0, 0, 0],
+            "colours": ["#000", "#000", "#000", "#000"]
+          }
+        }
+      }
+    }
   }
   
