@@ -8,6 +8,7 @@ use crate::{
     text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionType, ConnectionsParentGroup,
     DirectionType, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET, SIDE_LENGTH,
 };
+pub use utils::FONT_SIZE_WITH_OFFSET;
 
 static OFFSET_FROM_BORDER: u16 = 1;
 static TEXT_GROUP_FILTER: &str = concatcp!("url(#", TEXT_BACKGROUND_ID, ")");

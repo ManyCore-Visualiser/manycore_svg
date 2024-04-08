@@ -3,7 +3,7 @@ use serde::Serialize;
 
 pub const CLIP_PATH_ID: &'static str = "crop";
 
-pub const USE_CLIP_PATH: &'static str = concatcp!("url(#", CLIP_PATH_ID, ")");
+pub static USE_CLIP_PATH: &'static str = concatcp!("url(#", CLIP_PATH_ID, ")");
 
 #[derive(Serialize)]
 struct Polygon {

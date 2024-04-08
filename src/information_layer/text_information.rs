@@ -5,13 +5,14 @@ use serde::Serialize;
 
 use crate::{
     style::EDGE_DATA_CLASS_NAME, FieldConfiguration, LoadConfiguration, RoutingConfiguration,
-    HALF_CONNECTION_LENGTH, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET,
+    CONNECTION_LENGTH, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET,
 };
 
 use super::utils;
 
 static OFFSET_FROM_LINK: u16 = 5;
 static OFFSET_FROM_FIRST: u16 = 20;
+static HALF_CONNECTION_LENGTH: u16 = CONNECTION_LENGTH.saturating_add(MARKER_HEIGHT).div_ceil(2);
 
 #[derive(Serialize)]
 pub struct TextInformation {

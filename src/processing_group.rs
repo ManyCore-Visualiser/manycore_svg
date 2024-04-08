@@ -7,7 +7,7 @@ use serde::Serialize;
 
 use crate::{
     style::{BASE_FILL_CLASS_NAME, DEFAULT_FILL},
-    TextInformation, GROUP_DISTANCE,
+    TextInformation, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
 pub const SIDE_LENGTH: u16 = 100;
@@ -15,10 +15,13 @@ pub const ROUTER_OFFSET: u16 = SIDE_LENGTH.div_ceil(4).saturating_mul(3);
 pub static BLOCK_LENGTH: u16 = SIDE_LENGTH + ROUTER_OFFSET;
 pub static HALF_SIDE_LENGTH: u16 = SIDE_LENGTH.div_ceil(2);
 pub static HALF_ROUTER_OFFSET: u16 = ROUTER_OFFSET.div_ceil(2);
+pub static BLOCK_DISTANCE: u16 = CONNECTION_LENGTH
+    .saturating_sub(ROUTER_OFFSET)
+    .saturating_add(MARKER_HEIGHT);
 
 // Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
 // l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z
-const PROCESSOR_PATH: &'static str = concatcp!(
+static PROCESSOR_PATH: &'static str = concatcp!(
     "l0,",
     SIDE_LENGTH,
     " l",
@@ -36,7 +39,7 @@ const PROCESSOR_PATH: &'static str = concatcp!(
 
 // Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
 // l0,-75 l100,0 l0,100 l-75,0 Z
-const ROUTER_PATH: &'static str = concatcp!(
+static ROUTER_PATH: &'static str = concatcp!(
     "l0,-",
     ROUTER_OFFSET,
     " l",
@@ -153,13 +156,13 @@ impl Task {
     }
 
     fn get_centre_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let cx = c * BLOCK_LENGTH + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE + c * GROUP_DISTANCE;
+        let cx = c * BLOCK_LENGTH + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE + c * BLOCK_DISTANCE;
         let cy = r * BLOCK_LENGTH
             + ROUTER_OFFSET
             + SIDE_LENGTH
             + TASK_CIRCLE_OFFSET
             + TASK_CIRCLE_STROKE
-            + r * GROUP_DISTANCE;
+            + r * BLOCK_DISTANCE;
 
         (cx, cy)
     }
@@ -193,12 +196,9 @@ impl Router {
     }
 
     pub fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let move_x = (c * BLOCK_LENGTH)
-            + ROUTER_OFFSET
-            + TASK_CIRCLE_TOTAL_OFFSET
-            + if *c == 0 { 0 } else { c * GROUP_DISTANCE };
-        let move_y =
-            r * BLOCK_LENGTH + ROUTER_OFFSET + if *r == 0 { 0 } else { r * GROUP_DISTANCE };
+        let move_x =
+            (c * BLOCK_LENGTH) + ROUTER_OFFSET + TASK_CIRCLE_TOTAL_OFFSET + c * BLOCK_DISTANCE;
+        let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
 
         (move_x, move_y)
     }
@@ -221,11 +221,8 @@ pub struct Core {
 
 impl Core {
     pub fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let move_x = c * BLOCK_LENGTH
-            + TASK_CIRCLE_TOTAL_OFFSET
-            + if *c == 0 { 0 } else { c * GROUP_DISTANCE };
-        let move_y =
-            r * BLOCK_LENGTH + ROUTER_OFFSET + if *r == 0 { 0 } else { r * GROUP_DISTANCE };
+        let move_x = c * BLOCK_LENGTH + TASK_CIRCLE_TOTAL_OFFSET + c * BLOCK_DISTANCE;
+        let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
 
         (move_x, move_y)
     }

@@ -34,16 +34,6 @@ use serde::Serialize;
 use style::Style;
 use text_background::TextBackground;
 
-// static GROUP_DISTANCE: u16 = 120;
-
-// static CONNECTION_LENGTH: u16 = 187;
-static CONNECTION_LENGTH: u16 = ROUTER_OFFSET.saturating_mul(4);
-static GROUP_DISTANCE: u16 = CONNECTION_LENGTH
-    .saturating_sub(ROUTER_OFFSET)
-    .saturating_add(MARKER_HEIGHT);
-static HALF_CONNECTION_LENGTH: u16 = (CONNECTION_LENGTH + MARKER_HEIGHT) / 2;
-static FONT_SIZE_WITH_OFFSET: u16 = 18;
-
 #[derive(Serialize)]
 struct Defs {
     marker: Marker,
@@ -163,10 +153,10 @@ impl From<&ManycoreSystem> for SVG {
         let columns_u16 = u16::from(columns);
         let rows_u16 = u16::from(rows);
         let width = (columns_u16 * BLOCK_LENGTH)
-            + ((columns_u16 - 1) * GROUP_DISTANCE)
+            + ((columns_u16 - 1) * BLOCK_DISTANCE)
             + TASK_CIRCLE_TOTAL_OFFSET;
         let height = (rows_u16 * BLOCK_LENGTH)
-            + ((rows_u16 - 1) * GROUP_DISTANCE)
+            + ((rows_u16 - 1) * BLOCK_DISTANCE)
             + TASK_CIRCLE_TOTAL_OFFSET
             + FONT_SIZE_WITH_OFFSET;
 

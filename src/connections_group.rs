@@ -5,7 +5,7 @@ use manycore_parser::{Core, Directions, EdgePosition, WithID};
 use serde::Serialize;
 
 use crate::{
-    style::EDGE_DATA_CLASS_NAME, CommonAttributes, Router, CONNECTION_LENGTH, HALF_ROUTER_OFFSET,
+    style::EDGE_DATA_CLASS_NAME, CommonAttributes, Router, HALF_ROUTER_OFFSET,
     MARKER_HEIGHT, MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
@@ -18,6 +18,8 @@ static CONNECTION_GAP: u16 = 0u16
     .div_ceil(4)
     .wrapping_sub(5);
 static I_CONNECTION_GAP: i32 = 0i32.saturating_add_unsigned(CONNECTION_GAP as u32);
+
+pub static CONNECTION_LENGTH: u16 = ROUTER_OFFSET.saturating_mul(4);
 
 #[derive(Serialize, Getters, Debug)]
 pub struct Connection {

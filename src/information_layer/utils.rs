@@ -5,8 +5,10 @@ use manycore_parser::{Directions, WithID, WithXMLAttributes, COORDINATES_KEY, ID
 use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER};
 use crate::{
     ConnectionType, ConnectionsParentGroup, DirectionType, FieldConfiguration, SVGError,
-    SVGErrorKind, FONT_SIZE_WITH_OFFSET,
+    SVGErrorKind,
 };
+
+pub static FONT_SIZE_WITH_OFFSET: u16 = 18;
 
 pub fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) -> usize {
     // Bounds has always length 4
