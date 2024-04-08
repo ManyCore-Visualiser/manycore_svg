@@ -26,7 +26,8 @@ static I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: i16 =
 // Viewbox Offset
 pub static SINKS_SOURCES_GROUP_OFFSET: u16 = SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
     .saturating_add(SINKS_SOURCES_SIDE_LENGTH)
-    .saturating_add(SINKS_SOURCES_STROKE_WIDTH);
+    .saturating_add(SINKS_SOURCES_STROKE_WIDTH)
+    .saturating_add(MARKER_HEIGHT);
 pub static I_SINKS_SOURCES_GROUP_OFFSET: i16 =
     0i16.wrapping_add_unsigned(SINKS_SOURCES_GROUP_OFFSET);
 

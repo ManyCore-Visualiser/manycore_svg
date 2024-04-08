@@ -154,11 +154,13 @@ impl From<&ManycoreSystem> for SVG {
         let rows_u16 = u16::from(rows);
         let width = (columns_u16 * BLOCK_LENGTH)
             + ((columns_u16 - 1) * BLOCK_DISTANCE)
-            + TASK_CIRCLE_TOTAL_OFFSET;
+            + TASK_CIRCLE_TOTAL_OFFSET
+            + CORE_ROUTER_STROKE_WIDTH;
         let height = (rows_u16 * BLOCK_LENGTH)
             + ((rows_u16 - 1) * BLOCK_DISTANCE)
             + TASK_CIRCLE_TOTAL_OFFSET
-            + FONT_SIZE_WITH_OFFSET;
+            + FONT_SIZE_WITH_OFFSET
+            + CORE_ROUTER_STROKE_WIDTH;
 
         let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height);
 

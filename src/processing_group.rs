@@ -59,6 +59,9 @@ static TASK_CIRCLE_STROKE: u16 = 1;
 pub static TASK_CIRCLE_TOTAL_OFFSET: u16 =
     TASK_CIRCLE_OFFSET + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE;
 
+pub const CORE_ROUTER_STROKE_WIDTH: u16 = 1;
+static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
+
 #[derive(Serialize, Setters, Debug)]
 pub struct CommonAttributes {
     #[serde(rename = "@class", skip_serializing_if = "Option::is_none")]
@@ -80,7 +83,7 @@ impl Default for CommonAttributes {
             fill_rule: "evenodd",
             stroke: "black",
             stroke_linecap: "butt",
-            stroke_width: "1",
+            stroke_width: CORE_ROUTER_STROKE_WIDTH_STR,
         }
     }
 }
@@ -92,7 +95,7 @@ impl CommonAttributes {
             fill_rule: "evenodd",
             stroke: "black",
             stroke_linecap: "butt",
-            stroke_width: "1",
+            stroke_width: CORE_ROUTER_STROKE_WIDTH_STR,
         }
     }
 }
@@ -121,7 +124,7 @@ impl Circle {
             r: TASK_CIRCLE_RADIUS_STR,
             fill: DEFAULT_FILL,
             stroke: "black",
-            stroke_width: "1",
+            stroke_width: CORE_ROUTER_STROKE_WIDTH_STR,
         }
     }
 }

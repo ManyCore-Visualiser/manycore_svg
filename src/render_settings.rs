@@ -230,7 +230,8 @@ mod tests {
         assert_eq!(update.style, expected_style);
         assert_eq!(update.information_group, expected_information);
         assert_eq!(update.view_box, expected_view_box);
-        // println!("Update info: {}\n\n", update.information_group)
+        // println!("Update info: {}\n\n", update.information_group);
+        // println!("Update viewBox: {}\n\n", update.view_box);
     }
 
     #[test]
