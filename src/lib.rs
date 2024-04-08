@@ -34,22 +34,13 @@ use serde::Serialize;
 use style::Style;
 use text_background::TextBackground;
 
-static PROCESSOR_PATH: &str = "l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z";
-static ROUTER_PATH: &str = "l0,-75 l100,0 l0,100 l-75,0 Z";
-static UNIT_LENGTH: u16 = 175;
-static SIDE_LENGTH: u16 = 100;
-static HALF_SIDE_LENGTH: u16 = 50;
-static ROUTER_OFFSET: u16 = 75;
-static HALF_ROUTER_OFFSET: u16 = ROUTER_OFFSET.div_ceil(2);
 // static GROUP_DISTANCE: u16 = 120;
-static MARKER_PATH: &str = "M0,0 M0,0 V8 L8,4 Z";
-static MARKER_REFERENCE: &str = "url(#arrowHead)";
+
 // static CONNECTION_LENGTH: u16 = 187;
 static CONNECTION_LENGTH: u16 = ROUTER_OFFSET.saturating_mul(4);
 static GROUP_DISTANCE: u16 = CONNECTION_LENGTH
     .saturating_sub(ROUTER_OFFSET)
     .saturating_add(MARKER_HEIGHT);
-static MARKER_HEIGHT: u16 = 8;
 static HALF_CONNECTION_LENGTH: u16 = (CONNECTION_LENGTH + MARKER_HEIGHT) / 2;
 static FONT_SIZE_WITH_OFFSET: u16 = 18;
 
@@ -171,10 +162,10 @@ impl From<&ManycoreSystem> for SVG {
 
         let columns_u16 = u16::from(columns);
         let rows_u16 = u16::from(rows);
-        let width = (columns_u16 * UNIT_LENGTH)
+        let width = (columns_u16 * BLOCK_LENGTH)
             + ((columns_u16 - 1) * GROUP_DISTANCE)
             + TASK_CIRCLE_TOTAL_OFFSET;
-        let height = (rows_u16 * UNIT_LENGTH)
+        let height = (rows_u16 * BLOCK_LENGTH)
             + ((rows_u16 - 1) * GROUP_DISTANCE)
             + TASK_CIRCLE_TOTAL_OFFSET
             + FONT_SIZE_WITH_OFFSET;

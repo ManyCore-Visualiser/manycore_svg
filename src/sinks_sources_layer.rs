@@ -1,3 +1,4 @@
+use const_format::concatcp;
 use manycore_parser::{EdgePosition, SinkSourceDirection};
 use serde::Serialize;
 
@@ -6,20 +7,29 @@ use crate::{
     HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
-static SINKS_SOURCES_SIDE_LENGTH: &str = "70";
-static SINKS_SOURCES_STROKE_WIDTH: &str = "1";
+// Side lengths
+const SINKS_SOURCES_SIDE_LENGTH: u16 = 70;
+static I_SINKS_SOURCES_SIDE_LENGTH: i16 = 0i16.saturating_add_unsigned(SINKS_SOURCES_SIDE_LENGTH);
+static I_SINKS_SOURCES_HALF_SIDE_LENGTH: i16 = I_SINKS_SOURCES_SIDE_LENGTH.saturating_div(2);
+static SINKS_SOURCES_SIDE_LENGTH_STR: &'static str = concatcp!(SINKS_SOURCES_SIDE_LENGTH);
+
+// Stroke
+const SINKS_SOURCES_STROKE_WIDTH: u16 = 1;
+static SINKS_SOURCES_STROKE_WIDTH_STR: &'static str = concatcp!(SINKS_SOURCES_STROKE_WIDTH);
 static SINKS_SOURCES_RX: &str = "15";
-static SINKS_SOURCE_STROKE_WIDTH_VAL: u16 = 1;
-static SINKS_SOURCES_SIDE_LENGTH_VAL: u16 = 70;
+
+// Connection
 pub static SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: u16 = 100;
+static I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: i16 =
+    0i16.saturating_add_unsigned(SINKS_SOURCES_CONNECTION_EXTRA_LENGTH);
+
+// Viewbox Offset
 pub static SINKS_SOURCES_GROUP_OFFSET: u16 = SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
-    + SINKS_SOURCES_SIDE_LENGTH_VAL
-    + SINKS_SOURCE_STROKE_WIDTH_VAL;
-static I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: i16 = 100;
+    .saturating_add(SINKS_SOURCES_SIDE_LENGTH)
+    .saturating_add(SINKS_SOURCES_STROKE_WIDTH);
 pub static I_SINKS_SOURCES_GROUP_OFFSET: i16 =
     0i16.wrapping_add_unsigned(SINKS_SOURCES_GROUP_OFFSET);
-static I_SINKS_SOURCES_SIDE_LENGTH: i16 = 70;
-static I_SINKS_SOURCES_HALF_SIDE_LENGTH: i16 = I_SINKS_SOURCES_SIDE_LENGTH / 2;
+
 // static SINK_FILL: &str = "#fb923c";
 // static SOURCE_FILL: &str = "#fbbf24";
 
@@ -75,8 +85,8 @@ impl Rect {
         Self {
             x,
             y,
-            width: SINKS_SOURCES_SIDE_LENGTH,
-            height: SINKS_SOURCES_SIDE_LENGTH,
+            width: SINKS_SOURCES_SIDE_LENGTH_STR,
+            height: SINKS_SOURCES_SIDE_LENGTH_STR,
             rx: SINKS_SOURCES_RX,
             fill: DEFAULT_FILL, /*match variant {
                                     SinkSourceVariant::Source => SOURCE_FILL,
@@ -84,7 +94,7 @@ impl Rect {
                                     SinkSourceVariant::None => DEFAULT_FILL,
                                 }*/
             stroke: "black",
-            stroke_width: SINKS_SOURCES_STROKE_WIDTH,
+            stroke_width: SINKS_SOURCES_STROKE_WIDTH_STR,
         }
     }
 }

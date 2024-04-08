@@ -1,6 +1,13 @@
+use const_format::concatcp;
 use serde::Serialize;
 
 use crate::CommonAttributes;
+
+pub static MARKER_PATH: &str = "M0,0 M0,0 V8 L8,4 Z";
+pub static MARKER_REFERENCE: &str = "url(#arrowHead)";
+pub const MARKER_HEIGHT: u16 = 8;
+static MARKER_DIMEN: &'static str = concatcp!(MARKER_HEIGHT);
+static MARKER_REF_Y: &'static str = concatcp!(MARKER_HEIGHT.div_ceil(2));
 
 #[derive(Serialize)]
 struct MarkerPath {
@@ -15,7 +22,7 @@ struct MarkerPath {
 impl Default for MarkerPath {
     fn default() -> Self {
         Self {
-            d: crate::MARKER_PATH,
+            d: MARKER_PATH,
             fill: "black",
             attributes: CommonAttributes::with_no_class(),
         }
@@ -42,9 +49,9 @@ impl Default for Marker {
         Self {
             id: "arrowHead",
             orient: "auto",
-            marker_width: "8",
-            marker_height: "8",
-            ref_y: "4",
+            marker_width: MARKER_DIMEN,
+            marker_height: MARKER_DIMEN,
+            ref_y: MARKER_REF_Y,
             path: MarkerPath::default(),
         }
     }
