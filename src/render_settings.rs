@@ -202,6 +202,7 @@ mod tests {
             .expect("Could not read input test file \"tests/SVG2.svg\"");
 
         assert_eq!(res, expected)
+        // println!("SVG2: {res}\n\n")
     }
 
     #[test]
@@ -229,6 +230,7 @@ mod tests {
         assert_eq!(update.style, expected_style);
         assert_eq!(update.information_group, expected_information);
         assert_eq!(update.view_box, expected_view_box);
+        // println!("Update info: {}\n\n", update.information_group)
     }
 
     #[test]
@@ -252,6 +254,7 @@ mod tests {
             .expect("Could not read input test file \"tests/SVG3.svg\"");
 
         assert_eq!(res, expected)
+        // println!("SVG3: {res}\n\n")
     }
 
     #[test]
@@ -275,5 +278,6 @@ mod tests {
             .expect("Could not read input test file \"tests/SVG4.svg\"");
 
         assert_eq!(res, expected)
+        // println!("SVG4: {res}\n\n")
     }
 }

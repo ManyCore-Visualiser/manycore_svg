@@ -401,5 +401,6 @@ mod tests {
             .expect("Could not read input test file \"tests/SVG1.svg\"");
 
         assert_eq!(res, expected)
+        // println!("SVG1: {res}\n\n")
     }
 }

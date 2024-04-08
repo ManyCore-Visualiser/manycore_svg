@@ -10,8 +10,9 @@ use crate::{
     UNIT_LENGTH,
 };
 
-static TASK_CIRCLE_OFFSET: u16 = 10;
-static TASK_CIRCLE_RADIUS: u16 = 20;
+static TASK_CIRCLE_RADIUS_STR: &'static str = "30";
+static TASK_CIRCLE_RADIUS: u16 = 30;
+static TASK_CIRCLE_OFFSET: u16 = TASK_CIRCLE_RADIUS.div_ceil(2);
 static TASK_CIRCLE_STROKE: u16 = 1;
 
 pub static TASK_CIRCLE_TOTAL_OFFSET: u16 =
@@ -76,7 +77,7 @@ impl Circle {
         Self {
             cx,
             cy,
-            r: "20",
+            r: TASK_CIRCLE_RADIUS_STR,
             fill: DEFAULT_FILL,
             stroke: "black",
             stroke_width: "1",
@@ -97,9 +98,10 @@ impl Task {
                 let (cx, cy) = Self::get_centre_coordinates(r, c);
                 Some(Self {
                     circle: Circle::new(cx, cy),
-                    text: TextInformation::new(
-                        cx,
-                        cy,
+                    text: TextInformation::new_signed(
+                        cx.into(),
+                        cy.into(),
+                        Some("20px"),
                         "middle",
                         "middle",
                         None,
@@ -113,16 +115,13 @@ impl Task {
     }
 
     fn get_centre_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let cx = c * UNIT_LENGTH
-            + TASK_CIRCLE_RADIUS
-            + TASK_CIRCLE_STROKE
-            + if *c == 0 { 0 } else { c * GROUP_DISTANCE };
+        let cx = c * UNIT_LENGTH + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE + c * GROUP_DISTANCE;
         let cy = r * UNIT_LENGTH
             + ROUTER_OFFSET
             + SIDE_LENGTH
             + TASK_CIRCLE_OFFSET
             + TASK_CIRCLE_STROKE
-            + if *r == 0 { 0 } else { r * GROUP_DISTANCE };
+            + r * GROUP_DISTANCE;
 
         (cx, cy)
     }

@@ -20,7 +20,7 @@ pub struct TextInformation {
     #[serde(rename = "@y")]
     y: i32,
     #[serde(rename = "@font-size")]
-    font_size: &'static str,
+    font_size: String,
     #[serde(rename = "@font-family")]
     font_family: &'static str,
     #[serde(rename = "@text-anchor")]
@@ -39,6 +39,7 @@ impl TextInformation {
     pub fn new_signed(
         x: i32,
         y: i32,
+        font_size: Option<&str>,
         text_anchor: &'static str,
         dominant_baseline: &'static str,
         fill: Option<&String>,
@@ -48,7 +49,10 @@ impl TextInformation {
         Self {
             x,
             y,
-            font_size: "16px",
+            font_size: match font_size {
+                Some(fs) => fs.to_string(),
+                None => "16px".to_string(),
+            },
             font_family: "Roboto Mono",
             text_anchor,
             dominant_baseline,
@@ -73,6 +77,7 @@ impl TextInformation {
         Self::new_signed(
             x.into(),
             y.into(),
+            None,
             text_anchor,
             dominant_baseline,
             fill,
@@ -98,6 +103,7 @@ impl TextInformation {
                 TextInformation::new_signed(
                     link_x.saturating_add(OFFSET_FROM_LINK.into()),
                     link_y.saturating_sub(delta_y),
+                    None,
                     "start",
                     "middle",
                     fill,
@@ -111,6 +117,7 @@ impl TextInformation {
                 TextInformation::new_signed(
                     link_x.saturating_add(delta_x),
                     link_y.saturating_sub(OFFSET_FROM_LINK.into()),
+                    None,
                     "middle",
                     "text-after-edge",
                     fill,
@@ -124,6 +131,7 @@ impl TextInformation {
                 TextInformation::new_signed(
                     link_x.saturating_sub(OFFSET_FROM_LINK.into()),
                     link_y.saturating_add(delta_y),
+                    None,
                     "end",
                     "middle",
                     fill,
@@ -137,6 +145,7 @@ impl TextInformation {
                 TextInformation::new_signed(
                     link_x.saturating_sub(delta_x),
                     link_y.saturating_add(OFFSET_FROM_LINK.into()),
+                    None,
                     if edge { "end" } else { "middle" },
                     "text-before-edge",
                     fill,
@@ -343,6 +352,7 @@ impl TextInformation {
                     link_y
                         .saturating_sub(delta_y)
                         .saturating_add_unsigned(OFFSET_FROM_FIRST.into()),
+                    None,
                     "start",
                     "middle",
                     fill,
@@ -356,6 +366,7 @@ impl TextInformation {
                 TextInformation::new_signed(
                     link_x.saturating_add(delta_x),
                     link_y.saturating_add(OFFSET_FROM_LINK.into()),
+                    None,
                     "middle",
                     "text-before-edge",
                     fill,
@@ -371,6 +382,7 @@ impl TextInformation {
                     link_y
                         .saturating_add(delta_y)
                         .saturating_add_unsigned(OFFSET_FROM_FIRST.into()),
+                    None,
                     "end",
                     "middle",
                     fill,
@@ -384,6 +396,7 @@ impl TextInformation {
                 TextInformation::new_signed(
                     link_x.saturating_sub(delta_x),
                     link_y.saturating_sub(OFFSET_FROM_LINK.into()),
+                    None,
                     "middle",
                     "text-after-edge",
                     fill,
