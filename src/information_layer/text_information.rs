@@ -5,7 +5,8 @@ use serde::Serialize;
 
 use crate::{
     style::EDGE_DATA_CLASS_NAME, FieldConfiguration, LoadConfiguration, RoutingConfiguration,
-    CONNECTION_LENGTH, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET,
+    CONNECTION_LENGTH, FONT_SIZE_WITH_OFFSET, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH,
+    MARKER_HEIGHT, ROUTER_OFFSET,
 };
 
 use super::utils;
@@ -131,7 +132,13 @@ impl TextInformation {
 
                 TextInformation::new_signed(
                     link_x.saturating_sub(OFFSET_FROM_LINK.into()),
-                    link_y.saturating_add(delta_y),
+                    if edge {
+                        link_y
+                            .saturating_add(delta_y)
+                            .saturating_add_unsigned(FONT_SIZE_WITH_OFFSET.into())
+                    } else {
+                        link_y.saturating_add(delta_y)
+                    },
                     None,
                     "end",
                     "middle",
@@ -380,9 +387,16 @@ impl TextInformation {
 
                 TextInformation::new_signed(
                     link_x.saturating_sub(OFFSET_FROM_LINK.into()),
-                    link_y
-                        .saturating_add(delta_y)
-                        .saturating_add_unsigned(OFFSET_FROM_FIRST.into()),
+                    if edge {
+                        link_y
+                            .saturating_add(delta_y)
+                            .saturating_add_unsigned(FONT_SIZE_WITH_OFFSET.into())
+                            .saturating_add_unsigned(OFFSET_FROM_FIRST.into())
+                    } else {
+                        link_y
+                            .saturating_add(delta_y)
+                            .saturating_add_unsigned(OFFSET_FROM_FIRST.into())
+                    },
                     None,
                     "end",
                     "middle",
