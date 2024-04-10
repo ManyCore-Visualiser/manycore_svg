@@ -19,12 +19,12 @@ static SINKS_SOURCES_STROKE_WIDTH_STR: &'static str = concatcp!(SINKS_SOURCES_ST
 static SINKS_SOURCES_RX: &str = "15";
 
 // Connection
-pub static SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: u16 = 100;
-static I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: i16 =
-    0i16.saturating_add_unsigned(SINKS_SOURCES_CONNECTION_EXTRA_LENGTH);
+pub static SINKS_SOURCES_CONNECTION_LENGTH: u16 = ROUTER_OFFSET.saturating_mul(3);
+pub static I_SINKS_SOURCES_CONNECTION_LENGTH: i32 =
+    0i32.saturating_add_unsigned(SINKS_SOURCES_CONNECTION_LENGTH as u32);
 
 // Viewbox Offset
-pub static SINKS_SOURCES_GROUP_OFFSET: u16 = SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+pub static SINKS_SOURCES_GROUP_OFFSET: u16 = SINKS_SOURCES_CONNECTION_LENGTH
     .saturating_add(SINKS_SOURCES_SIDE_LENGTH)
     .saturating_add(SINKS_SOURCES_STROKE_WIDTH)
     .saturating_add(MARKER_HEIGHT);
@@ -64,9 +64,9 @@ pub const SINK_SOURCES_ID: &'static str = "sinksSources";
 #[derive(Serialize)]
 struct Rect {
     #[serde(rename = "@x")]
-    x: i16,
+    x: i32,
     #[serde(rename = "@y")]
-    y: i16,
+    y: i32,
     #[serde(rename = "@width")]
     width: &'static str,
     #[serde(rename = "@height")]
@@ -82,7 +82,7 @@ struct Rect {
 }
 
 impl Rect {
-    fn new(x: i16, y: i16 /*, variant: SinkSourceVariant */) -> Self {
+    fn new(x: i32, y: i32 /*, variant: SinkSourceVariant */) -> Self {
         Self {
             x,
             y,
@@ -107,37 +107,37 @@ impl Rect {
 //     None,
 // }
 
-static NORTH_DELTA_Y: i16 = 0i16
-    .wrapping_sub(I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH)
-    .wrapping_sub(I_SINKS_SOURCES_SIDE_LENGTH)
-    .wrapping_sub_unsigned(ROUTER_OFFSET)
-    .wrapping_sub_unsigned(MARKER_HEIGHT);
+static NORTH_DELTA_Y: i32 = 0i32
+    .wrapping_sub(I_SINKS_SOURCES_CONNECTION_LENGTH)
+    .wrapping_sub(I_SINKS_SOURCES_SIDE_LENGTH as i32)
+    .wrapping_sub_unsigned(ROUTER_OFFSET as u32)
+    .wrapping_sub_unsigned(MARKER_HEIGHT as u32);
 
-static SOUTH_DELTA_Y: i16 = 0i16
-    .wrapping_add_unsigned(SIDE_LENGTH)
-    .wrapping_add(I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH)
-    .wrapping_add_unsigned(MARKER_HEIGHT);
+static SOUTH_DELTA_Y: i32 = 0i32
+    .wrapping_add_unsigned(SIDE_LENGTH as u32)
+    .wrapping_add(I_SINKS_SOURCES_CONNECTION_LENGTH)
+    .wrapping_add_unsigned(MARKER_HEIGHT as u32);
 
-static NORTH_SOUTH_DELTA_X: i16 = 0i16
-    .wrapping_add_unsigned(SIDE_LENGTH)
-    .wrapping_sub_unsigned(HALF_ROUTER_OFFSET)
-    .wrapping_sub(I_SINKS_SOURCES_HALF_SIDE_LENGTH);
+static NORTH_SOUTH_DELTA_X: i32 = 0i32
+    .wrapping_add_unsigned(SIDE_LENGTH as u32)
+    .wrapping_sub_unsigned(HALF_ROUTER_OFFSET as u32)
+    .wrapping_sub(I_SINKS_SOURCES_HALF_SIDE_LENGTH as i32);
 
-static EAST_WEST_DELTA_Y: i16 = 0i16
-    .wrapping_sub_unsigned(ROUTER_OFFSET)
-    .wrapping_add_unsigned(HALF_ROUTER_OFFSET)
-    .wrapping_sub(I_SINKS_SOURCES_HALF_SIDE_LENGTH);
+static EAST_WEST_DELTA_Y: i32 = 0i32
+    .wrapping_sub_unsigned(ROUTER_OFFSET as u32)
+    .wrapping_add_unsigned(HALF_ROUTER_OFFSET as u32)
+    .wrapping_sub(I_SINKS_SOURCES_HALF_SIDE_LENGTH as i32);
 
-static EAST_DELTA_X: i16 = 0i16
-    .wrapping_add(I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH)
-    .wrapping_add_unsigned(SIDE_LENGTH)
-    .wrapping_add_unsigned(MARKER_HEIGHT);
+static EAST_DELTA_X: i32 = 0i32
+    .wrapping_add(I_SINKS_SOURCES_CONNECTION_LENGTH)
+    .wrapping_add_unsigned(SIDE_LENGTH as u32)
+    .wrapping_add_unsigned(MARKER_HEIGHT as u32);
 
-static WEST_DELTA_X: i16 = 0i16
-    .wrapping_sub(I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH)
-    .wrapping_sub_unsigned(MARKER_HEIGHT)
-    .wrapping_sub_unsigned(ROUTER_OFFSET)
-    .wrapping_sub(I_SINKS_SOURCES_SIDE_LENGTH);
+static WEST_DELTA_X: i32 = 0i32
+    .wrapping_sub(I_SINKS_SOURCES_CONNECTION_LENGTH)
+    .wrapping_sub_unsigned(MARKER_HEIGHT as u32)
+    .wrapping_sub_unsigned(ROUTER_OFFSET as u32)
+    .wrapping_sub(I_SINKS_SOURCES_SIDE_LENGTH as i32);
 
 #[derive(Serialize)]
 pub struct SinkSource {
@@ -175,8 +175,8 @@ impl SinkSource {
             }
         };
 
-        let x = delta_x.wrapping_add_unsigned(*router_x);
-        let y = delta_y.wrapping_add_unsigned(*router_y);
+        let x = delta_x.wrapping_add_unsigned((*router_x).into());
+        let y = delta_y.wrapping_add_unsigned((*router_y).into());
 
         SinkSource {
             rect: Rect::new(x, y), //, variant),

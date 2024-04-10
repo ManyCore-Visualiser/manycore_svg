@@ -194,24 +194,25 @@ impl InformationLayer {
                     routing_configuration,
                 ));
 
-                // Additional parameter, if any
-                if let (Some((key, field_configuration)), Some(channel_attributes)) = (
-                    configuration.channel_config().iter().next(),
-                    channel.other_attributes(),
-                ) {
-                    match channel_attributes.get(key) {
-                        Some(attribute_value) => {
-                            ret.links_load.push(TextInformation::link_secondary(
-                                direction,
-                                x,
-                                y,
-                                attribute_value,
-                                edge,
-                                field_configuration,
-                            ));
-                        }
-                        None => {
-                            panic!("Missing attribute requested")
+                if !edge {
+                    // Additional parameter, if any
+                    if let (Some((key, field_configuration)), Some(channel_attributes)) = (
+                        configuration.channel_config().iter().next(),
+                        channel.other_attributes(),
+                    ) {
+                        match channel_attributes.get(key) {
+                            Some(attribute_value) => {
+                                ret.links_load.push(TextInformation::link_secondary(
+                                    direction,
+                                    x,
+                                    y,
+                                    attribute_value,
+                                    field_configuration,
+                                ));
+                            }
+                            None => {
+                                panic!("Missing attribute requested")
+                            }
                         }
                     }
                 }
@@ -228,53 +229,51 @@ impl InformationLayer {
 
             let mut iter = configuration.channel_config().iter();
 
-            if let Some(channel_attributes) = channel.other_attributes() {
-                // First element
-                if let Some((key, field_configuration)) = iter.next() {
-                    match channel_attributes.get(key) {
-                        Some(attribute_value) => {
-                            let (x, y, edge) = InformationLayer::link_info_details(
-                                direction,
-                                connections_group,
-                                core,
-                            )?;
+            let (x, y, edge) =
+                InformationLayer::link_info_details(direction, connections_group, core)?;
 
-                            ret.links_load.push(TextInformation::link_primary(
-                                direction,
-                                x,
-                                y,
-                                attribute_value,
-                                edge,
-                                field_configuration,
-                            ));
-                        }
-                        None => {
-                            panic!("Missing attribute requested")
+            if !edge {
+                if let Some(channel_attributes) = channel.other_attributes() {
+                    // First element
+                    if let Some((key, field_configuration)) = iter.next() {
+                        match channel_attributes.get(key) {
+                            Some(attribute_value) => {
+                                ret.links_load.push(TextInformation::link_primary(
+                                    direction,
+                                    x,
+                                    y,
+                                    attribute_value,
+                                    false,
+                                    field_configuration,
+                                ));
+                            }
+                            None => {
+                                panic!("Missing attribute requested")
+                            }
                         }
                     }
-                }
 
-                // Second element
-                if let Some((key, field_configuration)) = iter.next() {
-                    match channel_attributes.get(key) {
-                        Some(attribute_value) => {
-                            let (x, y, edge) = InformationLayer::link_info_details(
-                                direction,
-                                connections_group,
-                                core,
-                            )?;
+                    // Second element
+                    if let Some((key, field_configuration)) = iter.next() {
+                        match channel_attributes.get(key) {
+                            Some(attribute_value) => {
+                                let (x, y, _) = InformationLayer::link_info_details(
+                                    direction,
+                                    connections_group,
+                                    core,
+                                )?;
 
-                            ret.links_load.push(TextInformation::link_secondary(
-                                direction,
-                                x,
-                                y,
-                                attribute_value,
-                                edge,
-                                field_configuration,
-                            ));
-                        }
-                        None => {
-                            panic!("Missing attribute requested")
+                                ret.links_load.push(TextInformation::link_secondary(
+                                    direction,
+                                    x,
+                                    y,
+                                    attribute_value,
+                                    field_configuration,
+                                ));
+                            }
+                            None => {
+                                panic!("Missing attribute requested")
+                            }
                         }
                     }
                 }

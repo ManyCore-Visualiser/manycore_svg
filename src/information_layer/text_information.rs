@@ -4,14 +4,15 @@ use manycore_parser::Directions;
 use serde::Serialize;
 
 use crate::{
-    style::EDGE_DATA_CLASS_NAME, FieldConfiguration, LoadConfiguration, RoutingConfiguration,
-    CONNECTION_LENGTH, FONT_SIZE_WITH_OFFSET, I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH,
-    MARKER_HEIGHT, ROUTER_OFFSET,
+    sinks_sources_layer::I_SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
+    FieldConfiguration, LoadConfiguration, RoutingConfiguration, CONNECTION_LENGTH, MARKER_HEIGHT,
+    ROUTER_OFFSET,
 };
 
 use super::utils;
 
-static OFFSET_FROM_LINK: u16 = 5;
+static HORIZONTAL_OFFSET_FROM_LINK: u16 = 5;
+static VERTICAL_OFFSET_FROM_LINK: u16 = 1;
 static OFFSET_FROM_FIRST: u16 = 20;
 static HALF_CONNECTION_LENGTH: u16 = CONNECTION_LENGTH.saturating_add(MARKER_HEIGHT).div_ceil(2);
 
@@ -96,14 +97,13 @@ impl TextInformation {
         fill: Option<&String>,
         class: Option<&'static str>,
         data: String,
-        edge: bool,
     ) -> Self {
         match direction {
             Directions::North => {
                 let delta_y = relevant_delta;
 
                 TextInformation::new_signed(
-                    link_x.saturating_add(OFFSET_FROM_LINK.into()),
+                    link_x.saturating_add(HORIZONTAL_OFFSET_FROM_LINK.into()),
                     link_y.saturating_sub(delta_y),
                     None,
                     "start",
@@ -118,7 +118,7 @@ impl TextInformation {
 
                 TextInformation::new_signed(
                     link_x.saturating_add(delta_x),
-                    link_y.saturating_sub(OFFSET_FROM_LINK.into()),
+                    link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK.into()),
                     None,
                     "middle",
                     "text-after-edge",
@@ -131,14 +131,8 @@ impl TextInformation {
                 let delta_y = relevant_delta;
 
                 TextInformation::new_signed(
-                    link_x.saturating_sub(OFFSET_FROM_LINK.into()),
-                    if edge {
-                        link_y
-                            .saturating_add(delta_y)
-                            .saturating_add_unsigned(FONT_SIZE_WITH_OFFSET.into())
-                    } else {
-                        link_y.saturating_add(delta_y)
-                    },
+                    link_x.saturating_sub(HORIZONTAL_OFFSET_FROM_LINK.into()),
+                    link_y.saturating_add(delta_y),
                     None,
                     "end",
                     "middle",
@@ -152,10 +146,10 @@ impl TextInformation {
 
                 TextInformation::new_signed(
                     link_x.saturating_sub(delta_x),
-                    link_y.saturating_add(OFFSET_FROM_LINK.into()),
+                    link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK.into()),
                     None,
-                    if edge { "end" } else { "middle" },
-                    "text-before-edge",
+                    "middle",
+                    "text-after-edge",
                     fill,
                     class,
                     data,
@@ -211,10 +205,10 @@ impl TextInformation {
         routing_configuration: &RoutingConfiguration,
     ) -> Self {
         let relevant_delta: i32 = match direction {
-            Directions::South | Directions::West => I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+            Directions::South | Directions::West => I_SINKS_SOURCES_CONNECTION_LENGTH
                 .saturating_add(MARKER_HEIGHT.into())
                 .div(2),
-            _ => I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+            _ => I_SINKS_SOURCES_CONNECTION_LENGTH
                 .saturating_add(ROUTER_OFFSET.into())
                 .saturating_add(MARKER_HEIGHT.into())
                 .div(2),
@@ -240,7 +234,6 @@ impl TextInformation {
             fill,
             Some(EDGE_DATA_CLASS_NAME),
             data,
-            false,
         )
     }
 
@@ -248,13 +241,13 @@ impl TextInformation {
         if edge {
             return match direction {
                 Directions::North | Directions::East => (
-                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                    I_SINKS_SOURCES_CONNECTION_LENGTH
                         .saturating_add(MARKER_HEIGHT.into())
                         .div(2),
                     Some(EDGE_DATA_CLASS_NAME),
                 ),
                 _ => (
-                    I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                    I_SINKS_SOURCES_CONNECTION_LENGTH
                         .saturating_add(ROUTER_OFFSET.into())
                         .saturating_add(MARKER_HEIGHT.into())
                         .div(2),
@@ -297,7 +290,6 @@ impl TextInformation {
             fill,
             class,
             data,
-            edge,
         )
     }
 
@@ -328,7 +320,6 @@ impl TextInformation {
             fill,
             class,
             display,
-            edge,
         )
     }
 
@@ -337,10 +328,10 @@ impl TextInformation {
         link_x: &i32,
         link_y: &i32,
         data: &String,
-        edge: bool,
         field_configuration: &FieldConfiguration,
     ) -> Self {
-        let (relevant_delta, class) = TextInformation::link_delta_and_class(edge, direction);
+        // This function is called only for non edge links
+        let (relevant_delta, class) = TextInformation::link_delta_and_class(false, direction);
 
         let (fill, display) = match field_configuration {
             FieldConfiguration::ColouredText(display_key, colour_config) => (
@@ -356,7 +347,7 @@ impl TextInformation {
                 let delta_y = relevant_delta;
 
                 TextInformation::new_signed(
-                    link_x.saturating_add(OFFSET_FROM_LINK.into()),
+                    link_x.saturating_add(HORIZONTAL_OFFSET_FROM_LINK.into()),
                     link_y
                         .saturating_sub(delta_y)
                         .saturating_add_unsigned(OFFSET_FROM_FIRST.into()),
@@ -373,7 +364,7 @@ impl TextInformation {
 
                 TextInformation::new_signed(
                     link_x.saturating_add(delta_x),
-                    link_y.saturating_add(OFFSET_FROM_LINK.into()),
+                    link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK.into()),
                     None,
                     "middle",
                     "text-before-edge",
@@ -386,17 +377,10 @@ impl TextInformation {
                 let delta_y = relevant_delta;
 
                 TextInformation::new_signed(
-                    link_x.saturating_sub(OFFSET_FROM_LINK.into()),
-                    if edge {
-                        link_y
-                            .saturating_add(delta_y)
-                            .saturating_add_unsigned(FONT_SIZE_WITH_OFFSET.into())
-                            .saturating_add_unsigned(OFFSET_FROM_FIRST.into())
-                    } else {
-                        link_y
-                            .saturating_add(delta_y)
-                            .saturating_add_unsigned(OFFSET_FROM_FIRST.into())
-                    },
+                    link_x.saturating_sub(HORIZONTAL_OFFSET_FROM_LINK.into()),
+                    link_y
+                        .saturating_add(delta_y)
+                        .saturating_add_unsigned(OFFSET_FROM_FIRST.into()),
                     None,
                     "end",
                     "middle",
@@ -410,10 +394,10 @@ impl TextInformation {
 
                 TextInformation::new_signed(
                     link_x.saturating_sub(delta_x),
-                    link_y.saturating_sub(OFFSET_FROM_LINK.into()),
+                    link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK.into()),
                     None,
                     "middle",
-                    "text-after-edge",
+                    "text-before-edge",
                     fill,
                     class,
                     display,

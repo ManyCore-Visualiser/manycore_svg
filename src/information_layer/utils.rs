@@ -8,7 +8,7 @@ use crate::{
     SVGErrorKind,
 };
 
-pub static FONT_SIZE_WITH_OFFSET: u16 = 18;
+pub static FONT_SIZE_WITH_OFFSET: i16 = 18;
 
 pub fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) -> usize {
     // Bounds has always length 4
@@ -64,7 +64,7 @@ pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                     None,
                     format!("{}: {}", title, target.id()),
                 ));
-                base_y += FONT_SIZE_WITH_OFFSET;
+                base_y += FONT_SIZE_WITH_OFFSET as u16;
             }
             _ => {}
         }
@@ -91,7 +91,7 @@ pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                     None,
                                     format!("{}: {}", title, value),
                                 ));
-                                base_y += FONT_SIZE_WITH_OFFSET;
+                                base_y += FONT_SIZE_WITH_OFFSET as u16;
                             }
                             FieldConfiguration::Fill(colour_config) => {
                                 let bounds = colour_config.bounds();
@@ -128,7 +128,7 @@ pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                     None,
                                     format!("{}: {}", title, value),
                                 ));
-                                base_y += FONT_SIZE_WITH_OFFSET;
+                                base_y += FONT_SIZE_WITH_OFFSET as u16;
                             }
                             _ => {
                                 // Remaining variants are handled elsewhere

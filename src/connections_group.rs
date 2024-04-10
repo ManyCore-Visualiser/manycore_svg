@@ -5,12 +5,9 @@ use manycore_parser::{Core, Directions, EdgePosition, WithID};
 use serde::Serialize;
 
 use crate::{
-    style::EDGE_DATA_CLASS_NAME, CommonAttributes, Router, HALF_ROUTER_OFFSET,
-    MARKER_HEIGHT, MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH,
+    sinks_sources_layer::I_SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME, CommonAttributes, Router, HALF_ROUTER_OFFSET, MARKER_HEIGHT, MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH
 };
 
-// static I_SINKS_SOURCE_CONNECTION_SPACING: i32 = 15;
-pub static I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH: i32 = 100;
 pub const EDGE_CONNECTIONS_ID: &'static str = "edgeConnetions";
 static CONNECTION_GAP: u16 = 0u16
     .saturating_add(HALF_ROUTER_OFFSET)
@@ -95,9 +92,9 @@ impl Connection {
                     .wrapping_sub_unsigned(HALF_ROUTER_OFFSET.into());
                 start_y = start_y.wrapping_sub_unsigned(ROUTER_OFFSET.into());
 
-                let connection_length = I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                let connection_length = I_SINKS_SOURCES_CONNECTION_LENGTH
                     .wrapping_add_unsigned(MARKER_HEIGHT.into());
-                let render_length = I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH;
+                let render_length = I_SINKS_SOURCES_CONNECTION_LENGTH;
 
                 // Input
                 let input_x = start_x - I_CONNECTION_GAP;
@@ -127,9 +124,9 @@ impl Connection {
                     .wrapping_sub_unsigned(ROUTER_OFFSET.into())
                     .wrapping_add_unsigned(HALF_ROUTER_OFFSET.into());
 
-                let connection_length = I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                let connection_length = I_SINKS_SOURCES_CONNECTION_LENGTH
                     .wrapping_add_unsigned(MARKER_HEIGHT.into());
-                let render_length = I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH;
+                let render_length = I_SINKS_SOURCES_CONNECTION_LENGTH;
 
                 // Input
                 let input_x = start_x + connection_length;
@@ -161,7 +158,7 @@ impl Connection {
                     .wrapping_sub_unsigned(ROUTER_OFFSET.into())
                     .wrapping_add_unsigned(SIDE_LENGTH.into());
 
-                let render_length = I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                let render_length = I_SINKS_SOURCES_CONNECTION_LENGTH
                     .wrapping_add_unsigned(ROUTER_OFFSET.into());
                 let connection_length = render_length.wrapping_add_unsigned(MARKER_HEIGHT.into());
 
@@ -192,7 +189,7 @@ impl Connection {
                     .wrapping_sub_unsigned(ROUTER_OFFSET.into())
                     .wrapping_add_unsigned(HALF_ROUTER_OFFSET.into());
 
-                let render_length = I_SINKS_SOURCES_CONNECTION_EXTRA_LENGTH
+                let render_length = I_SINKS_SOURCES_CONNECTION_LENGTH
                     .wrapping_add_unsigned(ROUTER_OFFSET.into());
                 let connection_length = render_length.wrapping_add_unsigned(MARKER_HEIGHT.into());
 

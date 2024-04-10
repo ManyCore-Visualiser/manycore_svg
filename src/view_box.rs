@@ -1,5 +1,12 @@
+use std::ops::AddAssign;
+
 use getset::{Getters, Setters};
 use serde::Serialize;
+
+use crate::{
+    sinks_sources_layer::{I_SINKS_SOURCES_GROUP_OFFSET, SINKS_SOURCES_GROUP_OFFSET},
+    FONT_SIZE_WITH_OFFSET,
+};
 
 #[derive(Getters, Setters, Clone, Copy)]
 #[getset(get = "pub", set = "pub")]
@@ -14,7 +21,8 @@ impl ViewBox {
     pub fn new(width: u16, height: u16) -> Self {
         Self {
             x: 0,
-            y: 0,
+            // Needed to fit upper text on links
+            y: FONT_SIZE_WITH_OFFSET.wrapping_mul(-1),
             width,
             height,
         }
@@ -37,27 +45,21 @@ impl ViewBox {
 
     pub fn reset(&mut self, width: u16, height: u16) {
         self.x = 0;
-        self.y = 0;
+        self.y = FONT_SIZE_WITH_OFFSET.wrapping_mul(-1);
         self.width = width;
         self.height = height;
     }
 
-    pub fn extend_left_by(&mut self, dx: i16) {
-        self.x -= dx;
-        self.width = self.width.wrapping_add_signed(dx);
-    }
+    pub fn insert_edges(&mut self) {
+        // This offset is greater than font offset
+        self.x = -I_SINKS_SOURCES_GROUP_OFFSET;
+        self.width.add_assign(2 * SINKS_SOURCES_GROUP_OFFSET);
 
-    pub fn extend_top_by(&mut self, dy: i16) {
-        self.y -= dy;
-        self.height = self.height.wrapping_add_signed(dy);
-    }
-
-    pub fn extend_right_by(&mut self, dx: u16) {
-        self.width += dx;
-    }
-
-    pub fn extend_bottom_by(&mut self, dy: u16) {
-        self.height += dy;
+        self.y = -I_SINKS_SOURCES_GROUP_OFFSET;
+        self.height = self
+            .height
+            .saturating_add_signed(-FONT_SIZE_WITH_OFFSET)
+            .saturating_add(2 * SINKS_SOURCES_GROUP_OFFSET);
     }
 }
 

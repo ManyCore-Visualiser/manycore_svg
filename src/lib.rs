@@ -22,9 +22,7 @@ use information_layer::*;
 use marker::*;
 use processing_group::*;
 pub use render_settings::*;
-use sinks_sources_layer::{
-    SinksSourcesGroup, I_SINKS_SOURCES_GROUP_OFFSET, SINKS_SOURCES_GROUP_OFFSET,
-};
+use sinks_sources_layer::SinksSourcesGroup;
 pub use view_box::*;
 
 use manycore_parser::{ManycoreSystem, RoutingTarget, WithID, BORDER_ROUTERS_KEY, ROUTING_KEY};
@@ -156,11 +154,12 @@ impl From<&ManycoreSystem> for SVG {
             + ((columns_u16 - 1) * BLOCK_DISTANCE)
             + TASK_CIRCLE_TOTAL_OFFSET
             + CORE_ROUTER_STROKE_WIDTH;
-        let height = (rows_u16 * BLOCK_LENGTH)
+        let height = ((rows_u16 * BLOCK_LENGTH)
             + ((rows_u16 - 1) * BLOCK_DISTANCE)
             + TASK_CIRCLE_TOTAL_OFFSET
-            + FONT_SIZE_WITH_OFFSET
-            + CORE_ROUTER_STROKE_WIDTH;
+            + CORE_ROUTER_STROKE_WIDTH)
+            // Link text, no need for bottom as its covered by task circle offset
+            .saturating_add_signed(FONT_SIZE_WITH_OFFSET);
 
         let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height);
 
@@ -279,10 +278,8 @@ impl SVG {
                     if show_border_routers {
                         self.style = Style::base(); // CSS
 
-                        self.view_box.extend_left_by(I_SINKS_SOURCES_GROUP_OFFSET);
-                        self.view_box.extend_right_by(SINKS_SOURCES_GROUP_OFFSET);
-                        self.view_box.extend_top_by(I_SINKS_SOURCES_GROUP_OFFSET);
-                        self.view_box.extend_bottom_by(SINKS_SOURCES_GROUP_OFFSET);
+                        // Expand viewBox for edges
+                        self.view_box.insert_edges();
                     } else {
                         self.style = Style::default(); // CSS
                     }

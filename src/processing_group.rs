@@ -51,8 +51,9 @@ static ROUTER_PATH: &'static str = concatcp!(
     ",0 Z"
 );
 
-static TASK_CIRCLE_RADIUS_STR: &'static str = "30";
-static TASK_CIRCLE_RADIUS: u16 = 30;
+const TASK_CIRCLE_RADIUS: u16 = 35;
+static TASK_CIRCLE_RADIUS_STR: &'static str = concatcp!(TASK_CIRCLE_RADIUS);
+static TASK_FONT_SIZE: &'static str = "22px";
 static TASK_CIRCLE_OFFSET: u16 = TASK_CIRCLE_RADIUS.div_ceil(2);
 static TASK_CIRCLE_STROKE: u16 = 1;
 
@@ -145,7 +146,7 @@ impl Task {
                     text: TextInformation::new_signed(
                         cx.into(),
                         cy.into(),
-                        Some("20px"),
+                        Some(TASK_FONT_SIZE),
                         "middle",
                         "middle",
                         None,

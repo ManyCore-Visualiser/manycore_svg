@@ -27,7 +27,7 @@
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
-                <Channel direction="West" age="30" actualComCost="0" status="Normal"
+                <Channel direction="West" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
                 <Channel direction="East" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
@@ -42,7 +42,7 @@
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
-                <Channel direction="West" age="30" actualComCost="0" status="Normal"
+                <Channel direction="West" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
                 <Channel direction="East" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
@@ -56,7 +56,7 @@
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
-                <Channel direction="West" age="30" actualComCost="0" status="Normal"
+                <Channel direction="West" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
                 <Channel direction="East" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
@@ -70,7 +70,7 @@
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
-                <Channel direction="West" age="30" actualComCost="0" status="Normal"
+                <Channel direction="West" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
                 <Channel direction="East" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
@@ -84,7 +84,7 @@
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
-                <Channel direction="West" age="30" actualComCost="0" status="Normal"
+                <Channel direction="West" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
                 <Channel direction="East" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
@@ -99,7 +99,7 @@
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
-                <Channel direction="West" age="30" actualComCost="0" status="Normal"
+                <Channel direction="West" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
                 <Channel direction="East" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
@@ -113,7 +113,7 @@
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
-                <Channel direction="West" age="30" actualComCost="0" status="Normal"
+                <Channel direction="West" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
                 <Channel direction="East" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
@@ -128,7 +128,7 @@
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
-                <Channel direction="West" age="30" actualComCost="0" status="Normal"
+                <Channel direction="West" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
                 <Channel direction="East" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
@@ -142,7 +142,7 @@
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
-                <Channel direction="West" age="30" actualComCost="0" status="Normal"
+                <Channel direction="West" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
                 <Channel direction="East" age="30" actualComCost="4" status="Normal"
                     bandwidth="400" />
