@@ -1,4 +1,4 @@
-use std::ops::Div;
+use std::ops::{Div, Mul};
 
 use manycore_parser::Directions;
 use serde::Serialize;
@@ -15,6 +15,11 @@ static HORIZONTAL_OFFSET_FROM_LINK: u16 = 5;
 static VERTICAL_OFFSET_FROM_LINK: u16 = 1;
 static OFFSET_FROM_FIRST: u16 = 20;
 static HALF_CONNECTION_LENGTH: u16 = CONNECTION_LENGTH.saturating_add(MARKER_HEIGHT).div_ceil(2);
+pub static CHAR_WIDTH_AT_16_PX: f32 = 9.3;
+pub static CHAR_WIDTH_AT_22_PX: f32 = 13.3;
+pub static CHAR_HEIGHT_AT_22_PX: i32 = 30;
+pub static CHAR_V_PADDING: i32 = 2;
+pub static CHAR_H_PADDING: f32 = CHAR_WIDTH_AT_22_PX * 2.0;
 
 #[derive(Serialize)]
 pub struct TextInformation {

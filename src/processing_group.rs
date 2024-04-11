@@ -7,7 +7,8 @@ use serde::Serialize;
 
 use crate::{
     style::{BASE_FILL_CLASS_NAME, DEFAULT_FILL},
-    TextInformation, CONNECTION_LENGTH, MARKER_HEIGHT,
+    TextInformation, CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING, CHAR_V_PADDING, CHAR_WIDTH_AT_16_PX,
+    CHAR_WIDTH_AT_22_PX, CONNECTION_LENGTH, FONT_SIZE_WITH_OFFSET, MARKER_HEIGHT,
 };
 
 pub const SIDE_LENGTH: u16 = 100;
@@ -51,17 +52,13 @@ static ROUTER_PATH: &'static str = concatcp!(
     ",0 Z"
 );
 
-const TASK_CIRCLE_RADIUS: u16 = 35;
-static TASK_CIRCLE_RADIUS_STR: &'static str = concatcp!(TASK_CIRCLE_RADIUS);
-static TASK_FONT_SIZE: &'static str = "22px";
-static TASK_CIRCLE_OFFSET: u16 = TASK_CIRCLE_RADIUS.div_ceil(2);
-static TASK_CIRCLE_STROKE: u16 = 1;
-
-pub static TASK_CIRCLE_TOTAL_OFFSET: u16 =
-    TASK_CIRCLE_OFFSET + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE;
-
 pub const CORE_ROUTER_STROKE_WIDTH: u16 = 1;
 static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
+
+static TASK_FONT_SIZE: &'static str = "22px";
+static TASK_RECT_STROKE: u16 = 1;
+static TASK_RECT_HEIGHT: i32 = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
+static TASK_RECT_OFFSET: i32 = TASK_RECT_HEIGHT.saturating_div(2);
 
 #[derive(Serialize, Setters, Debug)]
 pub struct CommonAttributes {
@@ -102,13 +99,17 @@ impl CommonAttributes {
 }
 
 #[derive(Serialize)]
-struct Circle {
-    #[serde(rename = "@cx")]
-    cx: u16,
-    #[serde(rename = "@cy")]
-    cy: u16,
-    #[serde(rename = "@r")]
-    r: &'static str,
+struct TaskRect {
+    #[serde(rename = "@x")]
+    x: i32,
+    #[serde(rename = "@y")]
+    y: i32,
+    #[serde(rename = "@width")]
+    width: i32,
+    #[serde(rename = "@height")]
+    height: i32,
+    #[serde(rename = "@rx")]
+    rx: &'static str,
     #[serde(rename = "@fill")]
     fill: &'static str,
     #[serde(rename = "@stroke")]
@@ -117,12 +118,14 @@ struct Circle {
     stroke_width: &'static str,
 }
 
-impl Circle {
-    fn new(cx: u16, cy: u16) -> Self {
+impl TaskRect {
+    fn new(cx: i32, cy: i32, text_width: f32) -> Self {
         Self {
-            cx,
-            cy,
-            r: TASK_CIRCLE_RADIUS_STR,
+            x: cx - (text_width / 2.0).round() as i32,
+            y: cy - TASK_RECT_OFFSET,
+            width: text_width.round() as i32,
+            height: TASK_RECT_HEIGHT,
+            rx: "15",
             fill: DEFAULT_FILL,
             stroke: "black",
             stroke_width: CORE_ROUTER_STROKE_WIDTH_STR,
@@ -132,7 +135,7 @@ impl Circle {
 
 #[derive(Serialize)]
 struct Task {
-    circle: Circle,
+    rect: TaskRect,
     text: TextInformation,
 }
 
@@ -141,8 +144,11 @@ impl Task {
         match task {
             Some(task) => {
                 let (cx, cy) = Self::get_centre_coordinates(r, c);
+                let text = format!("T{}", task);
+                let text_width = CHAR_WIDTH_AT_22_PX * i16::try_from(text.len()).unwrap() as f32
+                    + CHAR_H_PADDING;
                 Some(Self {
-                    circle: Circle::new(cx, cy),
+                    rect: TaskRect::new(cx, cy, text_width),
                     text: TextInformation::new_signed(
                         cx.into(),
                         cy.into(),
@@ -159,14 +165,11 @@ impl Task {
         }
     }
 
-    fn get_centre_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let cx = c * BLOCK_LENGTH + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE + c * BLOCK_DISTANCE;
-        let cy = r * BLOCK_LENGTH
-            + ROUTER_OFFSET
-            + SIDE_LENGTH
-            + TASK_CIRCLE_OFFSET
-            + TASK_CIRCLE_STROKE
-            + r * BLOCK_DISTANCE;
+    fn get_centre_coordinates(r: &u16, c: &u16) -> (i32, i32) {
+        let cx = i32::from(c * BLOCK_LENGTH + c * BLOCK_DISTANCE);
+        let cy = TASK_RECT_OFFSET.saturating_add_unsigned(u32::from(
+            r * BLOCK_LENGTH + ROUTER_OFFSET + SIDE_LENGTH + TASK_RECT_STROKE + r * BLOCK_DISTANCE,
+        ));
 
         (cx, cy)
     }
@@ -200,8 +203,7 @@ impl Router {
     }
 
     pub fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let move_x =
-            (c * BLOCK_LENGTH) + ROUTER_OFFSET + TASK_CIRCLE_TOTAL_OFFSET + c * BLOCK_DISTANCE;
+        let move_x = (c * BLOCK_LENGTH) + ROUTER_OFFSET + c * BLOCK_DISTANCE;
         let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
 
         (move_x, move_y)
@@ -225,7 +227,7 @@ pub struct Core {
 
 impl Core {
     pub fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let move_x = c * BLOCK_LENGTH + TASK_CIRCLE_TOTAL_OFFSET + c * BLOCK_DISTANCE;
+        let move_x = c * BLOCK_LENGTH + c * BLOCK_DISTANCE;
         let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
 
         (move_x, move_y)
