@@ -35,5 +35,9 @@
       ]
     }
   },
-  "channelConfig": {}
+  "channelConfig": {
+    "@status": {
+      "Text": "Status"
+    }
+  }
 }

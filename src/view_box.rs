@@ -1,11 +1,9 @@
-use std::ops::AddAssign;
-
 use getset::{Getters, Setters};
 use serde::Serialize;
 
 use crate::{
     sinks_sources_layer::{I_SINKS_SOURCES_GROUP_OFFSET, SINKS_SOURCES_GROUP_OFFSET},
-    FONT_SIZE_WITH_OFFSET,
+    BLOCK_LENGTH, FONT_SIZE_WITH_OFFSET,
 };
 
 #[derive(Getters, Setters, Clone, Copy)]
@@ -53,8 +51,10 @@ impl ViewBox {
     pub fn insert_edges(&mut self) {
         // This offset is greater than font offset
         self.x = -I_SINKS_SOURCES_GROUP_OFFSET;
-        self.width.add_assign(2 * SINKS_SOURCES_GROUP_OFFSET);
-
+        self.width = self
+            .width
+            .wrapping_sub(BLOCK_LENGTH / 2)
+            .saturating_add(2 * SINKS_SOURCES_GROUP_OFFSET);
         self.y = -I_SINKS_SOURCES_GROUP_OFFSET;
         self.height = self
             .height

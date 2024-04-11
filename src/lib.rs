@@ -151,6 +151,7 @@ impl From<&ManycoreSystem> for SVG {
         let columns_u16 = u16::from(columns);
         let rows_u16 = u16::from(rows);
         let width = (columns_u16 * BLOCK_LENGTH)
+            + (BLOCK_LENGTH / 2) // Buffer for channel text on the right
             + ((columns_u16 - 1) * BLOCK_DISTANCE)
             + TASK_CIRCLE_TOTAL_OFFSET
             + CORE_ROUTER_STROKE_WIDTH;
