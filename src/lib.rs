@@ -108,7 +108,7 @@ pub struct SVG {
     #[serde(rename = "@preserveAspectRation")]
     preserve_aspect_ratio: &'static str,
     #[serde(rename = "@class")]
-    class: String,
+    class: &'static str,
     #[serde(rename = "@viewBox")]
     #[getset(get = "pub", get_mut = "pub")]
     view_box: ViewBox,
@@ -217,7 +217,7 @@ impl SVG {
             xmlns_svg: "http://www.w3.org/2000/svg",
             xmlns: "http://www.w3.org/2000/svg",
             preserve_aspect_ratio: "xMidYMid meet",
-            class: String::from("w-full max-h-full"),
+            class: "mx-auto",
             view_box: ViewBox::new(width, height),
             defs: Defs {
                 marker: Marker::default(),
