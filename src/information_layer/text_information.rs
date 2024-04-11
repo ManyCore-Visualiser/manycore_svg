@@ -189,10 +189,20 @@ impl TextInformation {
     ) -> String {
         match routing_configuration.load_configuration() {
             LoadConfiguration::Percentage => match percentage {
-                Some(value) => format!("Load: {}%", value),
-                None => format!("Load: {}/{}", load, bandwidth),
+                Some(value) => format!("{}: {}%", routing_configuration.display(), value),
+                None => format!(
+                    "{}: {}/{}",
+                    routing_configuration.display(),
+                    load,
+                    bandwidth
+                ),
             },
-            LoadConfiguration::Fraction => format!("Load: {}/{}", load, bandwidth),
+            LoadConfiguration::Fraction => format!(
+                "{}: {}/{}",
+                routing_configuration.display(),
+                load,
+                bandwidth
+            ),
         }
     }
 

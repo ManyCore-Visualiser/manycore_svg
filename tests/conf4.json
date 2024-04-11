@@ -10,7 +10,8 @@
         "loadColours": {
           "bounds": [20, 50, 70, 90],
           "colours": ["#1a5fb4", "#26a269", "#c64600", "#a51d2d"]
-        }
+        },
+        "display": "Load"
       }
     }
   }

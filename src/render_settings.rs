@@ -24,6 +24,7 @@ pub struct RoutingConfiguration {
     algorithm: RoutingAlgorithms,
     load_configuration: LoadConfiguration,
     load_colours: ColourSettings,
+    display: String,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -168,6 +169,7 @@ mod tests {
                                 "#a51d2d".to_string(),
                             ],
                         },
+                        display: String::from("L"),
                     }),
                 ),
             ]),

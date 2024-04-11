@@ -1,61 +1,61 @@
 {
-    "coreConfig": {
-      "@coordinates": { "Coordinates": "B" },
-      "@id": { "Text": "ID" },
-      "@age": {
-        "Fill": {
+  "coreConfig": {
+    "@coordinates": { "Coordinates": "B" },
+    "@id": { "Text": "ID" },
+    "@age": {
+      "Fill": {
+        "bounds": [30, 100, 200, 300],
+        "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
+      }
+    },
+    "@temperature": {
+      "ColouredText": [
+        "Temp",
+        {
+          "bounds": [30, 31, 50, 75],
+          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
+        }
+      ]
+    }
+  },
+  "routerConfig": {
+    "@age": {
+      "Fill": {
+        "bounds": [30, 100, 200, 300],
+        "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
+      }
+    },
+    "@temperature": {
+      "ColouredText": [
+        "Temp",
+        {
+          "bounds": [30, 31, 50, 75],
+          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
+        }
+      ]
+    }
+  },
+  "channelConfig": {
+    "@age": {
+      "ColouredText": [
+        "Age",
+        {
           "bounds": [30, 100, 200, 300],
           "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
         }
-      },
-      "@temperature": {
-        "ColouredText": [
-          "Temp",
-          {
-            "bounds": [30, 31, 50, 75],
-            "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-          }
-        ]
-      }
+      ]
     },
-    "routerConfig": {
-      "@age": {
-        "Fill": {
-          "bounds": [30, 100, 200, 300],
-          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-        }
-      },
-      "@temperature": {
-        "ColouredText": [
-          "Temp",
-          {
-            "bounds": [30, 31, 50, 75],
-            "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-          }
-        ]
-      }
-    },
-    "channelConfig": {
-      "@age": {
-        "ColouredText": [
-          "Age",
-          {
-            "bounds": [30, 100, 200, 300],
-            "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-          }
-        ]
-      },
-      "@borderRouters": { "Boolean": true },
-      "@routingAlgorithm": {
-        "Routing": {
-          "algorithm": "RowFirst",
-          "loadConfiguration": "Percentage",
-          "loadColours": {
-            "bounds": [0, 0, 0, 0],
-            "colours": ["#000", "#000", "#000", "#000"]
-          }
-        }
+    "@borderRouters": { "Boolean": true },
+    "@routingAlgorithm": {
+      "Routing": {
+        "algorithm": "RowFirst",
+        "loadConfiguration": "Percentage",
+        "loadColours": {
+          "bounds": [0, 0, 0, 0],
+          "colours": ["#000", "#000", "#000", "#000"]
+        },
+        "display": "Cost"
       }
     }
   }
-  
+}
