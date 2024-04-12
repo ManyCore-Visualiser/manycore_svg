@@ -203,7 +203,7 @@ mod tests {
         let expected = read_to_string("tests/SVG2.svg")
             .expect("Could not read input test file \"tests/SVG2.svg\"");
 
-        // assert_eq!(res, expected)
+        assert_eq!(res, expected)
         // println!("SVG2: {res}\n\n")
     }
 
@@ -229,9 +229,9 @@ mod tests {
         let expected_view_box = read_to_string("tests/view_box_update.txt")
             .expect("Could not open \"tests/view_box_update.txt\"");
 
-        // assert_eq!(update.style, expected_style);
-        // assert_eq!(update.information_group, expected_information);
-        // assert_eq!(update.view_box, expected_view_box);
+        assert_eq!(update.style, expected_style);
+        assert_eq!(update.information_group, expected_information);
+        assert_eq!(update.view_box, expected_view_box);
         // println!("Update info: {}\n\n", update.information_group);
         // println!("Update viewBox: {}\n\n", update.view_box);
     }
@@ -256,7 +256,7 @@ mod tests {
         let expected = read_to_string("tests/SVG3.svg")
             .expect("Could not read input test file \"tests/SVG3.svg\"");
 
-        // assert_eq!(res, expected)
+        assert_eq!(res, expected)
         // println!("SVG3: {res}\n\n")
     }
 
@@ -280,7 +280,7 @@ mod tests {
         let expected = read_to_string("tests/SVG4.svg")
             .expect("Could not read input test file \"tests/SVG4.svg\"");
 
-        // assert_eq!(res, expected)
+        assert_eq!(res, expected)
         // println!("SVG4: {res}\n\n")
     }
 }

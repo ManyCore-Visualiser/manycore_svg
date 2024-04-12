@@ -6,10 +6,8 @@ use manycore_utils::serialise_btreemap;
 use serde::Serialize;
 
 use crate::{
-    coordinate,
-    style::{BASE_FILL_CLASS_NAME, DEFAULT_FILL},
-    TextInformation, CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING, CHAR_V_PADDING, CHAR_WIDTH_AT_16_PX,
-    CHAR_WIDTH_AT_22_PX, CONNECTION_LENGTH, FONT_SIZE_WITH_OFFSET, MARKER_HEIGHT,
+    coordinate, style::BASE_FILL_CLASS_NAME, TextInformation, CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING,
+    CHAR_V_PADDING, CHAR_WIDTH_AT_22_PX, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
 pub const SIDE_LENGTH: coordinate = 100;
@@ -20,6 +18,7 @@ pub static HALF_ROUTER_OFFSET: coordinate = ROUTER_OFFSET.saturating_div(2);
 pub static BLOCK_DISTANCE: coordinate = CONNECTION_LENGTH
     .saturating_sub(ROUTER_OFFSET)
     .saturating_add(MARKER_HEIGHT);
+static TASK_RECT_X_OFFSET: coordinate = 10;
 
 // Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
 // l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z
@@ -57,9 +56,12 @@ pub const CORE_ROUTER_STROKE_WIDTH: coordinate = 1;
 static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
 
 static TASK_FONT_SIZE: &'static str = "22px";
-static TASK_RECT_STROKE: coordinate = 1;
+pub static TASK_RECT_STROKE: coordinate = 1;
 static TASK_RECT_HEIGHT: coordinate = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
-static TASK_RECT_OFFSET: coordinate = TASK_RECT_HEIGHT.saturating_div(2);
+pub static HALF_TASK_RECT_HEIGHT: coordinate = TASK_RECT_HEIGHT.saturating_div(2);
+pub static TASK_RECT_CENTRE_OFFSET: coordinate =
+    HALF_TASK_RECT_HEIGHT.saturating_sub(TASK_RECT_HEIGHT.saturating_div(3));
+static TASK_RECT_FILL: &'static str = "#bfdbfe";
 
 #[derive(Serialize, Setters, Debug)]
 pub struct CommonAttributes {
@@ -123,11 +125,11 @@ impl TaskRect {
     fn new(cx: coordinate, cy: coordinate, text_width: f32) -> Self {
         Self {
             x: cx - (text_width / 2.0).round() as coordinate,
-            y: cy - TASK_RECT_OFFSET,
+            y: cy - HALF_TASK_RECT_HEIGHT,
             width: text_width.round() as coordinate,
             height: TASK_RECT_HEIGHT,
             rx: "15",
-            fill: DEFAULT_FILL,
+            fill: TASK_RECT_FILL,
             stroke: "black",
             stroke_width: CORE_ROUTER_STROKE_WIDTH_STR,
         }
@@ -144,10 +146,10 @@ impl Task {
     fn new(r: &coordinate, c: &coordinate, task: &Option<u16>) -> Option<Self> {
         match task {
             Some(task) => {
-                let (cx, cy) = Self::get_centre_coordinates(r, c);
                 let text = format!("T{}", task);
                 let text_width = CHAR_WIDTH_AT_22_PX * u16::try_from(text.len()).unwrap() as f32
                     + CHAR_H_PADDING;
+                let (cx, cy) = Self::get_centre_coordinates(r, c, text_width);
                 Some(Self {
                     rect: TaskRect::new(cx, cy, text_width),
                     text: TextInformation::new(
@@ -155,10 +157,10 @@ impl Task {
                         cy,
                         Some(TASK_FONT_SIZE),
                         "middle",
-                        "middle",
+                        "central",
                         None,
                         None,
-                        format!("T{}", task),
+                        text,
                     ),
                 })
             }
@@ -166,13 +168,17 @@ impl Task {
         }
     }
 
-    fn get_centre_coordinates(r: &coordinate, c: &coordinate) -> (coordinate, coordinate) {
-        let cx = c * BLOCK_LENGTH + c * BLOCK_DISTANCE;
-        let cy = TASK_RECT_OFFSET
+    fn get_centre_coordinates(
+        r: &coordinate,
+        c: &coordinate,
+        text_width: f32,
+    ) -> (coordinate, coordinate) {
+        let cx = c * BLOCK_LENGTH + c * BLOCK_DISTANCE - ((text_width.round() / 2.0) as coordinate)
+            + TASK_RECT_X_OFFSET;
+        let cy = TASK_RECT_CENTRE_OFFSET
             + r * BLOCK_LENGTH
             + ROUTER_OFFSET
             + SIDE_LENGTH
-            + TASK_RECT_STROKE
             + r * BLOCK_DISTANCE;
 
         (cx, cy)

@@ -129,7 +129,7 @@ impl Connection {
 
                 // Input
                 let input_x = router_x.saturating_add(connection_length);
-                let input_y = router_y.saturating_add(CONNECTION_GAP);
+                let input_y = router_y.saturating_sub(CONNECTION_GAP);
                 let input_s = format!("M{},{} h-{}", input_x, input_y, render_length);
 
                 // Output

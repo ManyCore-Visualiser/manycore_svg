@@ -15,10 +15,10 @@ static OFFSET_FROM_FIRST: coordinate = 20;
 static HALF_CONNECTION_LENGTH: coordinate = CONNECTION_LENGTH
     .saturating_add(MARKER_HEIGHT)
     .saturating_div(2);
-pub static CHAR_WIDTH_AT_16_PX: f32 = 9.3;
+// pub static CHAR_WIDTH_AT_16_PX: f32 = 9.3;
 pub static CHAR_WIDTH_AT_22_PX: f32 = 13.3;
 pub static CHAR_HEIGHT_AT_22_PX: coordinate = 30;
-pub static CHAR_V_PADDING: coordinate = 2;
+pub static CHAR_V_PADDING: coordinate = 3;
 pub static CHAR_H_PADDING: f32 = CHAR_WIDTH_AT_22_PX * 2.0;
 
 #[derive(Serialize)]

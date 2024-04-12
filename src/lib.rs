@@ -161,15 +161,12 @@ impl From<&ManycoreSystem> for SVG {
             + ((rows_coord - 1) * BLOCK_DISTANCE)
             + CORE_ROUTER_STROKE_WIDTH)
             // Link text, no need for bottom as its covered by task circle offset
-            .saturating_add(FONT_SIZE_WITH_OFFSET);
+            .saturating_add(FONT_SIZE_WITH_OFFSET)
+            .saturating_add(TASK_RECT_CENTRE_OFFSET)
+            .saturating_add(HALF_TASK_RECT_HEIGHT)
+            .saturating_add(TASK_RECT_STROKE);
 
-        let mut ret = SVG::new(
-            &manycore.cores().list().len(),
-            rows,
-            columns,
-            width,
-            height,
-        );
+        let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height);
 
         let mut r: u8 = 0;
 
@@ -396,7 +393,7 @@ mod tests {
         let expected = read_to_string("tests/SVG1.svg")
             .expect("Could not read input test file \"tests/SVG1.svg\"");
 
-        // assert_eq!(res, expected)
-        println!("SVG1: {res}\n\n")
+        assert_eq!(res, expected)
+        // println!("SVG1: {res}\n\n")
     }
 }
