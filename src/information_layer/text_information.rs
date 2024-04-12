@@ -1,8 +1,10 @@
+use std::num::TryFromIntError;
+
 use manycore_parser::Directions;
 use serde::Serialize;
 
 use crate::{
-    CoordinateT, sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
+    sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME, CoordinateT,
     FieldConfiguration, LoadConfiguration, RoutingConfiguration, CONNECTION_LENGTH, MARKER_HEIGHT,
     ROUTER_OFFSET,
 };
@@ -44,6 +46,10 @@ pub struct TextInformation {
 }
 
 impl TextInformation {
+    pub fn calculate_length(text: &String) -> Result<CoordinateT, TryFromIntError> {
+        Ok((CHAR_WIDTH_AT_22_PX * u16::try_from(text.len())? as f32 + CHAR_H_PADDING).round() as CoordinateT)
+    }
+
     pub fn new(
         x: CoordinateT,
         y: CoordinateT,

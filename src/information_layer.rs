@@ -1,11 +1,15 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 use const_format::concatcp;
-use manycore_parser::{source::Source, Directions, SinkSourceDirection, WithID, WithXMLAttributes};
+use manycore_parser::{
+    source::Source, BorderEntry, Directions, SinkSourceDirection, WithID, WithXMLAttributes,
+};
 use serde::Serialize;
 
 use crate::{
-    CoordinateT, text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionType, ConnectionsParentGroup, DirectionType, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET, SIDE_LENGTH
+    text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionType, ConnectionsParentGroup,
+    CoordinateT, DirectionType, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET,
+    SIDE_LENGTH,
 };
 pub use utils::FONT_SIZE_WITH_OFFSET;
 
@@ -112,7 +116,7 @@ impl InformationLayer {
         columns: u8,
         configuration: &Configuration,
         core: &manycore_parser::Core,
-        sources_ids: Option<&HashMap<SinkSourceDirection, Vec<u16>>>,
+        border_routers_ids: Option<&HashMap<SinkSourceDirection, BorderEntry>>,
         sources: &BTreeMap<u16, Source>,
         css: &mut String,
         core_loads: Option<&BTreeSet<Directions>>,
@@ -280,20 +284,18 @@ impl InformationLayer {
         }
 
         // Source loads
-        if let (Some(sources_ids), Some(routing_configuration)) =
-            (sources_ids, routing_configuration)
+        if let (Some(border_routers_ids), Some(routing_configuration)) =
+            (border_routers_ids, routing_configuration)
         {
             if let Some(edge_position) = core.is_on_edge(columns, rows).as_ref() {
                 let keys: Vec<SinkSourceDirection> = edge_position.into();
 
                 for source_direction in keys {
-                    if let Some(tasks) = sources_ids.get(&source_direction) {
-                        let mut load = 0;
-
-                        for task_id in tasks {
-                            let source = sources.get(&task_id).ok_or(missing_source(task_id))?;
-                            load += source.current_load();
-                        }
+                    if let Some(BorderEntry::Source(task_id)) =
+                        border_routers_ids.get(&source_direction)
+                    {
+                        let source = sources.get(&task_id).ok_or(missing_source(task_id))?;
+                        let load = source.current_load();
 
                         let mut direction: Directions = (&source_direction).into();
                         let direction_type = DirectionType::Source(direction.clone());

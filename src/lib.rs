@@ -173,9 +173,6 @@ impl From<&ManycoreSystem> for SVG {
         let cores = manycore.cores().list();
 
         for (i, core) in cores.iter().enumerate() {
-            // This cast here might look a bit iffy as the result of the mod
-            // might not fit in 8 bits. However, since manycore.columns is 8 bits,
-            // that should never happen.
             let c = u8::try_from(i % usize::try_from(columns).expect("8 bits must fit in a usize. I have no idea what you're trying to run this on, TI TMS 1000?")).expect(
                 "Somehow, modulus on an 8 bit number gave a number that does not fit in 8 bits (your ALU re-invented mathematics).",
             );
@@ -200,9 +197,13 @@ impl From<&ManycoreSystem> for SVG {
             if let Some(edge_position) = core.is_on_edge(columns, rows) {
                 let (router_x, router_y) = processing_group.router().move_coordinates();
 
-                ret.root
-                    .sinks_sources_group
-                    .insert(edge_position, router_x, router_y);
+                // Remember that index
+                ret.root.sinks_sources_group.insert(
+                    edge_position,
+                    router_x,
+                    router_y,
+                    manycore.borders().core_border_map().get(&i),
+                );
             }
 
             // Store processing group
@@ -344,7 +345,8 @@ impl SVG {
                         self.columns,
                         configuration,
                         core,
-                        manycore.borders().core_source_map().get(&i),
+                        // manycore.borders().core_source_map().get(&i),
+                        manycore.borders().core_border_map().get(&i),
                         manycore.borders().sources(),
                         self.style.css_mut(),
                         core_loads.as_ref(),

@@ -6,8 +6,8 @@ use manycore_utils::serialise_btreemap;
 use serde::Serialize;
 
 use crate::{
-    CoordinateT, style::BASE_FILL_CLASS_NAME, TextInformation, CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING,
-    CHAR_V_PADDING, CHAR_WIDTH_AT_22_PX, CONNECTION_LENGTH, MARKER_HEIGHT,
+    style::BASE_FILL_CLASS_NAME, CoordinateT, TextInformation, CHAR_HEIGHT_AT_22_PX,
+    CHAR_V_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
 pub const SIDE_LENGTH: CoordinateT = 100;
@@ -55,7 +55,7 @@ static ROUTER_PATH: &'static str = concatcp!(
 pub const CORE_ROUTER_STROKE_WIDTH: CoordinateT = 1;
 static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
 
-static TASK_FONT_SIZE: &'static str = "22px";
+pub static TASK_FONT_SIZE: &'static str = "22px";
 pub static TASK_RECT_STROKE: CoordinateT = 1;
 static TASK_RECT_HEIGHT: CoordinateT = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
 pub static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(2);
@@ -122,11 +122,11 @@ struct TaskRect {
 }
 
 impl TaskRect {
-    fn new(cx: CoordinateT, cy: CoordinateT, text_width: f32) -> Self {
+    fn new(cx: CoordinateT, cy: CoordinateT, text_width: CoordinateT) -> Self {
         Self {
-            x: cx - (text_width / 2.0).round() as CoordinateT,
+            x: cx - (text_width.saturating_div(2)),
             y: cy - HALF_TASK_RECT_HEIGHT,
-            width: text_width.round() as CoordinateT,
+            width: text_width,
             height: TASK_RECT_HEIGHT,
             rx: "15",
             fill: TASK_RECT_FILL,
@@ -147,8 +147,10 @@ impl Task {
         match task {
             Some(task) => {
                 let text = format!("T{}", task);
-                let text_width = CHAR_WIDTH_AT_22_PX * u16::try_from(text.len()).unwrap() as f32
-                    + CHAR_H_PADDING;
+
+                // TODO: This should bubble up the error
+                let text_width = TextInformation::calculate_length(&text).unwrap_or(0);
+
                 let (cx, cy) = Self::get_centre_coordinates(r, c, text_width);
                 Some(Self {
                     rect: TaskRect::new(cx, cy, text_width),
@@ -171,9 +173,9 @@ impl Task {
     fn get_centre_coordinates(
         r: &CoordinateT,
         c: &CoordinateT,
-        text_width: f32,
+        text_width: CoordinateT,
     ) -> (CoordinateT, CoordinateT) {
-        let cx = c * BLOCK_LENGTH + c * BLOCK_DISTANCE - ((text_width.round() / 2.0) as CoordinateT)
+        let cx = c * BLOCK_LENGTH + c * BLOCK_DISTANCE - (text_width.saturating_div(2))
             + TASK_RECT_X_OFFSET;
         let cy = TASK_RECT_CENTRE_OFFSET
             + r * BLOCK_LENGTH
