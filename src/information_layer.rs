@@ -5,12 +5,11 @@ use manycore_parser::{source::Source, Directions, SinkSourceDirection, WithID, W
 use serde::Serialize;
 
 use crate::{
-    text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionType, ConnectionsParentGroup,
-    DirectionType, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET, SIDE_LENGTH,
+    coordinate, text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionType, ConnectionsParentGroup, DirectionType, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET, SIDE_LENGTH
 };
 pub use utils::FONT_SIZE_WITH_OFFSET;
 
-static OFFSET_FROM_BORDER: u16 = 1;
+static OFFSET_FROM_BORDER: coordinate = 1;
 static TEXT_GROUP_FILTER: &str = concatcp!("url(#", TEXT_BACKGROUND_ID, ")");
 
 // Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
@@ -131,7 +130,7 @@ impl InformationLayer {
             configuration.core_config(),
             core_x,
             core_y,
-            u16::from(rows),
+            rows,
             r,
             c,
             &mut ret,

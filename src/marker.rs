@@ -1,13 +1,13 @@
 use const_format::concatcp;
 use serde::Serialize;
 
-use crate::CommonAttributes;
+use crate::{coordinate, CommonAttributes};
 
 pub static MARKER_PATH: &str = "M0,0 M0,0 V8 L8,4 Z";
 pub static MARKER_REFERENCE: &str = "url(#arrowHead)";
-pub const MARKER_HEIGHT: u16 = 8;
+pub const MARKER_HEIGHT: coordinate = 8;
 static MARKER_DIMEN: &'static str = concatcp!(MARKER_HEIGHT);
-static MARKER_REF_Y: &'static str = concatcp!(MARKER_HEIGHT.div_ceil(2));
+static MARKER_REF_Y: &'static str = concatcp!(MARKER_HEIGHT.saturating_div(2));
 
 #[derive(Serialize)]
 struct MarkerPath {

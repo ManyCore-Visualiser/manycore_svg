@@ -4,11 +4,11 @@ use manycore_parser::{Directions, WithID, WithXMLAttributes, COORDINATES_KEY, ID
 
 use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER};
 use crate::{
-    ConnectionType, ConnectionsParentGroup, DirectionType, FieldConfiguration, SVGError,
-    SVGErrorKind,
+    coordinate, ConnectionType, ConnectionsParentGroup, DirectionType, FieldConfiguration,
+    SVGError, SVGErrorKind,
 };
 
-pub static FONT_SIZE_WITH_OFFSET: i16 = 18;
+pub static FONT_SIZE_WITH_OFFSET: coordinate = 18;
 
 pub fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) -> usize {
     // Bounds has always length 4
@@ -40,16 +40,16 @@ pub fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) -> usize 
 }
 
 pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
-    mut base_x: u16,
-    mut base_y: u16,
+    mut base_x: coordinate,
+    mut base_y: coordinate,
     configuration: &BTreeMap<String, FieldConfiguration>,
     target: &T,
     group: &mut ProcessingInformation,
     text_anchor: &'static str,
     css: &mut String,
 ) {
-    base_x += OFFSET_FROM_BORDER;
-    base_y += OFFSET_FROM_BORDER;
+    base_x = base_x.saturating_add(OFFSET_FROM_BORDER);
+    base_y = base_y.saturating_add(OFFSET_FROM_BORDER);
 
     // Id value is outside of attributes map
     if let Some(configuration) = configuration.get(ID_KEY) {
@@ -58,13 +58,14 @@ pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                 group.information.push(TextInformation::new(
                     base_x,
                     base_y,
+                    None,
                     text_anchor,
                     "text-before-edge",
                     None,
                     None,
                     format!("{}: {}", title, target.id()),
                 ));
-                base_y += FONT_SIZE_WITH_OFFSET as u16;
+                base_y = base_y.saturating_add(FONT_SIZE_WITH_OFFSET);
             }
             _ => {}
         }
@@ -85,13 +86,14 @@ pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                 group.information.push(TextInformation::new(
                                     base_x,
                                     base_y,
+                                    None,
                                     text_anchor,
                                     "text-before-edge",
                                     None,
                                     None,
                                     format!("{}: {}", title, value),
                                 ));
-                                base_y += FONT_SIZE_WITH_OFFSET as u16;
+                                base_y = base_y.saturating_add(FONT_SIZE_WITH_OFFSET);
                             }
                             FieldConfiguration::Fill(colour_config) => {
                                 let bounds = colour_config.bounds();
@@ -122,13 +124,14 @@ pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                 group.information.push(TextInformation::new(
                                     base_x,
                                     base_y,
+                                    None,
                                     text_anchor,
                                     "text-before-edge",
                                     fill,
                                     None,
                                     format!("{}: {}", title, value),
                                 ));
-                                base_y += FONT_SIZE_WITH_OFFSET as u16;
+                                base_y = base_y.saturating_add(FONT_SIZE_WITH_OFFSET);
                             }
                             _ => {
                                 // Remaining variants are handled elsewhere

@@ -32,6 +32,8 @@ use serde::Serialize;
 use style::Style;
 use text_background::TextBackground;
 
+type coordinate = i32;
+
 #[derive(Serialize)]
 struct Defs {
     marker: Marker,
@@ -97,10 +99,10 @@ pub struct Root {
 pub struct SVG {
     #[serde(skip)]
     #[getset(get = "pub")]
-    width: u16,
+    width: coordinate,
     #[serde(skip)]
     #[getset(get = "pub")]
-    height: u16,
+    height: coordinate,
     #[serde(rename = "@xmlns:svg")]
     xmlns_svg: &'static str,
     #[serde(rename = "@xmlns")]
@@ -148,19 +150,26 @@ impl From<&ManycoreSystem> for SVG {
         let columns = *manycore.columns();
         let rows = *manycore.rows();
 
-        let columns_u16 = u16::from(columns);
-        let rows_u16 = u16::from(rows);
-        let width = (columns_u16 * BLOCK_LENGTH)
+        let columns_coord: coordinate = columns.into();
+        let rows_coord: coordinate = rows.into();
+
+        let width = (columns_coord * BLOCK_LENGTH)
             + (BLOCK_LENGTH / 2) // Buffer for channel text on the right
-            + ((columns_u16 - 1) * BLOCK_DISTANCE)
+            + ((columns_coord - 1) * BLOCK_DISTANCE)
             + CORE_ROUTER_STROKE_WIDTH;
-        let height = ((rows_u16 * BLOCK_LENGTH)
-            + ((rows_u16 - 1) * BLOCK_DISTANCE)
+        let height = ((rows_coord * BLOCK_LENGTH)
+            + ((rows_coord - 1) * BLOCK_DISTANCE)
             + CORE_ROUTER_STROKE_WIDTH)
             // Link text, no need for bottom as its covered by task circle offset
-            .saturating_add_signed(FONT_SIZE_WITH_OFFSET);
+            .saturating_add(FONT_SIZE_WITH_OFFSET);
 
-        let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height);
+        let mut ret = SVG::new(
+            &manycore.cores().list().len(),
+            rows,
+            columns,
+            width,
+            height,
+        );
 
         let mut r: u8 = 0;
 
@@ -170,23 +179,25 @@ impl From<&ManycoreSystem> for SVG {
             // This cast here might look a bit iffy as the result of the mod
             // might not fit in 8 bits. However, since manycore.columns is 8 bits,
             // that should never happen.
-            let c = (i % usize::from(columns)) as u8;
+            let c = u8::try_from(i % usize::try_from(columns).expect("8 bits must fit in a usize. I have no idea what you're trying to run this on, TI TMS 1000?")).expect(
+                "Somehow, modulus on an 8 bit number gave a number that does not fit in 8 bits (your ALU re-invented mathematics).",
+            );
 
             if i > 0 && c == 0 {
                 r += 1;
             }
 
-            let r16 = u16::from(r);
-            let c16 = u16::from(c);
+            let r_coord: coordinate = r.into();
+            let c_coord: coordinate = c.into();
 
             // Generate processing group
             let processing_group =
-                ProcessingGroup::new(&r16, &c16, core.id(), core.allocated_task());
+                ProcessingGroup::new(&r_coord, &c_coord, core.id(), core.allocated_task());
 
             // Generate connections group
             ret.root
                 .connections_group
-                .add_connections(core, &r16, &c16, columns, rows);
+                .add_connections(core, &r_coord, &c_coord, columns, rows);
 
             // Generate borders
             if let Some(edge_position) = core.is_on_edge(columns, rows) {
@@ -209,7 +220,13 @@ impl From<&ManycoreSystem> for SVG {
 }
 
 impl SVG {
-    fn new(number_of_cores: &usize, rows: u8, columns: u8, width: u16, height: u16) -> Self {
+    fn new(
+        number_of_cores: &usize,
+        rows: u8,
+        columns: u8,
+        width: coordinate,
+        height: coordinate,
+    ) -> Self {
         Self {
             width,
             height,

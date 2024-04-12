@@ -1,32 +1,32 @@
-use std::ops::{Div, Mul};
-
 use manycore_parser::Directions;
 use serde::Serialize;
 
 use crate::{
-    sinks_sources_layer::I_SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
+    coordinate, sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
     FieldConfiguration, LoadConfiguration, RoutingConfiguration, CONNECTION_LENGTH, MARKER_HEIGHT,
     ROUTER_OFFSET,
 };
 
 use super::utils;
 
-static HORIZONTAL_OFFSET_FROM_LINK: u16 = 5;
-static VERTICAL_OFFSET_FROM_LINK: u16 = 1;
-static OFFSET_FROM_FIRST: u16 = 20;
-static HALF_CONNECTION_LENGTH: u16 = CONNECTION_LENGTH.saturating_add(MARKER_HEIGHT).div_ceil(2);
+static HORIZONTAL_OFFSET_FROM_LINK: coordinate = 5;
+static VERTICAL_OFFSET_FROM_LINK: coordinate = 1;
+static OFFSET_FROM_FIRST: coordinate = 20;
+static HALF_CONNECTION_LENGTH: coordinate = CONNECTION_LENGTH
+    .saturating_add(MARKER_HEIGHT)
+    .saturating_div(2);
 pub static CHAR_WIDTH_AT_16_PX: f32 = 9.3;
 pub static CHAR_WIDTH_AT_22_PX: f32 = 13.3;
-pub static CHAR_HEIGHT_AT_22_PX: i32 = 30;
-pub static CHAR_V_PADDING: i32 = 2;
+pub static CHAR_HEIGHT_AT_22_PX: coordinate = 30;
+pub static CHAR_V_PADDING: coordinate = 2;
 pub static CHAR_H_PADDING: f32 = CHAR_WIDTH_AT_22_PX * 2.0;
 
 #[derive(Serialize)]
 pub struct TextInformation {
     #[serde(rename = "@x")]
-    x: i32,
+    x: coordinate,
     #[serde(rename = "@y")]
-    y: i32,
+    y: coordinate,
     #[serde(rename = "@font-size")]
     font_size: String,
     #[serde(rename = "@font-family")]
@@ -44,9 +44,9 @@ pub struct TextInformation {
 }
 
 impl TextInformation {
-    pub fn new_signed(
-        x: i32,
-        y: i32,
+    pub fn new(
+        x: coordinate,
+        y: coordinate,
         font_size: Option<&str>,
         text_anchor: &'static str,
         dominant_baseline: &'static str,
@@ -73,32 +73,11 @@ impl TextInformation {
         }
     }
 
-    pub fn new(
-        x: u16,
-        y: u16,
-        text_anchor: &'static str,
-        dominant_baseline: &'static str,
-        fill: Option<&String>,
-        class: Option<&'static str>,
-        value: String,
-    ) -> Self {
-        Self::new_signed(
-            x.into(),
-            y.into(),
-            None,
-            text_anchor,
-            dominant_baseline,
-            fill,
-            class,
-            value,
-        )
-    }
-
     fn common_link_primary(
-        link_x: &i32,
-        link_y: &i32,
+        link_x: &coordinate,
+        link_y: &coordinate,
         direction: &Directions,
-        relevant_delta: i32,
+        relevant_delta: coordinate,
         fill: Option<&String>,
         class: Option<&'static str>,
         data: String,
@@ -107,8 +86,8 @@ impl TextInformation {
             Directions::North => {
                 let delta_y = relevant_delta;
 
-                TextInformation::new_signed(
-                    link_x.saturating_add(HORIZONTAL_OFFSET_FROM_LINK.into()),
+                TextInformation::new(
+                    link_x.saturating_add(HORIZONTAL_OFFSET_FROM_LINK),
                     link_y.saturating_sub(delta_y),
                     None,
                     "start",
@@ -121,9 +100,9 @@ impl TextInformation {
             Directions::East => {
                 let delta_x = relevant_delta;
 
-                TextInformation::new_signed(
+                TextInformation::new(
                     link_x.saturating_add(delta_x),
-                    link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK.into()),
+                    link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK),
                     None,
                     "middle",
                     "text-after-edge",
@@ -135,8 +114,8 @@ impl TextInformation {
             Directions::South => {
                 let delta_y = relevant_delta;
 
-                TextInformation::new_signed(
-                    link_x.saturating_sub(HORIZONTAL_OFFSET_FROM_LINK.into()),
+                TextInformation::new(
+                    link_x.saturating_sub(HORIZONTAL_OFFSET_FROM_LINK),
                     link_y.saturating_add(delta_y),
                     None,
                     "end",
@@ -149,9 +128,9 @@ impl TextInformation {
             Directions::West => {
                 let delta_x = relevant_delta;
 
-                TextInformation::new_signed(
+                TextInformation::new(
                     link_x.saturating_sub(delta_x),
-                    link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK.into()),
+                    link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK),
                     None,
                     "middle",
                     "text-after-edge",
@@ -167,9 +146,9 @@ impl TextInformation {
         load: &u16,
         bandwidth: &u16,
         routing_configuration: &'a RoutingConfiguration,
-    ) -> (Option<u32>, Option<&'a String>) {
+    ) -> (Option<u16>, Option<&'a String>) {
         if *bandwidth > 0 {
-            let percentage = ((f32::from(*load) / f32::from(*bandwidth)) * 100.0).round() as u32;
+            let percentage = ((f32::from(*load) / f32::from(*bandwidth)) * 100.0).round() as u16;
 
             let fill_idx = utils::binary_search_left_insertion_point(
                 routing_configuration.load_colours().bounds(),
@@ -189,7 +168,7 @@ impl TextInformation {
     fn calculate_load_data(
         load: &u16,
         bandwidth: &u16,
-        percentage: Option<u32>,
+        percentage: Option<u16>,
         routing_configuration: &RoutingConfiguration,
     ) -> String {
         match routing_configuration.load_configuration() {
@@ -213,20 +192,20 @@ impl TextInformation {
 
     pub fn source_load(
         direction: &Directions,
-        link_x: &i32,
-        link_y: &i32,
+        link_x: &coordinate,
+        link_y: &coordinate,
         load: &u16,
         bandwidth: &u16,
         routing_configuration: &RoutingConfiguration,
     ) -> Self {
         let relevant_delta: i32 = match direction {
-            Directions::South | Directions::West => I_SINKS_SOURCES_CONNECTION_LENGTH
-                .saturating_add(MARKER_HEIGHT.into())
-                .div(2),
-            _ => I_SINKS_SOURCES_CONNECTION_LENGTH
-                .saturating_add(ROUTER_OFFSET.into())
-                .saturating_add(MARKER_HEIGHT.into())
-                .div(2),
+            Directions::South | Directions::West => SINKS_SOURCES_CONNECTION_LENGTH
+                .saturating_add(MARKER_HEIGHT)
+                .saturating_div(2),
+            _ => SINKS_SOURCES_CONNECTION_LENGTH
+                .saturating_add(ROUTER_OFFSET)
+                .saturating_add(MARKER_HEIGHT)
+                .saturating_div(2),
         };
 
         let (percentage, fill) = TextInformation::calculate_load_fill_and_percentage(
@@ -252,32 +231,35 @@ impl TextInformation {
         )
     }
 
-    fn link_delta_and_class(edge: bool, direction: &Directions) -> (i32, Option<&'static str>) {
+    fn link_delta_and_class(
+        edge: bool,
+        direction: &Directions,
+    ) -> (coordinate, Option<&'static str>) {
         if edge {
             return match direction {
                 Directions::North | Directions::East => (
-                    I_SINKS_SOURCES_CONNECTION_LENGTH
-                        .saturating_add(MARKER_HEIGHT.into())
-                        .div(2),
+                    SINKS_SOURCES_CONNECTION_LENGTH
+                        .saturating_add(MARKER_HEIGHT)
+                        .saturating_div(2),
                     Some(EDGE_DATA_CLASS_NAME),
                 ),
                 _ => (
-                    I_SINKS_SOURCES_CONNECTION_LENGTH
-                        .saturating_add(ROUTER_OFFSET.into())
-                        .saturating_add(MARKER_HEIGHT.into())
-                        .div(2),
+                    SINKS_SOURCES_CONNECTION_LENGTH
+                        .saturating_add(ROUTER_OFFSET)
+                        .saturating_add(MARKER_HEIGHT)
+                        .saturating_div(2),
                     Some(EDGE_DATA_CLASS_NAME),
                 ),
             };
         }
 
-        (HALF_CONNECTION_LENGTH.into(), None)
+        (HALF_CONNECTION_LENGTH, None)
     }
 
     pub fn link_load(
         direction: &Directions,
-        link_x: &i32,
-        link_y: &i32,
+        link_x: &coordinate,
+        link_y: &coordinate,
         load: &u16,
         bandwidth: &u16,
         edge: bool,
@@ -310,8 +292,8 @@ impl TextInformation {
 
     pub fn link_primary(
         direction: &Directions,
-        link_x: &i32,
-        link_y: &i32,
+        link_x: &coordinate,
+        link_y: &coordinate,
         data: &String,
         edge: bool,
         field_configuration: &FieldConfiguration,
@@ -340,8 +322,8 @@ impl TextInformation {
 
     pub fn link_secondary(
         direction: &Directions,
-        link_x: &i32,
-        link_y: &i32,
+        link_x: &coordinate,
+        link_y: &coordinate,
         data: &String,
         field_configuration: &FieldConfiguration,
     ) -> Self {
@@ -361,11 +343,11 @@ impl TextInformation {
             Directions::North => {
                 let delta_y = relevant_delta;
 
-                TextInformation::new_signed(
-                    link_x.saturating_add(HORIZONTAL_OFFSET_FROM_LINK.into()),
+                TextInformation::new(
+                    link_x.saturating_add(HORIZONTAL_OFFSET_FROM_LINK),
                     link_y
                         .saturating_sub(delta_y)
-                        .saturating_add_unsigned(OFFSET_FROM_FIRST.into()),
+                        .saturating_add(OFFSET_FROM_FIRST),
                     None,
                     "start",
                     "middle",
@@ -377,9 +359,9 @@ impl TextInformation {
             Directions::East => {
                 let delta_x = relevant_delta;
 
-                TextInformation::new_signed(
+                TextInformation::new(
                     link_x.saturating_add(delta_x),
-                    link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK.into()),
+                    link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK),
                     None,
                     "middle",
                     "text-before-edge",
@@ -391,11 +373,11 @@ impl TextInformation {
             Directions::South => {
                 let delta_y = relevant_delta;
 
-                TextInformation::new_signed(
-                    link_x.saturating_sub(HORIZONTAL_OFFSET_FROM_LINK.into()),
+                TextInformation::new(
+                    link_x.saturating_sub(HORIZONTAL_OFFSET_FROM_LINK),
                     link_y
                         .saturating_add(delta_y)
-                        .saturating_add_unsigned(OFFSET_FROM_FIRST.into()),
+                        .saturating_add(OFFSET_FROM_FIRST),
                     None,
                     "end",
                     "middle",
@@ -407,9 +389,9 @@ impl TextInformation {
             Directions::West => {
                 let delta_x = relevant_delta;
 
-                TextInformation::new_signed(
+                TextInformation::new(
                     link_x.saturating_sub(delta_x),
-                    link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK.into()),
+                    link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK),
                     None,
                     "middle",
                     "text-before-edge",
