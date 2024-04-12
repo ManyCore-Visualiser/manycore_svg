@@ -2,21 +2,21 @@ use getset::{Getters, Setters};
 use serde::Serialize;
 
 use crate::{
-    coordinate, sinks_sources_layer::SINKS_SOURCES_GROUP_OFFSET, BLOCK_LENGTH,
+    CoordinateT, sinks_sources_layer::SINKS_SOURCES_GROUP_OFFSET, BLOCK_LENGTH,
     FONT_SIZE_WITH_OFFSET,
 };
 
 #[derive(Getters, Setters, Clone, Copy)]
 #[getset(get = "pub", set = "pub")]
 pub struct ViewBox {
-    x: coordinate,
-    y: coordinate,
-    width: coordinate,
-    height: coordinate,
+    x: CoordinateT,
+    y: CoordinateT,
+    width: CoordinateT,
+    height: CoordinateT,
 }
 
 impl ViewBox {
-    pub fn new(width: coordinate, height: coordinate) -> Self {
+    pub fn new(width: CoordinateT, height: CoordinateT) -> Self {
         Self {
             x: 0,
             // Needed to fit upper text on links
@@ -28,10 +28,10 @@ impl ViewBox {
 
     pub fn swap(
         &mut self,
-        x: coordinate,
-        y: coordinate,
-        width: coordinate,
-        height: coordinate,
+        x: CoordinateT,
+        y: CoordinateT,
+        width: CoordinateT,
+        height: CoordinateT,
     ) -> Self {
         let old = self.clone();
 
@@ -47,7 +47,7 @@ impl ViewBox {
         *self = *from;
     }
 
-    pub fn reset(&mut self, width: coordinate, height: coordinate) {
+    pub fn reset(&mut self, width: CoordinateT, height: CoordinateT) {
         self.x = 0;
         self.y = FONT_SIZE_WITH_OFFSET.wrapping_mul(-1);
         self.width = width;

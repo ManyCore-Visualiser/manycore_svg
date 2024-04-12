@@ -5,19 +5,19 @@ use manycore_parser::{Core, Directions, EdgePosition, WithID};
 use serde::Serialize;
 
 use crate::{
-    coordinate, sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
+    CoordinateT, sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
     CommonAttributes, Router, HALF_ROUTER_OFFSET, MARKER_HEIGHT, MARKER_REFERENCE, ROUTER_OFFSET,
     SIDE_LENGTH,
 };
 
 pub const EDGE_CONNECTIONS_ID: &'static str = "edgeConnetions";
-static CONNECTION_GAP: coordinate = 0i32
+static CONNECTION_GAP: CoordinateT = 0i32
     .saturating_add(HALF_ROUTER_OFFSET)
     .saturating_mul(3)
     .saturating_div(4)
     .wrapping_sub(5);
 
-pub static CONNECTION_LENGTH: coordinate = ROUTER_OFFSET.saturating_mul(4);
+pub static CONNECTION_LENGTH: CoordinateT = ROUTER_OFFSET.saturating_mul(4);
 
 #[derive(Serialize, Getters, Debug)]
 pub struct Connection {
@@ -29,16 +29,16 @@ pub struct Connection {
     marker_end: &'static str,
     #[serde(skip)]
     #[getset(get = "pub")]
-    x: coordinate,
+    x: CoordinateT,
     #[serde(skip)]
     #[getset(get = "pub")]
-    y: coordinate,
+    y: CoordinateT,
 }
 
 struct ConnectionPath {
     path: String,
-    x: coordinate,
-    y: coordinate,
+    x: CoordinateT,
+    y: CoordinateT,
 }
 
 struct EdgePath {
@@ -47,7 +47,7 @@ struct EdgePath {
 }
 
 impl Connection {
-    fn get_inner_path(direction: &Directions, r: &coordinate, c: &coordinate) -> ConnectionPath {
+    fn get_inner_path(direction: &Directions, r: &CoordinateT, c: &CoordinateT) -> ConnectionPath {
         let (mut router_x, mut router_y) = Router::get_move_coordinates(r, c);
 
         let path: String;
@@ -81,7 +81,7 @@ impl Connection {
         }
     }
 
-    fn get_edge_paths(direction: &Directions, r: &coordinate, c: &coordinate) -> EdgePath {
+    fn get_edge_paths(direction: &Directions, r: &CoordinateT, c: &CoordinateT) -> EdgePath {
         let (mut router_x, mut router_y) = Router::get_move_coordinates(r, c);
 
         let (input, output) = match direction {
@@ -303,8 +303,8 @@ impl ConnectionsParentGroup {
         &mut self,
         core_id: &u8,
         direction: &Directions,
-        r: &coordinate,
-        c: &coordinate,
+        r: &CoordinateT,
+        c: &CoordinateT,
     ) {
         let EdgePath { input, output } = Connection::get_edge_paths(direction, r, c);
         let current_source_size = self.edge_connections.source.len();
@@ -329,8 +329,8 @@ impl ConnectionsParentGroup {
         &mut self,
         core_id: &u8,
         direction: &Directions,
-        r: &coordinate,
-        c: &coordinate,
+        r: &CoordinateT,
+        c: &CoordinateT,
     ) {
         let path = Connection::get_inner_path(direction, &r, &c);
         let current_size = self.connections.path.len();
@@ -344,7 +344,7 @@ impl ConnectionsParentGroup {
         );
     }
 
-    pub fn add_connections(&mut self, core: &Core, r: &coordinate, c: &coordinate, columns: u8, rows: u8) {
+    pub fn add_connections(&mut self, core: &Core, r: &CoordinateT, c: &CoordinateT, columns: u8, rows: u8) {
         let on_edge = core.is_on_edge(columns, rows);
 
         for direction in core.channels().channel().keys() {

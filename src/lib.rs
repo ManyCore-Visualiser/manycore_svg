@@ -32,7 +32,7 @@ use serde::Serialize;
 use style::Style;
 use text_background::TextBackground;
 
-type coordinate = i32;
+type CoordinateT = i32;
 
 #[derive(Serialize)]
 struct Defs {
@@ -99,10 +99,10 @@ pub struct Root {
 pub struct SVG {
     #[serde(skip)]
     #[getset(get = "pub")]
-    width: coordinate,
+    width: CoordinateT,
     #[serde(skip)]
     #[getset(get = "pub")]
-    height: coordinate,
+    height: CoordinateT,
     #[serde(rename = "@xmlns:svg")]
     xmlns_svg: &'static str,
     #[serde(rename = "@xmlns")]
@@ -150,8 +150,8 @@ impl From<&ManycoreSystem> for SVG {
         let columns = *manycore.columns();
         let rows = *manycore.rows();
 
-        let columns_coord: coordinate = columns.into();
-        let rows_coord: coordinate = rows.into();
+        let columns_coord: CoordinateT = columns.into();
+        let rows_coord: CoordinateT = rows.into();
 
         let width = (columns_coord * BLOCK_LENGTH)
             + (BLOCK_LENGTH / 2) // Buffer for channel text on the right
@@ -184,8 +184,8 @@ impl From<&ManycoreSystem> for SVG {
                 r += 1;
             }
 
-            let r_coord: coordinate = r.into();
-            let c_coord: coordinate = c.into();
+            let r_coord: CoordinateT = r.into();
+            let c_coord: CoordinateT = c.into();
 
             // Generate processing group
             let processing_group =
@@ -221,8 +221,8 @@ impl SVG {
         number_of_cores: &usize,
         rows: u8,
         columns: u8,
-        width: coordinate,
-        height: coordinate,
+        width: CoordinateT,
+        height: CoordinateT,
     ) -> Self {
         Self {
             width,

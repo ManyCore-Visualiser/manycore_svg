@@ -3,26 +3,26 @@ use manycore_parser::{EdgePosition, SinkSourceDirection};
 use serde::Serialize;
 
 use crate::{
-    coordinate,
+    CoordinateT,
     style::{DEFAULT_FILL, EDGE_DATA_CLASS_NAME},
     HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 // Side lengths
-const SINKS_SOURCES_SIDE_LENGTH: coordinate = 70;
-static SINKS_SOURCES_HALF_SIDE_LENGTH: coordinate = SINKS_SOURCES_SIDE_LENGTH.saturating_div(2);
+const SINKS_SOURCES_SIDE_LENGTH: CoordinateT = 70;
+static SINKS_SOURCES_HALF_SIDE_LENGTH: CoordinateT = SINKS_SOURCES_SIDE_LENGTH.saturating_div(2);
 static SINKS_SOURCES_SIDE_LENGTH_STR: &'static str = concatcp!(SINKS_SOURCES_SIDE_LENGTH);
 
 // Stroke
-const SINKS_SOURCES_STROKE_WIDTH: coordinate = 1;
+const SINKS_SOURCES_STROKE_WIDTH: CoordinateT = 1;
 static SINKS_SOURCES_STROKE_WIDTH_STR: &'static str = concatcp!(SINKS_SOURCES_STROKE_WIDTH);
 static SINKS_SOURCES_RX: &str = "15";
 
 // Connection
-pub static SINKS_SOURCES_CONNECTION_LENGTH: coordinate = ROUTER_OFFSET.saturating_mul(3);
+pub static SINKS_SOURCES_CONNECTION_LENGTH: CoordinateT = ROUTER_OFFSET.saturating_mul(3);
 
 // Viewbox Offset
-pub static SINKS_SOURCES_GROUP_OFFSET: coordinate = SINKS_SOURCES_CONNECTION_LENGTH
+pub static SINKS_SOURCES_GROUP_OFFSET: CoordinateT = SINKS_SOURCES_CONNECTION_LENGTH
     .saturating_add(SINKS_SOURCES_SIDE_LENGTH)
     .saturating_add(SINKS_SOURCES_STROKE_WIDTH)
     .saturating_add(MARKER_HEIGHT);
@@ -103,33 +103,33 @@ impl Rect {
 //     None,
 // }
 
-static NORTH_DELTA_Y: coordinate = 0i32
+static NORTH_DELTA_Y: CoordinateT = 0i32
     .wrapping_sub(SINKS_SOURCES_CONNECTION_LENGTH)
     .wrapping_sub(SINKS_SOURCES_SIDE_LENGTH)
     .wrapping_sub(ROUTER_OFFSET)
     .wrapping_sub(MARKER_HEIGHT);
 
-static SOUTH_DELTA_Y: coordinate = 0i32
+static SOUTH_DELTA_Y: CoordinateT = 0i32
     .wrapping_add(SIDE_LENGTH)
     .wrapping_add(SINKS_SOURCES_CONNECTION_LENGTH)
     .wrapping_add(MARKER_HEIGHT);
 
-static NORTH_SOUTH_DELTA_X: coordinate = 0i32
+static NORTH_SOUTH_DELTA_X: CoordinateT = 0i32
     .wrapping_add(SIDE_LENGTH)
     .wrapping_sub(HALF_ROUTER_OFFSET)
     .wrapping_sub(SINKS_SOURCES_HALF_SIDE_LENGTH);
 
-static EAST_WEST_DELTA_Y: coordinate = 0i32
+static EAST_WEST_DELTA_Y: CoordinateT = 0i32
     .wrapping_sub(ROUTER_OFFSET)
     .wrapping_add(HALF_ROUTER_OFFSET)
     .wrapping_sub(SINKS_SOURCES_HALF_SIDE_LENGTH);
 
-static EAST_DELTA_X: coordinate = 0i32
+static EAST_DELTA_X: CoordinateT = 0i32
     .wrapping_add(SINKS_SOURCES_CONNECTION_LENGTH)
     .wrapping_add(SIDE_LENGTH)
     .wrapping_add(MARKER_HEIGHT);
 
-static WEST_DELTA_X: coordinate = 0i32
+static WEST_DELTA_X: CoordinateT = 0i32
     .wrapping_sub(SINKS_SOURCES_CONNECTION_LENGTH)
     .wrapping_sub(MARKER_HEIGHT)
     .wrapping_sub(ROUTER_OFFSET)
@@ -144,8 +144,8 @@ pub struct SinkSource {
 
 impl SinkSource {
     pub fn new(
-        router_x: &coordinate,
-        router_y: &coordinate,
+        router_x: &CoordinateT,
+        router_y: &CoordinateT,
         direction: &SinkSourceDirection,
         // variant: SinkSourceVariant,
     ) -> Self {
@@ -200,7 +200,7 @@ impl SinksSourcesGroup {
         }
     }
 
-    pub fn insert(&mut self, edge_position: EdgePosition, router_x: &coordinate, router_y: &coordinate) {
+    pub fn insert(&mut self, edge_position: EdgePosition, router_x: &CoordinateT, router_y: &CoordinateT) {
         match edge_position {
             EdgePosition::Top => {
                 self.g.push(SinkSource::new(

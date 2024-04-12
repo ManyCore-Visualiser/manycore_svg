@@ -4,11 +4,11 @@ use manycore_parser::{Directions, WithID, WithXMLAttributes, COORDINATES_KEY, ID
 
 use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER};
 use crate::{
-    coordinate, ConnectionType, ConnectionsParentGroup, DirectionType, FieldConfiguration,
+    CoordinateT, ConnectionType, ConnectionsParentGroup, DirectionType, FieldConfiguration,
     SVGError, SVGErrorKind,
 };
 
-pub static FONT_SIZE_WITH_OFFSET: coordinate = 18;
+pub static FONT_SIZE_WITH_OFFSET: CoordinateT = 18;
 
 pub fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) -> usize {
     // Bounds has always length 4
@@ -40,8 +40,8 @@ pub fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) -> usize 
 }
 
 pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
-    mut base_x: coordinate,
-    mut base_y: coordinate,
+    mut base_x: CoordinateT,
+    mut base_y: CoordinateT,
     configuration: &BTreeMap<String, FieldConfiguration>,
     target: &T,
     group: &mut ProcessingInformation,

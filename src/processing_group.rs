@@ -6,19 +6,19 @@ use manycore_utils::serialise_btreemap;
 use serde::Serialize;
 
 use crate::{
-    coordinate, style::BASE_FILL_CLASS_NAME, TextInformation, CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING,
+    CoordinateT, style::BASE_FILL_CLASS_NAME, TextInformation, CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING,
     CHAR_V_PADDING, CHAR_WIDTH_AT_22_PX, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
-pub const SIDE_LENGTH: coordinate = 100;
-pub const ROUTER_OFFSET: coordinate = SIDE_LENGTH.saturating_div(4).saturating_mul(3);
-pub static BLOCK_LENGTH: coordinate = SIDE_LENGTH + ROUTER_OFFSET;
-pub static HALF_SIDE_LENGTH: coordinate = SIDE_LENGTH.saturating_div(2);
-pub static HALF_ROUTER_OFFSET: coordinate = ROUTER_OFFSET.saturating_div(2);
-pub static BLOCK_DISTANCE: coordinate = CONNECTION_LENGTH
+pub const SIDE_LENGTH: CoordinateT = 100;
+pub const ROUTER_OFFSET: CoordinateT = SIDE_LENGTH.saturating_div(4).saturating_mul(3);
+pub static BLOCK_LENGTH: CoordinateT = SIDE_LENGTH + ROUTER_OFFSET;
+pub static HALF_SIDE_LENGTH: CoordinateT = SIDE_LENGTH.saturating_div(2);
+pub static HALF_ROUTER_OFFSET: CoordinateT = ROUTER_OFFSET.saturating_div(2);
+pub static BLOCK_DISTANCE: CoordinateT = CONNECTION_LENGTH
     .saturating_sub(ROUTER_OFFSET)
     .saturating_add(MARKER_HEIGHT);
-static TASK_RECT_X_OFFSET: coordinate = 10;
+static TASK_RECT_X_OFFSET: CoordinateT = 10;
 
 // Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
 // l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z
@@ -52,14 +52,14 @@ static ROUTER_PATH: &'static str = concatcp!(
     ",0 Z"
 );
 
-pub const CORE_ROUTER_STROKE_WIDTH: coordinate = 1;
+pub const CORE_ROUTER_STROKE_WIDTH: CoordinateT = 1;
 static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
 
 static TASK_FONT_SIZE: &'static str = "22px";
-pub static TASK_RECT_STROKE: coordinate = 1;
-static TASK_RECT_HEIGHT: coordinate = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
-pub static HALF_TASK_RECT_HEIGHT: coordinate = TASK_RECT_HEIGHT.saturating_div(2);
-pub static TASK_RECT_CENTRE_OFFSET: coordinate =
+pub static TASK_RECT_STROKE: CoordinateT = 1;
+static TASK_RECT_HEIGHT: CoordinateT = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
+pub static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(2);
+pub static TASK_RECT_CENTRE_OFFSET: CoordinateT =
     HALF_TASK_RECT_HEIGHT.saturating_sub(TASK_RECT_HEIGHT.saturating_div(3));
 static TASK_RECT_FILL: &'static str = "#bfdbfe";
 
@@ -104,13 +104,13 @@ impl CommonAttributes {
 #[derive(Serialize)]
 struct TaskRect {
     #[serde(rename = "@x")]
-    x: coordinate,
+    x: CoordinateT,
     #[serde(rename = "@y")]
-    y: coordinate,
+    y: CoordinateT,
     #[serde(rename = "@width")]
-    width: coordinate,
+    width: CoordinateT,
     #[serde(rename = "@height")]
-    height: coordinate,
+    height: CoordinateT,
     #[serde(rename = "@rx")]
     rx: &'static str,
     #[serde(rename = "@fill")]
@@ -122,11 +122,11 @@ struct TaskRect {
 }
 
 impl TaskRect {
-    fn new(cx: coordinate, cy: coordinate, text_width: f32) -> Self {
+    fn new(cx: CoordinateT, cy: CoordinateT, text_width: f32) -> Self {
         Self {
-            x: cx - (text_width / 2.0).round() as coordinate,
+            x: cx - (text_width / 2.0).round() as CoordinateT,
             y: cy - HALF_TASK_RECT_HEIGHT,
-            width: text_width.round() as coordinate,
+            width: text_width.round() as CoordinateT,
             height: TASK_RECT_HEIGHT,
             rx: "15",
             fill: TASK_RECT_FILL,
@@ -143,7 +143,7 @@ struct Task {
 }
 
 impl Task {
-    fn new(r: &coordinate, c: &coordinate, task: &Option<u16>) -> Option<Self> {
+    fn new(r: &CoordinateT, c: &CoordinateT, task: &Option<u16>) -> Option<Self> {
         match task {
             Some(task) => {
                 let text = format!("T{}", task);
@@ -169,11 +169,11 @@ impl Task {
     }
 
     fn get_centre_coordinates(
-        r: &coordinate,
-        c: &coordinate,
+        r: &CoordinateT,
+        c: &CoordinateT,
         text_width: f32,
-    ) -> (coordinate, coordinate) {
-        let cx = c * BLOCK_LENGTH + c * BLOCK_DISTANCE - ((text_width.round() / 2.0) as coordinate)
+    ) -> (CoordinateT, CoordinateT) {
+        let cx = c * BLOCK_LENGTH + c * BLOCK_DISTANCE - ((text_width.round() / 2.0) as CoordinateT)
             + TASK_RECT_X_OFFSET;
         let cy = TASK_RECT_CENTRE_OFFSET
             + r * BLOCK_LENGTH
@@ -190,7 +190,7 @@ pub struct Router {
     /// Router coordinates, (x, y)
     #[serde(skip)]
     #[getset(get = "pub")]
-    move_coordinates: (coordinate, coordinate),
+    move_coordinates: (CoordinateT, CoordinateT),
     #[serde(rename = "@id")]
     id: String,
     #[serde(rename = "@d")]
@@ -201,7 +201,7 @@ pub struct Router {
 }
 
 impl Router {
-    pub fn new(r: &coordinate, c: &coordinate, id: &u8) -> Self {
+    pub fn new(r: &CoordinateT, c: &CoordinateT, id: &u8) -> Self {
         let (move_x, move_y) = Self::get_move_coordinates(r, c);
 
         Self {
@@ -212,7 +212,7 @@ impl Router {
         }
     }
 
-    pub fn get_move_coordinates(r: &coordinate, c: &coordinate) -> (coordinate, coordinate) {
+    pub fn get_move_coordinates(r: &CoordinateT, c: &CoordinateT) -> (CoordinateT, CoordinateT) {
         let move_x = (c * BLOCK_LENGTH) + ROUTER_OFFSET + c * BLOCK_DISTANCE;
         let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
 
@@ -225,7 +225,7 @@ pub struct Core {
     /// Core coordinates, (x, y)
     #[serde(skip)]
     #[getset(get = "pub")]
-    move_coordinates: (coordinate, coordinate),
+    move_coordinates: (CoordinateT, CoordinateT),
     #[serde(rename = "@id")]
     id: String,
     #[serde(rename = "@d")]
@@ -236,13 +236,13 @@ pub struct Core {
 }
 
 impl Core {
-    pub fn get_move_coordinates(r: &coordinate, c: &coordinate) -> (coordinate, coordinate) {
+    pub fn get_move_coordinates(r: &CoordinateT, c: &CoordinateT) -> (CoordinateT, CoordinateT) {
         let move_x = c * BLOCK_LENGTH + c * BLOCK_DISTANCE;
         let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
 
         (move_x, move_y)
     }
-    fn new(r: &coordinate, c: &coordinate, id: &u8) -> Self {
+    fn new(r: &CoordinateT, c: &CoordinateT, id: &u8) -> Self {
         let (move_x, move_y) = Self::get_move_coordinates(r, c);
 
         Self {
@@ -259,7 +259,7 @@ pub struct ProcessingGroup {
     #[serde(skip)]
     #[getset(get = "pub")]
     /// Coordinates (row, column)
-    coordinates: (coordinate, coordinate),
+    coordinates: (CoordinateT, CoordinateT),
     #[serde(rename = "@id")]
     id: u8,
     #[serde(rename = "path")]
@@ -273,7 +273,7 @@ pub struct ProcessingGroup {
 }
 
 impl ProcessingGroup {
-    pub fn new(r: &coordinate, c: &coordinate, id: &u8, allocated_task: &Option<u16>) -> Self {
+    pub fn new(r: &CoordinateT, c: &CoordinateT, id: &u8, allocated_task: &Option<u16>) -> Self {
         Self {
             coordinates: (*r, *c),
             id: *id,

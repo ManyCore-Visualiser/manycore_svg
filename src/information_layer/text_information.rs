@@ -2,31 +2,31 @@ use manycore_parser::Directions;
 use serde::Serialize;
 
 use crate::{
-    coordinate, sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
+    CoordinateT, sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
     FieldConfiguration, LoadConfiguration, RoutingConfiguration, CONNECTION_LENGTH, MARKER_HEIGHT,
     ROUTER_OFFSET,
 };
 
 use super::utils;
 
-static HORIZONTAL_OFFSET_FROM_LINK: coordinate = 5;
-static VERTICAL_OFFSET_FROM_LINK: coordinate = 1;
-static OFFSET_FROM_FIRST: coordinate = 20;
-static HALF_CONNECTION_LENGTH: coordinate = CONNECTION_LENGTH
+static HORIZONTAL_OFFSET_FROM_LINK: CoordinateT = 5;
+static VERTICAL_OFFSET_FROM_LINK: CoordinateT = 1;
+static OFFSET_FROM_FIRST: CoordinateT = 20;
+static HALF_CONNECTION_LENGTH: CoordinateT = CONNECTION_LENGTH
     .saturating_add(MARKER_HEIGHT)
     .saturating_div(2);
 // pub static CHAR_WIDTH_AT_16_PX: f32 = 9.3;
 pub static CHAR_WIDTH_AT_22_PX: f32 = 13.3;
-pub static CHAR_HEIGHT_AT_22_PX: coordinate = 30;
-pub static CHAR_V_PADDING: coordinate = 3;
+pub static CHAR_HEIGHT_AT_22_PX: CoordinateT = 30;
+pub static CHAR_V_PADDING: CoordinateT = 3;
 pub static CHAR_H_PADDING: f32 = CHAR_WIDTH_AT_22_PX * 2.0;
 
 #[derive(Serialize)]
 pub struct TextInformation {
     #[serde(rename = "@x")]
-    x: coordinate,
+    x: CoordinateT,
     #[serde(rename = "@y")]
-    y: coordinate,
+    y: CoordinateT,
     #[serde(rename = "@font-size")]
     font_size: String,
     #[serde(rename = "@font-family")]
@@ -45,8 +45,8 @@ pub struct TextInformation {
 
 impl TextInformation {
     pub fn new(
-        x: coordinate,
-        y: coordinate,
+        x: CoordinateT,
+        y: CoordinateT,
         font_size: Option<&str>,
         text_anchor: &'static str,
         dominant_baseline: &'static str,
@@ -74,10 +74,10 @@ impl TextInformation {
     }
 
     fn common_link_primary(
-        link_x: &coordinate,
-        link_y: &coordinate,
+        link_x: &CoordinateT,
+        link_y: &CoordinateT,
         direction: &Directions,
-        relevant_delta: coordinate,
+        relevant_delta: CoordinateT,
         fill: Option<&String>,
         class: Option<&'static str>,
         data: String,
@@ -192,8 +192,8 @@ impl TextInformation {
 
     pub fn source_load(
         direction: &Directions,
-        link_x: &coordinate,
-        link_y: &coordinate,
+        link_x: &CoordinateT,
+        link_y: &CoordinateT,
         load: &u16,
         bandwidth: &u16,
         routing_configuration: &RoutingConfiguration,
@@ -234,7 +234,7 @@ impl TextInformation {
     fn link_delta_and_class(
         edge: bool,
         direction: &Directions,
-    ) -> (coordinate, Option<&'static str>) {
+    ) -> (CoordinateT, Option<&'static str>) {
         if edge {
             return match direction {
                 Directions::North | Directions::East => (
@@ -258,8 +258,8 @@ impl TextInformation {
 
     pub fn link_load(
         direction: &Directions,
-        link_x: &coordinate,
-        link_y: &coordinate,
+        link_x: &CoordinateT,
+        link_y: &CoordinateT,
         load: &u16,
         bandwidth: &u16,
         edge: bool,
@@ -292,8 +292,8 @@ impl TextInformation {
 
     pub fn link_primary(
         direction: &Directions,
-        link_x: &coordinate,
-        link_y: &coordinate,
+        link_x: &CoordinateT,
+        link_y: &CoordinateT,
         data: &String,
         edge: bool,
         field_configuration: &FieldConfiguration,
@@ -322,8 +322,8 @@ impl TextInformation {
 
     pub fn link_secondary(
         direction: &Directions,
-        link_x: &coordinate,
-        link_y: &coordinate,
+        link_x: &CoordinateT,
+        link_y: &CoordinateT,
         data: &String,
         field_configuration: &FieldConfiguration,
     ) -> Self {
