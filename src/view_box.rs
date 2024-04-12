@@ -2,21 +2,21 @@ use getset::{Getters, Setters};
 use serde::Serialize;
 
 use crate::{
-    sinks_sources_layer::{I_SINKS_SOURCES_GROUP_OFFSET, SINKS_SOURCES_GROUP_OFFSET},
-    BLOCK_LENGTH, FONT_SIZE_WITH_OFFSET,
+    CoordinateT, sinks_sources_layer::SINKS_SOURCES_GROUP_OFFSET, BLOCK_LENGTH,
+    FONT_SIZE_WITH_OFFSET,
 };
 
 #[derive(Getters, Setters, Clone, Copy)]
 #[getset(get = "pub", set = "pub")]
 pub struct ViewBox {
-    x: i16,
-    y: i16,
-    width: u16,
-    height: u16,
+    x: CoordinateT,
+    y: CoordinateT,
+    width: CoordinateT,
+    height: CoordinateT,
 }
 
 impl ViewBox {
-    pub fn new(width: u16, height: u16) -> Self {
+    pub fn new(width: CoordinateT, height: CoordinateT) -> Self {
         Self {
             x: 0,
             // Needed to fit upper text on links
@@ -26,7 +26,13 @@ impl ViewBox {
         }
     }
 
-    pub fn swap(&mut self, x: i16, y: i16, width: u16, height: u16) -> Self {
+    pub fn swap(
+        &mut self,
+        x: CoordinateT,
+        y: CoordinateT,
+        width: CoordinateT,
+        height: CoordinateT,
+    ) -> Self {
         let old = self.clone();
 
         self.x = x;
@@ -41,7 +47,7 @@ impl ViewBox {
         *self = *from;
     }
 
-    pub fn reset(&mut self, width: u16, height: u16) {
+    pub fn reset(&mut self, width: CoordinateT, height: CoordinateT) {
         self.x = 0;
         self.y = FONT_SIZE_WITH_OFFSET.wrapping_mul(-1);
         self.width = width;
@@ -50,15 +56,15 @@ impl ViewBox {
 
     pub fn insert_edges(&mut self) {
         // This offset is greater than font offset
-        self.x = -I_SINKS_SOURCES_GROUP_OFFSET;
+        self.x = SINKS_SOURCES_GROUP_OFFSET.saturating_mul(-1);
         self.width = self
             .width
             .wrapping_sub(BLOCK_LENGTH / 2)
             .saturating_add(2 * SINKS_SOURCES_GROUP_OFFSET);
-        self.y = -I_SINKS_SOURCES_GROUP_OFFSET;
+        self.y = SINKS_SOURCES_GROUP_OFFSET.saturating_mul(-1);
         self.height = self
             .height
-            .saturating_add_signed(-FONT_SIZE_WITH_OFFSET)
+            .saturating_add(FONT_SIZE_WITH_OFFSET.saturating_mul(-1))
             .saturating_add(2 * SINKS_SOURCES_GROUP_OFFSET);
     }
 }

@@ -3,33 +3,29 @@ use manycore_parser::{EdgePosition, SinkSourceDirection};
 use serde::Serialize;
 
 use crate::{
+    CoordinateT,
     style::{DEFAULT_FILL, EDGE_DATA_CLASS_NAME},
     HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 // Side lengths
-const SINKS_SOURCES_SIDE_LENGTH: u16 = 70;
-static I_SINKS_SOURCES_SIDE_LENGTH: i16 = 0i16.saturating_add_unsigned(SINKS_SOURCES_SIDE_LENGTH);
-static I_SINKS_SOURCES_HALF_SIDE_LENGTH: i16 = I_SINKS_SOURCES_SIDE_LENGTH.saturating_div(2);
+const SINKS_SOURCES_SIDE_LENGTH: CoordinateT = 70;
+static SINKS_SOURCES_HALF_SIDE_LENGTH: CoordinateT = SINKS_SOURCES_SIDE_LENGTH.saturating_div(2);
 static SINKS_SOURCES_SIDE_LENGTH_STR: &'static str = concatcp!(SINKS_SOURCES_SIDE_LENGTH);
 
 // Stroke
-const SINKS_SOURCES_STROKE_WIDTH: u16 = 1;
+const SINKS_SOURCES_STROKE_WIDTH: CoordinateT = 1;
 static SINKS_SOURCES_STROKE_WIDTH_STR: &'static str = concatcp!(SINKS_SOURCES_STROKE_WIDTH);
 static SINKS_SOURCES_RX: &str = "15";
 
 // Connection
-pub static SINKS_SOURCES_CONNECTION_LENGTH: u16 = ROUTER_OFFSET.saturating_mul(3);
-pub static I_SINKS_SOURCES_CONNECTION_LENGTH: i32 =
-    0i32.saturating_add_unsigned(SINKS_SOURCES_CONNECTION_LENGTH as u32);
+pub static SINKS_SOURCES_CONNECTION_LENGTH: CoordinateT = ROUTER_OFFSET.saturating_mul(3);
 
 // Viewbox Offset
-pub static SINKS_SOURCES_GROUP_OFFSET: u16 = SINKS_SOURCES_CONNECTION_LENGTH
+pub static SINKS_SOURCES_GROUP_OFFSET: CoordinateT = SINKS_SOURCES_CONNECTION_LENGTH
     .saturating_add(SINKS_SOURCES_SIDE_LENGTH)
     .saturating_add(SINKS_SOURCES_STROKE_WIDTH)
     .saturating_add(MARKER_HEIGHT);
-pub static I_SINKS_SOURCES_GROUP_OFFSET: i16 =
-    0i16.wrapping_add_unsigned(SINKS_SOURCES_GROUP_OFFSET);
 
 // static SINK_FILL: &str = "#fb923c";
 // static SOURCE_FILL: &str = "#fbbf24";
@@ -107,37 +103,37 @@ impl Rect {
 //     None,
 // }
 
-static NORTH_DELTA_Y: i32 = 0i32
-    .wrapping_sub(I_SINKS_SOURCES_CONNECTION_LENGTH)
-    .wrapping_sub(I_SINKS_SOURCES_SIDE_LENGTH as i32)
-    .wrapping_sub_unsigned(ROUTER_OFFSET as u32)
-    .wrapping_sub_unsigned(MARKER_HEIGHT as u32);
+static NORTH_DELTA_Y: CoordinateT = 0i32
+    .wrapping_sub(SINKS_SOURCES_CONNECTION_LENGTH)
+    .wrapping_sub(SINKS_SOURCES_SIDE_LENGTH)
+    .wrapping_sub(ROUTER_OFFSET)
+    .wrapping_sub(MARKER_HEIGHT);
 
-static SOUTH_DELTA_Y: i32 = 0i32
-    .wrapping_add_unsigned(SIDE_LENGTH as u32)
-    .wrapping_add(I_SINKS_SOURCES_CONNECTION_LENGTH)
-    .wrapping_add_unsigned(MARKER_HEIGHT as u32);
+static SOUTH_DELTA_Y: CoordinateT = 0i32
+    .wrapping_add(SIDE_LENGTH)
+    .wrapping_add(SINKS_SOURCES_CONNECTION_LENGTH)
+    .wrapping_add(MARKER_HEIGHT);
 
-static NORTH_SOUTH_DELTA_X: i32 = 0i32
-    .wrapping_add_unsigned(SIDE_LENGTH as u32)
-    .wrapping_sub_unsigned(HALF_ROUTER_OFFSET as u32)
-    .wrapping_sub(I_SINKS_SOURCES_HALF_SIDE_LENGTH as i32);
+static NORTH_SOUTH_DELTA_X: CoordinateT = 0i32
+    .wrapping_add(SIDE_LENGTH)
+    .wrapping_sub(HALF_ROUTER_OFFSET)
+    .wrapping_sub(SINKS_SOURCES_HALF_SIDE_LENGTH);
 
-static EAST_WEST_DELTA_Y: i32 = 0i32
-    .wrapping_sub_unsigned(ROUTER_OFFSET as u32)
-    .wrapping_add_unsigned(HALF_ROUTER_OFFSET as u32)
-    .wrapping_sub(I_SINKS_SOURCES_HALF_SIDE_LENGTH as i32);
+static EAST_WEST_DELTA_Y: CoordinateT = 0i32
+    .wrapping_sub(ROUTER_OFFSET)
+    .wrapping_add(HALF_ROUTER_OFFSET)
+    .wrapping_sub(SINKS_SOURCES_HALF_SIDE_LENGTH);
 
-static EAST_DELTA_X: i32 = 0i32
-    .wrapping_add(I_SINKS_SOURCES_CONNECTION_LENGTH)
-    .wrapping_add_unsigned(SIDE_LENGTH as u32)
-    .wrapping_add_unsigned(MARKER_HEIGHT as u32);
+static EAST_DELTA_X: CoordinateT = 0i32
+    .wrapping_add(SINKS_SOURCES_CONNECTION_LENGTH)
+    .wrapping_add(SIDE_LENGTH)
+    .wrapping_add(MARKER_HEIGHT);
 
-static WEST_DELTA_X: i32 = 0i32
-    .wrapping_sub(I_SINKS_SOURCES_CONNECTION_LENGTH)
-    .wrapping_sub_unsigned(MARKER_HEIGHT as u32)
-    .wrapping_sub_unsigned(ROUTER_OFFSET as u32)
-    .wrapping_sub(I_SINKS_SOURCES_SIDE_LENGTH as i32);
+static WEST_DELTA_X: CoordinateT = 0i32
+    .wrapping_sub(SINKS_SOURCES_CONNECTION_LENGTH)
+    .wrapping_sub(MARKER_HEIGHT)
+    .wrapping_sub(ROUTER_OFFSET)
+    .wrapping_sub(SINKS_SOURCES_SIDE_LENGTH);
 
 #[derive(Serialize)]
 pub struct SinkSource {
@@ -148,8 +144,8 @@ pub struct SinkSource {
 
 impl SinkSource {
     pub fn new(
-        router_x: &u16,
-        router_y: &u16,
+        router_x: &CoordinateT,
+        router_y: &CoordinateT,
         direction: &SinkSourceDirection,
         // variant: SinkSourceVariant,
     ) -> Self {
@@ -175,8 +171,8 @@ impl SinkSource {
             }
         };
 
-        let x = delta_x.wrapping_add_unsigned((*router_x).into());
-        let y = delta_y.wrapping_add_unsigned((*router_y).into());
+        let x = delta_x.wrapping_add(*router_x);
+        let y = delta_y.wrapping_add(*router_y);
 
         SinkSource {
             rect: Rect::new(x, y), //, variant),
@@ -204,7 +200,7 @@ impl SinksSourcesGroup {
         }
     }
 
-    pub fn insert(&mut self, edge_position: EdgePosition, router_x: &u16, router_y: &u16) {
+    pub fn insert(&mut self, edge_position: EdgePosition, router_x: &CoordinateT, router_y: &CoordinateT) {
         match edge_position {
             EdgePosition::Top => {
                 self.g.push(SinkSource::new(

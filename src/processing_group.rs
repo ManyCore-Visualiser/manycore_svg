@@ -6,18 +6,19 @@ use manycore_utils::serialise_btreemap;
 use serde::Serialize;
 
 use crate::{
-    style::{BASE_FILL_CLASS_NAME, DEFAULT_FILL},
-    TextInformation, CONNECTION_LENGTH, MARKER_HEIGHT,
+    CoordinateT, style::BASE_FILL_CLASS_NAME, TextInformation, CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING,
+    CHAR_V_PADDING, CHAR_WIDTH_AT_22_PX, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
-pub const SIDE_LENGTH: u16 = 100;
-pub const ROUTER_OFFSET: u16 = SIDE_LENGTH.div_ceil(4).saturating_mul(3);
-pub static BLOCK_LENGTH: u16 = SIDE_LENGTH + ROUTER_OFFSET;
-pub static HALF_SIDE_LENGTH: u16 = SIDE_LENGTH.div_ceil(2);
-pub static HALF_ROUTER_OFFSET: u16 = ROUTER_OFFSET.div_ceil(2);
-pub static BLOCK_DISTANCE: u16 = CONNECTION_LENGTH
+pub const SIDE_LENGTH: CoordinateT = 100;
+pub const ROUTER_OFFSET: CoordinateT = SIDE_LENGTH.saturating_div(4).saturating_mul(3);
+pub static BLOCK_LENGTH: CoordinateT = SIDE_LENGTH + ROUTER_OFFSET;
+pub static HALF_SIDE_LENGTH: CoordinateT = SIDE_LENGTH.saturating_div(2);
+pub static HALF_ROUTER_OFFSET: CoordinateT = ROUTER_OFFSET.saturating_div(2);
+pub static BLOCK_DISTANCE: CoordinateT = CONNECTION_LENGTH
     .saturating_sub(ROUTER_OFFSET)
     .saturating_add(MARKER_HEIGHT);
+static TASK_RECT_X_OFFSET: CoordinateT = 10;
 
 // Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
 // l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z
@@ -51,17 +52,16 @@ static ROUTER_PATH: &'static str = concatcp!(
     ",0 Z"
 );
 
-const TASK_CIRCLE_RADIUS: u16 = 35;
-static TASK_CIRCLE_RADIUS_STR: &'static str = concatcp!(TASK_CIRCLE_RADIUS);
-static TASK_FONT_SIZE: &'static str = "22px";
-static TASK_CIRCLE_OFFSET: u16 = TASK_CIRCLE_RADIUS.div_ceil(2);
-static TASK_CIRCLE_STROKE: u16 = 1;
-
-pub static TASK_CIRCLE_TOTAL_OFFSET: u16 =
-    TASK_CIRCLE_OFFSET + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE;
-
-pub const CORE_ROUTER_STROKE_WIDTH: u16 = 1;
+pub const CORE_ROUTER_STROKE_WIDTH: CoordinateT = 1;
 static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
+
+static TASK_FONT_SIZE: &'static str = "22px";
+pub static TASK_RECT_STROKE: CoordinateT = 1;
+static TASK_RECT_HEIGHT: CoordinateT = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
+pub static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(2);
+pub static TASK_RECT_CENTRE_OFFSET: CoordinateT =
+    HALF_TASK_RECT_HEIGHT.saturating_sub(TASK_RECT_HEIGHT.saturating_div(3));
+static TASK_RECT_FILL: &'static str = "#bfdbfe";
 
 #[derive(Serialize, Setters, Debug)]
 pub struct CommonAttributes {
@@ -102,13 +102,17 @@ impl CommonAttributes {
 }
 
 #[derive(Serialize)]
-struct Circle {
-    #[serde(rename = "@cx")]
-    cx: u16,
-    #[serde(rename = "@cy")]
-    cy: u16,
-    #[serde(rename = "@r")]
-    r: &'static str,
+struct TaskRect {
+    #[serde(rename = "@x")]
+    x: CoordinateT,
+    #[serde(rename = "@y")]
+    y: CoordinateT,
+    #[serde(rename = "@width")]
+    width: CoordinateT,
+    #[serde(rename = "@height")]
+    height: CoordinateT,
+    #[serde(rename = "@rx")]
+    rx: &'static str,
     #[serde(rename = "@fill")]
     fill: &'static str,
     #[serde(rename = "@stroke")]
@@ -117,13 +121,15 @@ struct Circle {
     stroke_width: &'static str,
 }
 
-impl Circle {
-    fn new(cx: u16, cy: u16) -> Self {
+impl TaskRect {
+    fn new(cx: CoordinateT, cy: CoordinateT, text_width: f32) -> Self {
         Self {
-            cx,
-            cy,
-            r: TASK_CIRCLE_RADIUS_STR,
-            fill: DEFAULT_FILL,
+            x: cx - (text_width / 2.0).round() as CoordinateT,
+            y: cy - HALF_TASK_RECT_HEIGHT,
+            width: text_width.round() as CoordinateT,
+            height: TASK_RECT_HEIGHT,
+            rx: "15",
+            fill: TASK_RECT_FILL,
             stroke: "black",
             stroke_width: CORE_ROUTER_STROKE_WIDTH_STR,
         }
@@ -132,26 +138,29 @@ impl Circle {
 
 #[derive(Serialize)]
 struct Task {
-    circle: Circle,
+    rect: TaskRect,
     text: TextInformation,
 }
 
 impl Task {
-    fn new(r: &u16, c: &u16, task: &Option<u16>) -> Option<Self> {
+    fn new(r: &CoordinateT, c: &CoordinateT, task: &Option<u16>) -> Option<Self> {
         match task {
             Some(task) => {
-                let (cx, cy) = Self::get_centre_coordinates(r, c);
+                let text = format!("T{}", task);
+                let text_width = CHAR_WIDTH_AT_22_PX * u16::try_from(text.len()).unwrap() as f32
+                    + CHAR_H_PADDING;
+                let (cx, cy) = Self::get_centre_coordinates(r, c, text_width);
                 Some(Self {
-                    circle: Circle::new(cx, cy),
-                    text: TextInformation::new_signed(
-                        cx.into(),
-                        cy.into(),
+                    rect: TaskRect::new(cx, cy, text_width),
+                    text: TextInformation::new(
+                        cx,
+                        cy,
                         Some(TASK_FONT_SIZE),
                         "middle",
-                        "middle",
+                        "central",
                         None,
                         None,
-                        format!("T{}", task),
+                        text,
                     ),
                 })
             }
@@ -159,13 +168,17 @@ impl Task {
         }
     }
 
-    fn get_centre_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let cx = c * BLOCK_LENGTH + TASK_CIRCLE_RADIUS + TASK_CIRCLE_STROKE + c * BLOCK_DISTANCE;
-        let cy = r * BLOCK_LENGTH
+    fn get_centre_coordinates(
+        r: &CoordinateT,
+        c: &CoordinateT,
+        text_width: f32,
+    ) -> (CoordinateT, CoordinateT) {
+        let cx = c * BLOCK_LENGTH + c * BLOCK_DISTANCE - ((text_width.round() / 2.0) as CoordinateT)
+            + TASK_RECT_X_OFFSET;
+        let cy = TASK_RECT_CENTRE_OFFSET
+            + r * BLOCK_LENGTH
             + ROUTER_OFFSET
             + SIDE_LENGTH
-            + TASK_CIRCLE_OFFSET
-            + TASK_CIRCLE_STROKE
             + r * BLOCK_DISTANCE;
 
         (cx, cy)
@@ -177,7 +190,7 @@ pub struct Router {
     /// Router coordinates, (x, y)
     #[serde(skip)]
     #[getset(get = "pub")]
-    move_coordinates: (u16, u16),
+    move_coordinates: (CoordinateT, CoordinateT),
     #[serde(rename = "@id")]
     id: String,
     #[serde(rename = "@d")]
@@ -188,7 +201,7 @@ pub struct Router {
 }
 
 impl Router {
-    pub fn new(r: &u16, c: &u16, id: &u8) -> Self {
+    pub fn new(r: &CoordinateT, c: &CoordinateT, id: &u8) -> Self {
         let (move_x, move_y) = Self::get_move_coordinates(r, c);
 
         Self {
@@ -199,9 +212,8 @@ impl Router {
         }
     }
 
-    pub fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let move_x =
-            (c * BLOCK_LENGTH) + ROUTER_OFFSET + TASK_CIRCLE_TOTAL_OFFSET + c * BLOCK_DISTANCE;
+    pub fn get_move_coordinates(r: &CoordinateT, c: &CoordinateT) -> (CoordinateT, CoordinateT) {
+        let move_x = (c * BLOCK_LENGTH) + ROUTER_OFFSET + c * BLOCK_DISTANCE;
         let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
 
         (move_x, move_y)
@@ -213,7 +225,7 @@ pub struct Core {
     /// Core coordinates, (x, y)
     #[serde(skip)]
     #[getset(get = "pub")]
-    move_coordinates: (u16, u16),
+    move_coordinates: (CoordinateT, CoordinateT),
     #[serde(rename = "@id")]
     id: String,
     #[serde(rename = "@d")]
@@ -224,13 +236,13 @@ pub struct Core {
 }
 
 impl Core {
-    pub fn get_move_coordinates(r: &u16, c: &u16) -> (u16, u16) {
-        let move_x = c * BLOCK_LENGTH + TASK_CIRCLE_TOTAL_OFFSET + c * BLOCK_DISTANCE;
+    pub fn get_move_coordinates(r: &CoordinateT, c: &CoordinateT) -> (CoordinateT, CoordinateT) {
+        let move_x = c * BLOCK_LENGTH + c * BLOCK_DISTANCE;
         let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
 
         (move_x, move_y)
     }
-    fn new(r: &u16, c: &u16, id: &u8) -> Self {
+    fn new(r: &CoordinateT, c: &CoordinateT, id: &u8) -> Self {
         let (move_x, move_y) = Self::get_move_coordinates(r, c);
 
         Self {
@@ -247,7 +259,7 @@ pub struct ProcessingGroup {
     #[serde(skip)]
     #[getset(get = "pub")]
     /// Coordinates (row, column)
-    coordinates: (u16, u16),
+    coordinates: (CoordinateT, CoordinateT),
     #[serde(rename = "@id")]
     id: u8,
     #[serde(rename = "path")]
@@ -261,7 +273,7 @@ pub struct ProcessingGroup {
 }
 
 impl ProcessingGroup {
-    pub fn new(r: &u16, c: &u16, id: &u8, allocated_task: &Option<u16>) -> Self {
+    pub fn new(r: &CoordinateT, c: &CoordinateT, id: &u8, allocated_task: &Option<u16>) -> Self {
         Self {
             coordinates: (*r, *c),
             id: *id,

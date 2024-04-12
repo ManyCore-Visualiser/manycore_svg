@@ -5,18 +5,19 @@ use manycore_parser::{Core, Directions, EdgePosition, WithID};
 use serde::Serialize;
 
 use crate::{
-    sinks_sources_layer::I_SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME, CommonAttributes, Router, HALF_ROUTER_OFFSET, MARKER_HEIGHT, MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH
+    CoordinateT, sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
+    CommonAttributes, Router, HALF_ROUTER_OFFSET, MARKER_HEIGHT, MARKER_REFERENCE, ROUTER_OFFSET,
+    SIDE_LENGTH,
 };
 
 pub const EDGE_CONNECTIONS_ID: &'static str = "edgeConnetions";
-static CONNECTION_GAP: u16 = 0u16
+static CONNECTION_GAP: CoordinateT = 0i32
     .saturating_add(HALF_ROUTER_OFFSET)
     .saturating_mul(3)
-    .div_ceil(4)
+    .saturating_div(4)
     .wrapping_sub(5);
-static I_CONNECTION_GAP: i32 = 0i32.saturating_add_unsigned(CONNECTION_GAP as u32);
 
-pub static CONNECTION_LENGTH: u16 = ROUTER_OFFSET.saturating_mul(4);
+pub static CONNECTION_LENGTH: CoordinateT = ROUTER_OFFSET.saturating_mul(4);
 
 #[derive(Serialize, Getters, Debug)]
 pub struct Connection {
@@ -28,16 +29,16 @@ pub struct Connection {
     marker_end: &'static str,
     #[serde(skip)]
     #[getset(get = "pub")]
-    x: i32,
+    x: CoordinateT,
     #[serde(skip)]
     #[getset(get = "pub")]
-    y: i32,
+    y: CoordinateT,
 }
 
 struct ConnectionPath {
     path: String,
-    x: i32,
-    y: i32,
+    x: CoordinateT,
+    y: CoordinateT,
 }
 
 struct EdgePath {
@@ -46,7 +47,7 @@ struct EdgePath {
 }
 
 impl Connection {
-    fn get_inner_path(direction: &Directions, r: &u16, c: &u16) -> ConnectionPath {
+    fn get_inner_path(direction: &Directions, r: &CoordinateT, c: &CoordinateT) -> ConnectionPath {
         let (mut router_x, mut router_y) = Router::get_move_coordinates(r, c);
 
         let path: String;
@@ -75,35 +76,33 @@ impl Connection {
 
         ConnectionPath {
             path,
-            x: router_x.into(),
-            y: router_y.into(),
+            x: router_x,
+            y: router_y,
         }
     }
 
-    fn get_edge_paths(direction: &Directions, r: &u16, c: &u16) -> EdgePath {
-        let (router_x, router_y) = Router::get_move_coordinates(r, c);
-        let mut start_x = i32::from(router_x);
-        let mut start_y = i32::from(router_y);
+    fn get_edge_paths(direction: &Directions, r: &CoordinateT, c: &CoordinateT) -> EdgePath {
+        let (mut router_x, mut router_y) = Router::get_move_coordinates(r, c);
 
         let (input, output) = match direction {
             Directions::North => {
-                start_x = start_x
-                    .wrapping_add_unsigned(SIDE_LENGTH.into())
-                    .wrapping_sub_unsigned(HALF_ROUTER_OFFSET.into());
-                start_y = start_y.wrapping_sub_unsigned(ROUTER_OFFSET.into());
+                router_x = router_x
+                    .saturating_add(SIDE_LENGTH)
+                    .saturating_sub(HALF_ROUTER_OFFSET);
+                router_y = router_y.saturating_sub(ROUTER_OFFSET);
 
-                let connection_length = I_SINKS_SOURCES_CONNECTION_LENGTH
-                    .wrapping_add_unsigned(MARKER_HEIGHT.into());
-                let render_length = I_SINKS_SOURCES_CONNECTION_LENGTH;
+                let connection_length =
+                    SINKS_SOURCES_CONNECTION_LENGTH.saturating_add(MARKER_HEIGHT);
+                let render_length = SINKS_SOURCES_CONNECTION_LENGTH;
 
                 // Input
-                let input_x = start_x - I_CONNECTION_GAP;
-                let input_y = start_y - connection_length;
+                let input_x = router_x.saturating_sub(CONNECTION_GAP);
+                let input_y = router_y.saturating_sub(connection_length);
                 let input_s = format!("M{},{} v{}", input_x, input_y, render_length);
 
                 // Output
-                let output_x = start_x + I_CONNECTION_GAP;
-                let output_s = format!("M{},{} v-{}", output_x, start_y, render_length);
+                let output_x = router_x.saturating_add(CONNECTION_GAP);
+                let output_s = format!("M{},{} v-{}", output_x, router_y, render_length);
 
                 (
                     ConnectionPath {
@@ -114,28 +113,28 @@ impl Connection {
                     ConnectionPath {
                         path: output_s,
                         x: output_x,
-                        y: start_y,
+                        y: router_y,
                     },
                 )
             }
             Directions::East => {
-                start_x = start_x.wrapping_add_unsigned(SIDE_LENGTH.into());
-                start_y = start_y
-                    .wrapping_sub_unsigned(ROUTER_OFFSET.into())
-                    .wrapping_add_unsigned(HALF_ROUTER_OFFSET.into());
+                router_x = router_x.saturating_add(SIDE_LENGTH);
+                router_y = router_y
+                    .saturating_sub(ROUTER_OFFSET)
+                    .saturating_add(HALF_ROUTER_OFFSET);
 
-                let connection_length = I_SINKS_SOURCES_CONNECTION_LENGTH
-                    .wrapping_add_unsigned(MARKER_HEIGHT.into());
-                let render_length = I_SINKS_SOURCES_CONNECTION_LENGTH;
+                let connection_length =
+                    SINKS_SOURCES_CONNECTION_LENGTH.saturating_add(MARKER_HEIGHT);
+                let render_length = SINKS_SOURCES_CONNECTION_LENGTH;
 
                 // Input
-                let input_x = start_x + connection_length;
-                let input_y = start_y + I_CONNECTION_GAP;
+                let input_x = router_x.saturating_add(connection_length);
+                let input_y = router_y.saturating_sub(CONNECTION_GAP);
                 let input_s = format!("M{},{} h-{}", input_x, input_y, render_length);
 
                 // Output
-                let output_y = start_y - I_CONNECTION_GAP;
-                let output_s = format!("M{},{} h{}", start_x, output_y, render_length);
+                let output_y = router_y.saturating_add(CONNECTION_GAP);
+                let output_s = format!("M{},{} h{}", router_x, output_y, render_length);
 
                 (
                     ConnectionPath {
@@ -145,31 +144,30 @@ impl Connection {
                     },
                     ConnectionPath {
                         path: output_s,
-                        x: start_x,
+                        x: router_x,
                         y: output_y,
                     },
                 )
             }
             Directions::South => {
-                start_x = start_x
-                    .wrapping_add_unsigned(SIDE_LENGTH.into())
-                    .wrapping_sub_unsigned(HALF_ROUTER_OFFSET.into());
-                start_y = start_y
-                    .wrapping_sub_unsigned(ROUTER_OFFSET.into())
-                    .wrapping_add_unsigned(SIDE_LENGTH.into());
+                router_x = router_x
+                    .saturating_add(SIDE_LENGTH)
+                    .saturating_sub(HALF_ROUTER_OFFSET);
+                router_y = router_y
+                    .saturating_sub(ROUTER_OFFSET)
+                    .saturating_add(SIDE_LENGTH);
 
-                let render_length = I_SINKS_SOURCES_CONNECTION_LENGTH
-                    .wrapping_add_unsigned(ROUTER_OFFSET.into());
-                let connection_length = render_length.wrapping_add_unsigned(MARKER_HEIGHT.into());
+                let render_length = SINKS_SOURCES_CONNECTION_LENGTH.saturating_add(ROUTER_OFFSET);
+                let connection_length = render_length.saturating_add(MARKER_HEIGHT);
 
                 // Input
-                let input_x = start_x + I_CONNECTION_GAP;
-                let input_y = start_y + connection_length;
+                let input_x = router_x.saturating_add(CONNECTION_GAP);
+                let input_y = router_y.saturating_add(connection_length);
                 let input_s = format!("M{},{} v-{}", input_x, input_y, render_length);
 
                 // Output
-                let output_x = start_x - I_CONNECTION_GAP;
-                let output_s = format!("M{},{} v{}", output_x, start_y, render_length);
+                let output_x = router_x.saturating_sub(CONNECTION_GAP);
+                let output_s = format!("M{},{} v{}", output_x, router_y, render_length);
 
                 (
                     ConnectionPath {
@@ -180,27 +178,26 @@ impl Connection {
                     ConnectionPath {
                         path: output_s,
                         x: output_x,
-                        y: start_y,
+                        y: router_y,
                     },
                 )
             }
             Directions::West => {
-                start_y = start_y
-                    .wrapping_sub_unsigned(ROUTER_OFFSET.into())
-                    .wrapping_add_unsigned(HALF_ROUTER_OFFSET.into());
+                router_y = router_y
+                    .saturating_sub(ROUTER_OFFSET)
+                    .saturating_add(HALF_ROUTER_OFFSET);
 
-                let render_length = I_SINKS_SOURCES_CONNECTION_LENGTH
-                    .wrapping_add_unsigned(ROUTER_OFFSET.into());
-                let connection_length = render_length.wrapping_add_unsigned(MARKER_HEIGHT.into());
+                let render_length = SINKS_SOURCES_CONNECTION_LENGTH.saturating_add(ROUTER_OFFSET);
+                let connection_length = render_length.saturating_add(MARKER_HEIGHT);
 
                 // Input
-                let input_x = start_x - connection_length;
-                let input_y = start_y - I_CONNECTION_GAP;
+                let input_x = router_x.saturating_sub(connection_length);
+                let input_y = router_y.saturating_sub(CONNECTION_GAP);
                 let input_s = format!("M{},{} h{}", input_x, input_y, render_length);
 
                 // Output
-                let output_y = start_y + I_CONNECTION_GAP;
-                let output_s = format!("M{},{} h-{}", start_x, output_y, render_length);
+                let output_y = router_y.saturating_add(CONNECTION_GAP);
+                let output_s = format!("M{},{} h-{}", router_x, output_y, render_length);
 
                 (
                     ConnectionPath {
@@ -210,7 +207,7 @@ impl Connection {
                     },
                     ConnectionPath {
                         path: output_s,
-                        x: start_x,
+                        x: router_x,
                         y: output_y,
                     },
                 )
@@ -302,7 +299,13 @@ impl ConnectionsParentGroup {
             .insert(direction, element);
     }
 
-    fn add_edge_connection(&mut self, core_id: &u8, direction: &Directions, r: &u16, c: &u16) {
+    fn add_edge_connection(
+        &mut self,
+        core_id: &u8,
+        direction: &Directions,
+        r: &CoordinateT,
+        c: &CoordinateT,
+    ) {
         let EdgePath { input, output } = Connection::get_edge_paths(direction, r, c);
         let current_source_size = self.edge_connections.source.len();
         let current_sink_size = self.edge_connections.sink.len();
@@ -322,7 +325,13 @@ impl ConnectionsParentGroup {
         );
     }
 
-    fn add_inner_connection(&mut self, core_id: &u8, direction: &Directions, r: &u16, c: &u16) {
+    fn add_inner_connection(
+        &mut self,
+        core_id: &u8,
+        direction: &Directions,
+        r: &CoordinateT,
+        c: &CoordinateT,
+    ) {
         let path = Connection::get_inner_path(direction, &r, &c);
         let current_size = self.connections.path.len();
 
@@ -335,7 +344,7 @@ impl ConnectionsParentGroup {
         );
     }
 
-    pub fn add_connections(&mut self, core: &Core, r: &u16, c: &u16, columns: u8, rows: u8) {
+    pub fn add_connections(&mut self, core: &Core, r: &CoordinateT, c: &CoordinateT, columns: u8, rows: u8) {
         let on_edge = core.is_on_edge(columns, rows);
 
         for direction in core.channels().channel().keys() {
