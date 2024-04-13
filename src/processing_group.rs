@@ -6,7 +6,7 @@ use manycore_utils::serialise_btreemap;
 use serde::Serialize;
 
 use crate::{
-    style::BASE_FILL_CLASS_NAME, CoordinateT, TextInformation, CHAR_HEIGHT_AT_22_PX,
+    style::BASE_FILL_CLASS_NAME, CoordinateT, TextInformation, TopLeft, CHAR_HEIGHT_AT_22_PX,
     CHAR_V_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
@@ -143,7 +143,12 @@ struct Task {
 }
 
 impl Task {
-    fn new(r: &CoordinateT, c: &CoordinateT, task: &Option<u16>) -> Option<Self> {
+    fn new(
+        r: &CoordinateT,
+        c: &CoordinateT,
+        task: &Option<u16>,
+        top_left: &TopLeft,
+    ) -> Option<Self> {
         match task {
             Some(task) => {
                 let text = format!("T{}", task);
@@ -151,7 +156,7 @@ impl Task {
                 // TODO: This should bubble up the error
                 let text_width = TextInformation::calculate_length(&text).unwrap_or(0);
 
-                let (cx, cy) = Self::get_centre_coordinates(r, c, text_width);
+                let (cx, cy) = Self::get_centre_coordinates(r, c, text_width, top_left);
                 Some(Self {
                     rect: TaskRect::new(cx, cy, text_width),
                     text: TextInformation::new(
@@ -174,14 +179,17 @@ impl Task {
         r: &CoordinateT,
         c: &CoordinateT,
         text_width: CoordinateT,
+        top_left: &TopLeft,
     ) -> (CoordinateT, CoordinateT) {
         let cx = c * BLOCK_LENGTH + c * BLOCK_DISTANCE - (text_width.saturating_div(2))
-            + TASK_RECT_X_OFFSET;
+            + TASK_RECT_X_OFFSET
+            + top_left.x();
         let cy = TASK_RECT_CENTRE_OFFSET
             + r * BLOCK_LENGTH
             + ROUTER_OFFSET
             + SIDE_LENGTH
-            + r * BLOCK_DISTANCE;
+            + r * BLOCK_DISTANCE
+            + top_left.y();
 
         (cx, cy)
     }
@@ -203,8 +211,8 @@ pub struct Router {
 }
 
 impl Router {
-    pub fn new(r: &CoordinateT, c: &CoordinateT, id: &u8) -> Self {
-        let (move_x, move_y) = Self::get_move_coordinates(r, c);
+    pub fn new(r: &CoordinateT, c: &CoordinateT, id: &u8, top_left: &TopLeft) -> Self {
+        let (move_x, move_y) = Self::get_move_coordinates(r, c, top_left);
 
         Self {
             move_coordinates: (move_x, move_y),
@@ -214,9 +222,21 @@ impl Router {
         }
     }
 
-    pub fn get_move_coordinates(r: &CoordinateT, c: &CoordinateT) -> (CoordinateT, CoordinateT) {
-        let move_x = (c * BLOCK_LENGTH) + ROUTER_OFFSET + c * BLOCK_DISTANCE;
-        let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
+    pub fn get_move_coordinates(
+        r: &CoordinateT,
+        c: &CoordinateT,
+        top_left: &TopLeft,
+    ) -> (CoordinateT, CoordinateT) {
+        let move_x = (c * BLOCK_LENGTH)
+            + ROUTER_OFFSET
+            + c * BLOCK_DISTANCE
+            + top_left.x()
+            + CORE_ROUTER_STROKE_WIDTH;
+        let move_y = r * BLOCK_LENGTH
+            + ROUTER_OFFSET
+            + r * BLOCK_DISTANCE
+            + top_left.y()
+            + CORE_ROUTER_STROKE_WIDTH;
 
         (move_x, move_y)
     }
@@ -238,14 +258,23 @@ pub struct Core {
 }
 
 impl Core {
-    pub fn get_move_coordinates(r: &CoordinateT, c: &CoordinateT) -> (CoordinateT, CoordinateT) {
-        let move_x = c * BLOCK_LENGTH + c * BLOCK_DISTANCE;
-        let move_y = r * BLOCK_LENGTH + ROUTER_OFFSET + r * BLOCK_DISTANCE;
+    pub fn get_move_coordinates(
+        r: &CoordinateT,
+        c: &CoordinateT,
+        top_left: &TopLeft,
+    ) -> (CoordinateT, CoordinateT) {
+        let move_x =
+            c * BLOCK_LENGTH + c * BLOCK_DISTANCE + top_left.x() + CORE_ROUTER_STROKE_WIDTH;
+        let move_y = r * BLOCK_LENGTH
+            + ROUTER_OFFSET
+            + r * BLOCK_DISTANCE
+            + top_left.y()
+            + CORE_ROUTER_STROKE_WIDTH;
 
         (move_x, move_y)
     }
-    fn new(r: &CoordinateT, c: &CoordinateT, id: &u8) -> Self {
-        let (move_x, move_y) = Self::get_move_coordinates(r, c);
+    fn new(r: &CoordinateT, c: &CoordinateT, id: &u8, top_left: &TopLeft) -> Self {
+        let (move_x, move_y) = Self::get_move_coordinates(r, c, top_left);
 
         Self {
             move_coordinates: (move_x, move_y),
@@ -275,13 +304,19 @@ pub struct ProcessingGroup {
 }
 
 impl ProcessingGroup {
-    pub fn new(r: &CoordinateT, c: &CoordinateT, id: &u8, allocated_task: &Option<u16>) -> Self {
+    pub fn new(
+        r: &CoordinateT,
+        c: &CoordinateT,
+        id: &u8,
+        allocated_task: &Option<u16>,
+        top_left: &TopLeft,
+    ) -> Self {
         Self {
             coordinates: (*r, *c),
             id: *id,
-            core: Core::new(r, c, id),
-            router: Router::new(r, c, id),
-            task: Task::new(r, c, allocated_task),
+            core: Core::new(r, c, id, top_left),
+            router: Router::new(r, c, id, top_left),
+            task: Task::new(r, c, allocated_task, top_left),
         }
     }
 }
