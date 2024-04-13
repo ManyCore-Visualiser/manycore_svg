@@ -1,12 +1,12 @@
-use std::num::TryFromIntError;
+use std::{num::TryFromIntError, ops::Div};
 
 use manycore_parser::Directions;
 use serde::Serialize;
 
 use crate::{
     sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME, CoordinateT,
-    FieldConfiguration, LoadConfiguration, RoutingConfiguration, CONNECTION_LENGTH, MARKER_HEIGHT,
-    ROUTER_OFFSET,
+    FieldConfiguration, LoadConfiguration, Offsets, RoutingConfiguration, SVGError,
+    CONNECTION_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET,
 };
 
 use super::utils;
@@ -22,6 +22,8 @@ pub static CHAR_WIDTH_AT_22_PX: f32 = 13.3;
 pub static CHAR_HEIGHT_AT_22_PX: CoordinateT = 30;
 pub static CHAR_V_PADDING: CoordinateT = 3;
 pub static CHAR_H_PADDING: f32 = CHAR_WIDTH_AT_22_PX * 2.0;
+
+static ROBOTO_RATIO: f32 = 1.665;
 
 #[derive(Serialize)]
 pub struct TextInformation {
@@ -46,8 +48,28 @@ pub struct TextInformation {
 }
 
 impl TextInformation {
-    pub fn calculate_length(text: &String) -> Result<CoordinateT, TryFromIntError> {
-        Ok((CHAR_WIDTH_AT_22_PX * u16::try_from(text.len())? as f32 + CHAR_H_PADDING).round() as CoordinateT)
+    pub fn calculate_length_at_22_px(text: &String) -> Result<CoordinateT, TryFromIntError> {
+        Ok(
+            (CHAR_WIDTH_AT_22_PX * u16::try_from(text.len())? as f32 + CHAR_H_PADDING).round()
+                as CoordinateT,
+        )
+    }
+
+    pub fn calculate_length(&self, pad: Option<f32>) -> Result<CoordinateT, SVGError> {
+        // TODO: Consider just passing in a number to font_size rather than str
+        let font_size: f32 = self.font_size[0..(self.font_size.len() - 2)]
+            .parse()
+            .unwrap();
+
+        let char_width = font_size.div(ROBOTO_RATIO);
+
+        Ok((char_width * u16::try_from(self.value.len())? as f32
+            + if let Some(pad) = pad {
+                char_width * pad
+            } else {
+                0.0
+            })
+        .round() as CoordinateT)
     }
 
     pub fn new(
@@ -407,5 +429,18 @@ impl TextInformation {
                 )
             }
         }
+    }
+}
+
+impl TryFrom<&TextInformation> for Offsets {
+    type Error = SVGError;
+
+    fn try_from(value: &TextInformation) -> Result<Self, Self::Error> {
+        Ok(Self {
+            top: value.y,
+            left: value.x,
+            bottom: value.y.saturating_add(CHAR_HEIGHT_AT_22_PX),
+            right: value.x.saturating_add(value.calculate_length(None)?),
+        })
     }
 }

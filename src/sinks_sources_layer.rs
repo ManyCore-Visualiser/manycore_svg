@@ -175,7 +175,7 @@ impl SinkSource {
         let text_width = match text_content.as_ref() {
             // TODO: This should bubble up error
             Some(text_content) => max(
-                TextInformation::calculate_length(text_content)
+                TextInformation::calculate_length_at_22_px(text_content)
                     .unwrap_or(SINKS_SOURCES_SHORT_SIDE_LENGTH),
                 SINKS_SOURCES_SHORT_SIDE_LENGTH,
             ),

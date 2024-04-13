@@ -2,11 +2,10 @@ use getset::{Getters, Setters};
 use serde::Serialize;
 
 use crate::{
-    CoordinateT, sinks_sources_layer::SINKS_SOURCES_GROUP_OFFSET, BLOCK_LENGTH,
-    FONT_SIZE_WITH_OFFSET,
+    sinks_sources_layer::SINKS_SOURCES_GROUP_OFFSET, CoordinateT, TopLeft, FONT_SIZE_WITH_OFFSET,
 };
 
-#[derive(Getters, Setters, Clone, Copy)]
+#[derive(Getters, Setters, Clone, Copy, Debug)]
 #[getset(get = "pub", set = "pub")]
 pub struct ViewBox {
     x: CoordinateT,
@@ -16,11 +15,10 @@ pub struct ViewBox {
 }
 
 impl ViewBox {
-    pub fn new(width: CoordinateT, height: CoordinateT) -> Self {
+    pub fn new(width: CoordinateT, height: CoordinateT, top_left: &TopLeft) -> Self {
         Self {
-            x: 0,
-            // Needed to fit upper text on links
-            y: FONT_SIZE_WITH_OFFSET.wrapping_mul(-1),
+            x: *top_left.x(),
+            y: *top_left.y(),
             width,
             height,
         }
@@ -55,17 +53,33 @@ impl ViewBox {
     }
 
     pub fn insert_edges(&mut self) {
-        // This offset is greater than font offset
-        self.x = SINKS_SOURCES_GROUP_OFFSET.saturating_mul(-1);
+        self.x = self.x.saturating_sub(SINKS_SOURCES_GROUP_OFFSET);
         self.width = self
             .width
-            .wrapping_sub(BLOCK_LENGTH / 2)
-            .saturating_add(2 * SINKS_SOURCES_GROUP_OFFSET);
-        self.y = SINKS_SOURCES_GROUP_OFFSET.saturating_mul(-1);
+            .saturating_add(SINKS_SOURCES_GROUP_OFFSET.saturating_mul(2));
+
+        self.y = self.y.saturating_sub(SINKS_SOURCES_GROUP_OFFSET);
         self.height = self
             .height
-            .saturating_add(FONT_SIZE_WITH_OFFSET.saturating_mul(-1))
-            .saturating_add(2 * SINKS_SOURCES_GROUP_OFFSET);
+            .saturating_add(SINKS_SOURCES_GROUP_OFFSET.saturating_mul(2));
+    }
+
+    pub fn extend_left(&mut self, left: CoordinateT) {
+        self.x = self.x.saturating_sub(left);
+        self.width = self.width.saturating_add(left);
+    }
+
+    pub fn extend_right(&mut self, right: CoordinateT) {
+        self.width = self.width.saturating_add(right);
+    }
+
+    pub fn extend_bottom(&mut self, bottom: CoordinateT) {
+        self.height = self.height.saturating_add(bottom);
+    }
+
+    pub fn extend_top(&mut self, top: CoordinateT) {
+        self.y = self.y.saturating_sub(top);
+        self.height = self.height.saturating_add(top);
     }
 }
 

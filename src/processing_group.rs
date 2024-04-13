@@ -62,6 +62,9 @@ pub static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(
 pub static TASK_RECT_CENTRE_OFFSET: CoordinateT =
     HALF_TASK_RECT_HEIGHT.saturating_sub(TASK_RECT_HEIGHT.saturating_div(3));
 static TASK_RECT_FILL: &'static str = "#bfdbfe";
+pub static TASK_BOTTOM_OFFSET: CoordinateT = TASK_RECT_CENTRE_OFFSET
+    .saturating_add(HALF_TASK_RECT_HEIGHT)
+    .saturating_add(TASK_RECT_STROKE);
 
 #[derive(Serialize, Setters, Debug)]
 pub struct CommonAttributes {
@@ -154,7 +157,7 @@ impl Task {
                 let text = format!("T{}", task);
 
                 // TODO: This should bubble up the error
-                let text_width = TextInformation::calculate_length(&text).unwrap_or(0);
+                let text_width = TextInformation::calculate_length_at_22_px(&text).unwrap_or(0);
 
                 let (cx, cy) = Self::get_centre_coordinates(r, c, text_width, top_left);
                 Some(Self {
@@ -317,6 +320,13 @@ impl ProcessingGroup {
             core: Core::new(r, c, id, top_left),
             router: Router::new(r, c, id, top_left),
             task: Task::new(r, c, allocated_task, top_left),
+        }
+    }
+
+    pub fn task_start(&self) -> Option<CoordinateT> {
+        match &self.task {
+            Some(task) => Some(task.rect.x),
+            None => None,
         }
     }
 }

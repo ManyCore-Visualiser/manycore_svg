@@ -11,7 +11,10 @@ mod style;
 mod text_background;
 mod view_box;
 
-use std::collections::BTreeSet;
+use std::{
+    cmp::{max, min},
+    collections::BTreeSet,
+};
 
 pub use clip_path::*;
 use connections_group::*;
@@ -101,6 +104,33 @@ struct TopLeft {
     y: CoordinateT,
 }
 
+#[derive(Getters, Clone, Copy, Debug)]
+#[getset(get = "pub")]
+struct Offsets {
+    left: CoordinateT,
+    top: CoordinateT,
+    right: CoordinateT,
+    bottom: CoordinateT,
+}
+
+impl Offsets {
+    fn new() -> Self {
+        Self {
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+        }
+    }
+
+    pub fn update(&mut self, other: Offsets) {
+        self.left = min(self.left, other.left);
+        self.top = min(self.top, other.top);
+        self.right = max(self.right, other.right);
+        self.bottom = max(self.bottom, other.bottom);
+    }
+}
+
 #[derive(Serialize, Getters, MutGetters)]
 #[serde(rename = "svg")]
 pub struct SVG {
@@ -136,6 +166,8 @@ pub struct SVG {
     height: CoordinateT,
     #[serde(skip)]
     top_left: TopLeft,
+    #[serde(skip)]
+    base_view_box: ViewBox,
 }
 
 #[derive(Serialize)]
@@ -180,12 +212,21 @@ impl From<&ManycoreSystem> for SVG {
             y: height.saturating_div(2).saturating_mul(-1),
         };
 
-        let mut ret = SVG::new(&manycore.cores().list().len(), rows, columns, width, height, top_left);
+        let mut ret = SVG::new(
+            &manycore.cores().list().len(),
+            rows,
+            columns,
+            width,
+            height,
+            top_left,
+        );
 
         let mut r: u8 = 0;
 
         let cores = manycore.cores().list();
 
+        let mut min_task_start = 0;
+        let mut has_bottom_task = false;
         for (i, core) in cores.iter().enumerate() {
             let c = u8::try_from(i % usize::try_from(columns).expect("8 bits must fit in a usize. I have no idea what you're trying to run this on, TI TMS 1000?")).expect(
                 "Somehow, modulus on an 8 bit number gave a number that does not fit in 8 bits (your ALU re-invented mathematics).",
@@ -199,8 +240,27 @@ impl From<&ManycoreSystem> for SVG {
             let c_coord: CoordinateT = c.into();
 
             // Generate processing group
-            let processing_group =
-                ProcessingGroup::new(&r_coord, &c_coord, core.id(), core.allocated_task(), &top_left);
+            let processing_group = ProcessingGroup::new(
+                &r_coord,
+                &c_coord,
+                core.id(),
+                core.allocated_task(),
+                &top_left,
+            );
+
+            // Check if viewBox needs to be extended left
+            if c == 0 {
+                if let Some(task_start) = processing_group.task_start() {
+                    min_task_start = min(min_task_start, task_start)
+                }
+            }
+
+            // Check if viewBox needs to be extended bottom
+            if r == (rows - 1) {
+                if let Some(_) = core.allocated_task() {
+                    has_bottom_task = true;
+                }
+            }
 
             // Generate connections group
             ret.root
@@ -211,7 +271,7 @@ impl From<&ManycoreSystem> for SVG {
             if let Some(edge_position) = core.is_on_edge(columns, rows) {
                 let (router_x, router_y) = processing_group.router().move_coordinates();
 
-                // Remember that index
+                // Remember that index always corresponts to core ID.
                 ret.root.sinks_sources_group.insert(
                     edge_position,
                     router_x,
@@ -227,6 +287,17 @@ impl From<&ManycoreSystem> for SVG {
                 .insert(*core.id(), processing_group);
         }
 
+        // Extend viewBox
+        ret.extend_base_view_box_left(
+            min_task_start
+                .abs()
+                .saturating_sub(ret.top_left.x.abs())
+                .saturating_add(TASK_RECT_STROKE),
+        );
+        if has_bottom_task {
+            ret.extend_base_view_box_bottom(TASK_BOTTOM_OFFSET);
+        }
+
         ret
     }
 }
@@ -240,6 +311,8 @@ impl SVG {
         height: CoordinateT,
         top_left: TopLeft,
     ) -> Self {
+        let view_box = ViewBox::new(width, height, &top_left);
+
         Self {
             width,
             height,
@@ -247,7 +320,7 @@ impl SVG {
             xmlns: "http://www.w3.org/2000/svg",
             preserve_aspect_ratio: "xMidYMid meet",
             class: "mx-auto",
-            view_box: ViewBox::new(width, height),
+            view_box,
             defs: Defs {
                 marker: Marker::default(),
                 text_background: TextBackground::default(),
@@ -266,7 +339,20 @@ impl SVG {
             rows,
             columns,
             top_left,
+            base_view_box: view_box,
         }
+    }
+
+    fn extend_base_view_box_left(&mut self, left: CoordinateT) {
+        self.view_box.extend_left(left);
+        self.base_view_box.extend_left(left);
+        self.width = self.width.saturating_add(left);
+    }
+
+    fn extend_base_view_box_bottom(&mut self, bottom: CoordinateT) {
+        self.view_box.extend_bottom(bottom);
+        self.base_view_box.extend_bottom(bottom);
+        self.height = self.height.saturating_add(bottom);
     }
 
     pub fn update_configurable_information(
@@ -295,10 +381,11 @@ impl SVG {
         // Clear information groups. Clear will keep memory allocated, hopefully less heap allocation penalties.
         self.root.information_group.groups.clear();
         // Reset viewbox
-        self.view_box.reset(self.width, self.height);
+        self.view_box.restore_from(&self.base_view_box);
 
         // Expand viewBox and adjust css if required (Sinks and Sources)
         // Always reset CSS. If user deselects all options and clicks apply, they expect the base render to show.
+        let mut has_edge_routers = false;
         if let Some(border_routers_configuration) = configuration
             .channel_config_mut()
             .remove(BORDER_ROUTERS_KEY)
@@ -306,6 +393,8 @@ impl SVG {
             match border_routers_configuration {
                 FieldConfiguration::Boolean(show_border_routers) => {
                     if show_border_routers {
+                        has_edge_routers = true;
+
                         self.style = Style::base(); // CSS
 
                         // Expand viewBox for edges
@@ -346,6 +435,7 @@ impl SVG {
             None
         };
 
+        let mut offsets = Offsets::new();
         if not_empty_configuration {
             for (i, core) in manycore.cores().list().iter().enumerate() {
                 let core_loads = get_core_loads(&i);
@@ -361,7 +451,6 @@ impl SVG {
                         self.columns,
                         configuration,
                         core,
-                        // manycore.borders().core_source_map().get(&i),
                         manycore.borders().core_border_map().get(&i),
                         manycore.borders().sources(),
                         self.style.css_mut(),
@@ -369,8 +458,42 @@ impl SVG {
                         processing_group,
                         &self.root.connections_group,
                         routing_configuration.as_ref(),
+                        &mut offsets,
                     )?);
             }
+        }
+
+        // Extend viewBox to fit channel text iff no edge routers.
+        // If edge routers are displayed any channel text is bound to fit.
+        if !has_edge_routers {
+            let mut updated_view_box = self.view_box;
+            if *self.view_box.x() > offsets.left {
+                updated_view_box
+                    .extend_left(offsets.left.abs().saturating_sub(self.view_box.x().abs()));
+            }
+
+            let far_end = self
+                .view_box
+                .width()
+                .saturating_sub(self.view_box.x().abs());
+            if far_end < offsets.right {
+                updated_view_box.extend_right(offsets.right.saturating_sub(far_end));
+            }
+
+            if *self.view_box.y() > offsets.top {
+                updated_view_box
+                    .extend_top(offsets.top.abs().saturating_sub(self.view_box.y().abs()));
+            }
+
+            let far_bottom = self
+                .view_box
+                .height()
+                .saturating_sub(self.view_box.y().abs());
+            if far_bottom < offsets.bottom {
+                updated_view_box.extend_bottom(offsets.bottom.saturating_sub(far_bottom))
+            }
+
+            self.view_box.restore_from(&updated_view_box);
         }
 
         Ok(UpdateResult {
@@ -411,7 +534,7 @@ mod tests {
         let expected = read_to_string("tests/SVG1.svg")
             .expect("Could not read input test file \"tests/SVG1.svg\"");
 
-        // assert_eq!(res, expected)
-        println!("SVG1: {res}\n\n")
+        assert_eq!(res, expected)
+        // println!("SVG1: {res}\n\n")
     }
 }

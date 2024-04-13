@@ -8,8 +8,8 @@ use serde::Serialize;
 
 use crate::{
     text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionType, ConnectionsParentGroup,
-    CoordinateT, DirectionType, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET,
-    SIDE_LENGTH,
+    CoordinateT, DirectionType, Offsets, ProcessingGroup, RoutingConfiguration, SVGError,
+    ROUTER_OFFSET, SIDE_LENGTH,
 };
 pub use utils::FONT_SIZE_WITH_OFFSET;
 
@@ -111,6 +111,7 @@ impl InformationLayer {
             }
         }
     }
+
     pub fn new(
         rows: u8,
         columns: u8,
@@ -123,6 +124,7 @@ impl InformationLayer {
         processing_group: &ProcessingGroup,
         connections_group: &ConnectionsParentGroup,
         routing_configuration: Option<&RoutingConfiguration>,
+        offsets: &mut Offsets,
     ) -> Result<Self, SVGError> {
         let mut ret = InformationLayer::default();
 
@@ -187,7 +189,7 @@ impl InformationLayer {
 
                 let bandwidth = channel.bandwidth();
 
-                ret.links_load.push(TextInformation::link_load(
+                let link_load_text = TextInformation::link_load(
                     direction,
                     x,
                     y,
@@ -195,7 +197,9 @@ impl InformationLayer {
                     bandwidth,
                     edge,
                     routing_configuration,
-                ));
+                );
+                offsets.update(Offsets::try_from(&link_load_text)?);
+                ret.links_load.push(link_load_text);
 
                 if !edge {
                     // Additional parameter, if any
@@ -205,13 +209,15 @@ impl InformationLayer {
                     ) {
                         match channel_attributes.get(key) {
                             Some(attribute_value) => {
-                                ret.links_load.push(TextInformation::link_secondary(
+                                let link_secondary_text = TextInformation::link_secondary(
                                     direction,
                                     x,
                                     y,
                                     attribute_value,
                                     field_configuration,
-                                ));
+                                );
+                                offsets.update(Offsets::try_from(&link_secondary_text)?);
+                                ret.links_load.push(link_secondary_text);
                             }
                             None => {
                                 panic!("Missing attribute requested")
@@ -241,14 +247,16 @@ impl InformationLayer {
                     if let Some((key, field_configuration)) = iter.next() {
                         match channel_attributes.get(key) {
                             Some(attribute_value) => {
-                                ret.links_load.push(TextInformation::link_primary(
+                                let link_text = TextInformation::link_primary(
                                     direction,
                                     x,
                                     y,
                                     attribute_value,
                                     false,
                                     field_configuration,
-                                ));
+                                );
+                                offsets.update(Offsets::try_from(&link_text)?);
+                                ret.links_load.push(link_text);
                             }
                             None => {
                                 panic!("Missing attribute requested")
@@ -260,19 +268,15 @@ impl InformationLayer {
                     if let Some((key, field_configuration)) = iter.next() {
                         match channel_attributes.get(key) {
                             Some(attribute_value) => {
-                                let (x, y, _) = InformationLayer::link_info_details(
-                                    direction,
-                                    connections_group,
-                                    core,
-                                )?;
-
-                                ret.links_load.push(TextInformation::link_secondary(
+                                let link_text = TextInformation::link_secondary(
                                     direction,
                                     x,
                                     y,
                                     attribute_value,
                                     field_configuration,
-                                ));
+                                );
+                                offsets.update(Offsets::try_from(&link_text)?);
+                                ret.links_load.push(link_text);
                             }
                             None => {
                                 panic!("Missing attribute requested")
