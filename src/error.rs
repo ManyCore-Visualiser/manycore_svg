@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, num::TryFromIntError};
 
 use manycore_parser::ManycoreError;
 use quick_xml::DeError;
@@ -9,6 +9,8 @@ pub enum SVGErrorKind {
     ManycoreMismatch(String),
     ManycoreError(String),
     SerialisationError(String),
+    DataConversionError(String),
+    GenerationError(String),
 }
 
 #[derive(Debug)]
@@ -31,6 +33,10 @@ impl Display for SVGError {
             }
             SVGErrorKind::ManycoreError(reason) => write!(f, "ManyCore Error: {reason}"),
             SVGErrorKind::SerialisationError(reason) => write!(f, "Serialisation Error: {reason}"),
+            SVGErrorKind::DataConversionError(reason) => {
+                write!(f, "Data Conversion Error: {reason}")
+            }
+            SVGErrorKind::GenerationError(reason) => write!(f, "Generation Error: {reason}"),
         }
     }
 }
@@ -49,6 +55,14 @@ impl From<DeError> for SVGError {
     fn from(error: DeError) -> Self {
         Self {
             error_kind: SVGErrorKind::SerialisationError(error.to_string()),
+        }
+    }
+}
+
+impl From<TryFromIntError> for SVGError {
+    fn from(error: TryFromIntError) -> Self {
+        Self {
+            error_kind: SVGErrorKind::DataConversionError(error.to_string()),
         }
     }
 }

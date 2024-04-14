@@ -4,8 +4,8 @@ use manycore_parser::{Directions, WithID, WithXMLAttributes, COORDINATES_KEY, ID
 
 use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER};
 use crate::{
-    CoordinateT, ConnectionType, ConnectionsParentGroup, DirectionType, FieldConfiguration,
-    SVGError, SVGErrorKind,
+    ConnectionType, ConnectionsParentGroup, CoordinateT, DirectionType, FieldConfiguration,
+    SVGError, SVGErrorKind, DEFAULT_FONT_SIZE,
 };
 
 pub static FONT_SIZE_WITH_OFFSET: CoordinateT = 18;
@@ -58,7 +58,7 @@ pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                 group.information.push(TextInformation::new(
                     base_x,
                     base_y,
-                    None,
+                    DEFAULT_FONT_SIZE,
                     text_anchor,
                     "text-before-edge",
                     None,
@@ -86,7 +86,7 @@ pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                 group.information.push(TextInformation::new(
                                     base_x,
                                     base_y,
-                                    None,
+                                    DEFAULT_FONT_SIZE,
                                     text_anchor,
                                     "text-before-edge",
                                     None,
@@ -124,7 +124,7 @@ pub fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                 group.information.push(TextInformation::new(
                                     base_x,
                                     base_y,
-                                    None,
+                                    DEFAULT_FONT_SIZE,
                                     text_anchor,
                                     "text-before-edge",
                                     fill,

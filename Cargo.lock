@@ -48,8 +48,8 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "manycore_parser"
-version = "0.4.2"
-source = "git+https://github.com/joe2k01/manycore_parser.git#f539d011a23a6225bd03a2d0644ce037c8914e43"
+version = "0.4.4"
+source = "git+https://github.com/joe2k01/manycore_parser.git#385431f31b013239a68af98aa367e1aa742554fe"
 dependencies = [
  "getset",
  "manycore_utils",
@@ -131,9 +131,9 @@ dependencies = [
 
 [[package]]
 name = "quote"
-version = "1.0.35"
+version = "1.0.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "291ec9ab5efd934aaf503a6466c5d5251535d108ee747472c3977cc5acc868ef"
+checksum = "0fa76aaf39101c457836aec0ce2316dbdc3ab723cdda1c6bd4e6ad4208acaca7"
 dependencies = [
  "proc-macro2",
 ]

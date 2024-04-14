@@ -6,8 +6,8 @@ use serde::Serialize;
 
 use crate::{
     style::{DEFAULT_FILL, EDGE_DATA_CLASS_NAME},
-    CoordinateT, TextInformation, HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH,
-    TASK_FONT_SIZE,
+    CoordinateT, TextInformation, CHAR_H_PADDING, HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET,
+    SIDE_LENGTH, TASK_FONT_SIZE,
 };
 
 // Side lengths
@@ -46,7 +46,7 @@ impl TextInformation {
             return Some(TextInformation::new(
                 cx,
                 cy,
-                Some(TASK_FONT_SIZE),
+                TASK_FONT_SIZE,
                 "middle",
                 "central",
                 None,
@@ -175,8 +175,12 @@ impl SinkSource {
         let text_width = match text_content.as_ref() {
             // TODO: This should bubble up error
             Some(text_content) => max(
-                TextInformation::calculate_length(text_content)
-                    .unwrap_or(SINKS_SOURCES_SHORT_SIDE_LENGTH),
+                TextInformation::calculate_length_util(
+                    TASK_FONT_SIZE,
+                    text_content.len(),
+                    Some(CHAR_H_PADDING),
+                )
+                .unwrap_or(SINKS_SOURCES_SHORT_SIDE_LENGTH),
                 SINKS_SOURCES_SHORT_SIDE_LENGTH,
             ),
             None => SINKS_SOURCES_SHORT_SIDE_LENGTH,

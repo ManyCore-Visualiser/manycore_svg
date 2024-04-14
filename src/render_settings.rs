@@ -193,7 +193,9 @@ mod tests {
         let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let mut svg: SVG = (&manycore).into();
+        let mut svg: SVG = (&manycore)
+            .try_into()
+            .expect("Could not convert Manycorer to SVG.");
         let _ = svg
             .update_configurable_information(&mut manycore, &mut configuration)
             .expect("Could not generate SVG update.");
@@ -217,7 +219,9 @@ mod tests {
         let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let mut svg: SVG = (&manycore).into();
+        let mut svg: SVG = (&manycore)
+            .try_into()
+            .expect("Could not convert Manycorer to SVG.");
         let update = svg
             .update_configurable_information(&mut manycore, &mut configuration)
             .expect("Could not generate update based on configuration.");
@@ -246,7 +250,9 @@ mod tests {
         let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let mut svg: SVG = (&manycore).into();
+        let mut svg: SVG = (&manycore)
+            .try_into()
+            .expect("Could not convert Manycorer to SVG.");
         let _ = svg
             .update_configurable_information(&mut manycore, &mut configuration)
             .expect("Could not generate SVG update");
@@ -270,7 +276,9 @@ mod tests {
         let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let mut svg: SVG = (&manycore).into();
+        let mut svg: SVG = (&manycore)
+            .try_into()
+            .expect("Could not convert Manycorer to SVG.");
         let _ = svg
             .update_configurable_information(&mut manycore, &mut configuration)
             .expect("Could not generate SVG update");
