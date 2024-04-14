@@ -117,7 +117,7 @@ impl InformationLayer {
         configuration: &Configuration,
         core: &manycore_parser::Core,
         border_routers_ids: Option<&HashMap<SinkSourceDirection, BorderEntry>>,
-        sources: &BTreeMap<u16, Source>,
+        sources: Option<&BTreeMap<u16, Source>>,
         css: &mut String,
         core_loads: Option<&BTreeSet<Directions>>,
         processing_group: &ProcessingGroup,
@@ -287,8 +287,8 @@ impl InformationLayer {
         }
 
         // Source loads
-        if let (Some(border_routers_ids), Some(routing_configuration)) =
-            (border_routers_ids, routing_configuration)
+        if let (Some(sources), Some(border_routers_ids), Some(routing_configuration)) =
+            (sources, border_routers_ids, routing_configuration)
         {
             if let Some(edge_position) = core.is_on_edge(columns, rows).as_ref() {
                 let keys: Vec<SinkSourceDirection> = edge_position.into();

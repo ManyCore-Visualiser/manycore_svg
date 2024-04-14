@@ -213,6 +213,7 @@ impl TryFrom<&ManycoreSystem> for SVG {
         let mut r: u8 = 0;
 
         let cores = manycore.cores().list();
+        let borders = manycore.borders();
 
         let mut min_task_start = 0;
         let mut has_bottom_task = false;
@@ -265,7 +266,10 @@ impl TryFrom<&ManycoreSystem> for SVG {
                     edge_position,
                     router_x,
                     router_y,
-                    manycore.borders().core_border_map().get(&i),
+                    match borders {
+                        Some(borders) => borders.core_border_map().get(&i),
+                        None => None,
+                    },
                 );
             }
 
@@ -423,6 +427,12 @@ impl SVG {
 
         let mut offsets = Offsets::new();
         if not_empty_configuration {
+            let borders = manycore.borders();
+            let sources = match borders {
+                Some(borders) => Some(borders.sources()),
+                None => None,
+            };
+
             for (i, core) in manycore.cores().list().iter().enumerate() {
                 let core_loads = get_core_loads(&i);
 
@@ -441,8 +451,11 @@ impl SVG {
                         self.columns,
                         configuration,
                         core,
-                        manycore.borders().core_border_map().get(&i),
-                        manycore.borders().sources(),
+                        match borders {
+                            Some(borders) => borders.core_border_map().get(&i),
+                            None => None,
+                        },
+                        sources,
                         self.style.css_mut(),
                         core_loads.as_ref(),
                         processing_group,
