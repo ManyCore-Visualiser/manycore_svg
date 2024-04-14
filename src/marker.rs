@@ -1,3 +1,6 @@
+/// SVG marker useed in connection lines.
+/// This just gets deserialiseed as-is. No logic here.
+
 use const_format::concatcp;
 use serde::Serialize;
 

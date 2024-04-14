@@ -1,7 +1,11 @@
+//! SVG generation library for ManyCore systems.
+//!
+//! Provides utilities to generate and customise an SVG file rerpresenting a ManyCore system.
+
 mod clip_path;
 mod connections_group;
+mod defs;
 mod error;
-mod exporting_aid;
 mod information_layer;
 mod marker;
 mod processing_group;
@@ -18,8 +22,8 @@ use std::{
 
 pub use clip_path::*;
 use connections_group::*;
+use defs::*;
 pub use error::*;
-use exporting_aid::*;
 use getset::{Getters, MutGetters, Setters};
 use information_layer::*;
 use marker::*;
@@ -33,16 +37,8 @@ use manycore_parser::{ManycoreSystem, RoutingTarget, WithID, BORDER_ROUTERS_KEY,
 use quick_xml::DeError;
 use serde::Serialize;
 use style::Style;
-use text_background::TextBackground;
 
-type CoordinateT = i32;
-
-#[derive(Serialize)]
-struct Defs {
-    marker: Marker,
-    #[serde(rename = "filter")]
-    text_background: TextBackground,
-}
+pub type CoordinateT = i32;
 
 #[derive(Serialize)]
 struct InformationGroup {
@@ -152,8 +148,6 @@ pub struct SVG {
     #[serde(rename = "g")]
     #[getset(get_mut = "pub")]
     root: Root,
-    #[serde(rename = "rect")]
-    exporting_aid: ExportingAid,
     #[serde(skip)]
     rows: u8,
     #[serde(skip)]
@@ -317,10 +311,7 @@ impl SVG {
             preserve_aspect_ratio: "xMidYMid meet",
             class: "mx-auto",
             view_box,
-            defs: Defs {
-                marker: Marker::default(),
-                text_background: TextBackground::default(),
-            },
+            defs: Defs::default(),
             style: Style::default(),
             clip_path: None,
             root: Root {
@@ -331,7 +322,6 @@ impl SVG {
                 information_group: InformationGroup::new(number_of_cores),
                 sinks_sources_group: SinksSourcesGroup::new(rows, columns),
             },
-            exporting_aid: ExportingAid::default(),
             rows,
             columns,
             top_left,

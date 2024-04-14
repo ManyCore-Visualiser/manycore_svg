@@ -11,7 +11,6 @@ use crate::{
     CoordinateT, DirectionType, Offsets, ProcessingGroup, RoutingConfiguration, SVGError,
     ROUTER_OFFSET, SIDE_LENGTH,
 };
-pub use utils::FONT_SIZE_WITH_OFFSET;
 
 static OFFSET_FROM_BORDER: CoordinateT = 1;
 static TEXT_GROUP_FILTER: &str = concatcp!("url(#", TEXT_BACKGROUND_ID, ")");
