@@ -215,7 +215,7 @@ impl TryFrom<&ManycoreSystem> for SVG {
         let cores = manycore.cores().list();
         let borders = manycore.borders();
 
-        let mut min_task_start = 0;
+        let mut min_task_start = None;
         let mut has_bottom_task = false;
         for (i, core) in cores.iter().enumerate() {
             let c = u8::try_from(i % usize::try_from(columns).expect("8 bits must fit in a usize. I have no idea what you're trying to run this on, TI TMS 1000?")).expect(
@@ -241,7 +241,11 @@ impl TryFrom<&ManycoreSystem> for SVG {
             // Check if viewBox needs to be extended left
             if c == 0 {
                 if let Some(task_start) = processing_group.task_start() {
-                    min_task_start = min(min_task_start, task_start)
+                    if let Some(min_task_start_value) = min_task_start {
+                        min_task_start = Some(min(min_task_start_value, task_start));
+                    } else {
+                        min_task_start = Some(task_start);
+                    }
                 }
             }
 
@@ -278,12 +282,14 @@ impl TryFrom<&ManycoreSystem> for SVG {
         }
 
         // Extend viewBox
-        ret.extend_base_view_box_left(
-            min_task_start
-                .abs()
-                .saturating_sub(ret.top_left.x.abs())
-                .saturating_add(TASK_RECT_STROKE),
-        );
+        if let Some(min_task_start) = min_task_start {
+            ret.extend_base_view_box_left(
+                min_task_start
+                    .abs()
+                    .saturating_sub(ret.top_left.x.abs())
+                    .saturating_add(TASK_RECT_STROKE),
+            );
+        }
         if has_bottom_task {
             ret.extend_base_view_box_bottom(TASK_BOTTOM_OFFSET);
         }
