@@ -1,4 +1,4 @@
-use std::{num::TryFromIntError, ops::Div};
+use std::ops::Div;
 
 use manycore_parser::Directions;
 use serde::Serialize;
@@ -17,13 +17,25 @@ static OFFSET_FROM_FIRST: CoordinateT = 20;
 static HALF_CONNECTION_LENGTH: CoordinateT = CONNECTION_LENGTH
     .saturating_add(MARKER_HEIGHT)
     .saturating_div(2);
-// pub static CHAR_WIDTH_AT_16_PX: f32 = 9.3;
-pub static CHAR_WIDTH_AT_22_PX: f32 = 13.3;
 pub static CHAR_HEIGHT_AT_22_PX: CoordinateT = 30;
 pub static CHAR_V_PADDING: CoordinateT = 3;
-pub static CHAR_H_PADDING: f32 = CHAR_WIDTH_AT_22_PX * 2.0;
+pub static CHAR_H_PADDING: f32 = 2.0;
+pub static DEFAULT_FONT_SIZE: f32 = 16.0;
 
 static ROBOTO_RATIO: f32 = 1.665;
+
+pub struct FontSize {
+    px: f32,
+}
+
+impl Serialize for FontSize {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(format!("{}px", self.px as u32).as_str())
+    }
+}
 
 #[derive(Serialize)]
 pub struct TextInformation {
@@ -32,7 +44,7 @@ pub struct TextInformation {
     #[serde(rename = "@y")]
     y: CoordinateT,
     #[serde(rename = "@font-size")]
-    font_size: String,
+    font_size: FontSize,
     #[serde(rename = "@font-family")]
     font_family: &'static str,
     #[serde(rename = "@text-anchor")]
@@ -48,22 +60,21 @@ pub struct TextInformation {
 }
 
 impl TextInformation {
-    pub fn calculate_length_at_22_px(text: &String) -> Result<CoordinateT, TryFromIntError> {
-        Ok(
-            (CHAR_WIDTH_AT_22_PX * u16::try_from(text.len())? as f32 + CHAR_H_PADDING).round()
-                as CoordinateT,
-        )
-    }
+    // pub fn calculate_length_at_22_px(text: &String) -> Result<CoordinateT, SVGError> {
+    //     Ok(
+    //         (CHAR_WIDTH_AT_22_PX * u16::try_from(text.len())? as f32 + CHAR_H_PADDING).round()
+    //             as CoordinateT,
+    //     )
+    // }
 
-    pub fn calculate_length(&self, pad: Option<f32>) -> Result<CoordinateT, SVGError> {
-        // TODO: Consider just passing in a number to font_size rather than str
-        let font_size: f32 = self.font_size[0..(self.font_size.len() - 2)]
-            .parse()
-            .unwrap();
-
+    pub fn calculate_length_util(
+        font_size: f32,
+        length: usize,
+        pad: Option<f32>,
+    ) -> Result<CoordinateT, SVGError> {
         let char_width = font_size.div(ROBOTO_RATIO);
 
-        Ok((char_width * u16::try_from(self.value.len())? as f32
+        Ok((char_width * u16::try_from(length)? as f32
             + if let Some(pad) = pad {
                 char_width * pad
             } else {
@@ -72,10 +83,14 @@ impl TextInformation {
         .round() as CoordinateT)
     }
 
+    pub fn calculate_length(&self, pad: Option<f32>) -> Result<CoordinateT, SVGError> {
+        TextInformation::calculate_length_util(self.font_size.px, self.value.len(), pad)
+    }
+
     pub fn new(
         x: CoordinateT,
         y: CoordinateT,
-        font_size: Option<&str>,
+        font_size: f32,
         text_anchor: &'static str,
         dominant_baseline: &'static str,
         fill: Option<&String>,
@@ -85,10 +100,7 @@ impl TextInformation {
         Self {
             x,
             y,
-            font_size: match font_size {
-                Some(fs) => fs.to_string(),
-                None => "16px".to_string(),
-            },
+            font_size: FontSize { px: font_size },
             font_family: "Roboto Mono",
             text_anchor,
             dominant_baseline,
@@ -117,7 +129,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_add(HORIZONTAL_OFFSET_FROM_LINK),
                     link_y.saturating_sub(delta_y),
-                    None,
+                    DEFAULT_FONT_SIZE,
                     "start",
                     "middle",
                     fill,
@@ -131,7 +143,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_add(delta_x),
                     link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK),
-                    None,
+                    DEFAULT_FONT_SIZE,
                     "middle",
                     "text-after-edge",
                     fill,
@@ -145,7 +157,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_sub(HORIZONTAL_OFFSET_FROM_LINK),
                     link_y.saturating_add(delta_y),
-                    None,
+                    DEFAULT_FONT_SIZE,
                     "end",
                     "middle",
                     fill,
@@ -159,7 +171,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_sub(delta_x),
                     link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK),
-                    None,
+                    DEFAULT_FONT_SIZE,
                     "middle",
                     "text-after-edge",
                     fill,
@@ -376,7 +388,7 @@ impl TextInformation {
                     link_y
                         .saturating_sub(delta_y)
                         .saturating_add(OFFSET_FROM_FIRST),
-                    None,
+                    DEFAULT_FONT_SIZE,
                     "start",
                     "middle",
                     fill,
@@ -390,7 +402,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_add(delta_x),
                     link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK),
-                    None,
+                    DEFAULT_FONT_SIZE,
                     "middle",
                     "text-before-edge",
                     fill,
@@ -406,7 +418,7 @@ impl TextInformation {
                     link_y
                         .saturating_add(delta_y)
                         .saturating_add(OFFSET_FROM_FIRST),
-                    None,
+                    DEFAULT_FONT_SIZE,
                     "end",
                     "middle",
                     fill,
@@ -420,7 +432,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_sub(delta_x),
                     link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK),
-                    None,
+                    DEFAULT_FONT_SIZE,
                     "middle",
                     "text-before-edge",
                     fill,

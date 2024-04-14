@@ -10,6 +10,7 @@ pub enum SVGErrorKind {
     ManycoreError(String),
     SerialisationError(String),
     DataConversionError(String),
+    GenerationError(String),
 }
 
 #[derive(Debug)]
@@ -35,6 +36,7 @@ impl Display for SVGError {
             SVGErrorKind::DataConversionError(reason) => {
                 write!(f, "Data Conversion Error: {reason}")
             }
+            SVGErrorKind::GenerationError(reason) => write!(f, "Generation Error: {reason}"),
         }
     }
 }

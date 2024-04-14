@@ -1,13 +1,10 @@
-use std::collections::BTreeMap;
-
 use const_format::concatcp;
 use getset::{Getters, MutGetters, Setters};
-use manycore_utils::serialise_btreemap;
 use serde::Serialize;
 
 use crate::{
-    style::BASE_FILL_CLASS_NAME, CoordinateT, TextInformation, TopLeft, CHAR_HEIGHT_AT_22_PX,
-    CHAR_V_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
+    style::BASE_FILL_CLASS_NAME, CoordinateT, SVGError, TextInformation, TopLeft,
+    CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING, CHAR_V_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
 pub const SIDE_LENGTH: CoordinateT = 100;
@@ -55,7 +52,7 @@ static ROUTER_PATH: &'static str = concatcp!(
 pub const CORE_ROUTER_STROKE_WIDTH: CoordinateT = 1;
 static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
 
-pub static TASK_FONT_SIZE: &'static str = "22px";
+pub static TASK_FONT_SIZE: f32 = 22.0;
 pub static TASK_RECT_STROKE: CoordinateT = 1;
 static TASK_RECT_HEIGHT: CoordinateT = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
 pub static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(2);
@@ -151,30 +148,33 @@ impl Task {
         c: &CoordinateT,
         task: &Option<u16>,
         top_left: &TopLeft,
-    ) -> Option<Self> {
+    ) -> Result<Option<Self>, SVGError> {
         match task {
             Some(task) => {
                 let text = format!("T{}", task);
 
-                // TODO: This should bubble up the error
-                let text_width = TextInformation::calculate_length_at_22_px(&text).unwrap_or(0);
+                let text_width = TextInformation::calculate_length_util(
+                    TASK_FONT_SIZE,
+                    text.len(),
+                    Some(CHAR_H_PADDING),
+                )?;
 
                 let (cx, cy) = Self::get_centre_coordinates(r, c, text_width, top_left);
-                Some(Self {
+                Ok(Some(Self {
                     rect: TaskRect::new(cx, cy, text_width),
                     text: TextInformation::new(
                         cx,
                         cy,
-                        Some(TASK_FONT_SIZE),
+                        TASK_FONT_SIZE,
                         "middle",
                         "central",
                         None,
                         None,
                         text,
                     ),
-                })
+                }))
             }
-            None => None,
+            None => Ok(None),
         }
     }
 
@@ -313,14 +313,14 @@ impl ProcessingGroup {
         id: &u8,
         allocated_task: &Option<u16>,
         top_left: &TopLeft,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, SVGError> {
+        Ok(Self {
             coordinates: (*r, *c),
             id: *id,
             core: Core::new(r, c, id, top_left),
             router: Router::new(r, c, id, top_left),
-            task: Task::new(r, c, allocated_task, top_left),
-        }
+            task: Task::new(r, c, allocated_task, top_left)?,
+        })
     }
 
     pub fn task_start(&self) -> Option<CoordinateT> {
@@ -336,15 +336,14 @@ impl ProcessingGroup {
 pub struct ProcessingParentGroup {
     #[serde(rename = "@id")]
     id: &'static str,
-    #[serde(serialize_with = "serialise_btreemap")]
-    g: BTreeMap<u8, ProcessingGroup>,
+    g: Vec<ProcessingGroup>,
 }
 
 impl ProcessingParentGroup {
-    pub fn new() -> Self {
+    pub fn new(number_of_cores: &usize) -> Self {
         Self {
             id: "processingGroup",
-            g: BTreeMap::new(),
+            g: Vec::with_capacity(*number_of_cores),
         }
     }
 }

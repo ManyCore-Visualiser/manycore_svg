@@ -4,7 +4,7 @@ use manycore_parser::COORDINATES_KEY;
 
 use crate::{
     CoordinateT, CoordinatesOrientation, FieldConfiguration, InformationLayer, TextInformation,
-    HALF_SIDE_LENGTH, SIDE_LENGTH,
+    DEFAULT_FONT_SIZE, HALF_SIDE_LENGTH, SIDE_LENGTH,
 };
 
 pub fn make_coordinates(
@@ -31,7 +31,7 @@ pub fn make_coordinates(
         ret.coordinates = Some(TextInformation::new(
             x,
             y,
-            None,
+            DEFAULT_FONT_SIZE,
             "middle",
             "text-before-edge",
             None,

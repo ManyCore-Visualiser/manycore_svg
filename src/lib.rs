@@ -186,8 +186,9 @@ impl TryFrom<&SVG> for String {
     }
 }
 
-impl From<&ManycoreSystem> for SVG {
-    fn from(manycore: &ManycoreSystem) -> Self {
+impl TryFrom<&ManycoreSystem> for SVG {
+    type Error = SVGError;
+    fn try_from(manycore: &ManycoreSystem) -> Result<Self, Self::Error> {
         let columns = *manycore.columns();
         let rows = *manycore.rows();
 
@@ -195,17 +196,11 @@ impl From<&ManycoreSystem> for SVG {
         let rows_coord: CoordinateT = rows.into();
 
         let width = (columns_coord * BLOCK_LENGTH)
-            // + (BLOCK_LENGTH / 2) // Buffer for channel text on the right
             + ((columns_coord - 1) * BLOCK_DISTANCE)
             + CORE_ROUTER_STROKE_WIDTH.saturating_mul(2);
         let height = (rows_coord * BLOCK_LENGTH)
             + ((rows_coord - 1) * BLOCK_DISTANCE)
             + CORE_ROUTER_STROKE_WIDTH.saturating_mul(2);
-        // Link text, no need for bottom as its covered by task circle offset
-        // .saturating_add(FONT_SIZE_WITH_OFFSET)
-        // .saturating_add(TASK_RECT_CENTRE_OFFSET)
-        // .saturating_add(HALF_TASK_RECT_HEIGHT)
-        // .saturating_add(TASK_RECT_STROKE);
 
         let top_left = TopLeft {
             x: width.saturating_div(2).saturating_mul(-1),
@@ -246,7 +241,7 @@ impl From<&ManycoreSystem> for SVG {
                 core.id(),
                 core.allocated_task(),
                 &top_left,
-            );
+            )?;
 
             // Check if viewBox needs to be extended left
             if c == 0 {
@@ -281,10 +276,7 @@ impl From<&ManycoreSystem> for SVG {
             }
 
             // Store processing group
-            ret.root
-                .processing_group
-                .g_mut()
-                .insert(*core.id(), processing_group);
+            ret.root.processing_group.g_mut().push(processing_group);
         }
 
         // Extend viewBox
@@ -298,8 +290,12 @@ impl From<&ManycoreSystem> for SVG {
             ret.extend_base_view_box_bottom(TASK_BOTTOM_OFFSET);
         }
 
-        ret
+        Ok(ret)
     }
+}
+
+fn no_processing_group(index: usize) -> SVGError {
+    SVGError::new(SVGErrorKind::GenerationError(format!("Could not retrieve SVG group for core with ID {}. Something weent wrong generating the SVG, please try again.", index)))
 }
 
 impl SVG {
@@ -330,7 +326,7 @@ impl SVG {
             root: Root {
                 id: "mainGroup",
                 clip_path: None,
-                processing_group: ProcessingParentGroup::new(),
+                processing_group: ProcessingParentGroup::new(number_of_cores),
                 connections_group: ConnectionsParentGroup::default(),
                 information_group: InformationGroup::new(number_of_cores),
                 sinks_sources_group: SinksSourcesGroup::new(rows, columns),
@@ -440,8 +436,12 @@ impl SVG {
             for (i, core) in manycore.cores().list().iter().enumerate() {
                 let core_loads = get_core_loads(&i);
 
-                // TODO: Handle unwraps
-                let processing_group = self.root.processing_group.g().get(core.id()).unwrap();
+                let processing_group = self
+                    .root
+                    .processing_group
+                    .g()
+                    .get(i)
+                    .ok_or(no_processing_group(i))?;
 
                 self.root
                     .information_group
@@ -527,7 +527,9 @@ mod tests {
         let manycore: ManycoreSystem = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let svg: SVG = (&manycore).into();
+        let svg: SVG = (&manycore)
+            .try_into()
+            .expect("Could not convert Manycorer to SVG.");
 
         let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
 
