@@ -10,17 +10,18 @@ use crate::{
     MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
-pub const EDGE_CONNECTIONS_ID: &'static str = "edgeConnetions";
+pub(crate) const EDGE_CONNECTIONS_ID: &'static str = "edgeConnetions";
 static CONNECTION_GAP: CoordinateT = 0i32
     .saturating_add(HALF_ROUTER_OFFSET)
     .saturating_mul(3)
     .saturating_div(4)
     .wrapping_sub(5);
 
-pub static CONNECTION_LENGTH: CoordinateT = ROUTER_OFFSET.saturating_mul(4);
+pub(crate) static CONNECTION_LENGTH: CoordinateT = ROUTER_OFFSET.saturating_mul(4);
 
+/// Object representation of a connection path.
 #[derive(Serialize, Getters, Debug)]
-pub struct Connection {
+pub(crate) struct Connection {
     #[serde(rename = "@d")]
     d: String,
     #[serde(flatten)]
@@ -35,18 +36,21 @@ pub struct Connection {
     y: CoordinateT,
 }
 
+/// Helper struct used when calculating connection paths.
 struct ConnectionPath {
     path: String,
     x: CoordinateT,
     y: CoordinateT,
 }
 
+/// Helper struct to group input and output connections paths together.
 struct EdgePath {
     input: ConnectionPath,
     output: ConnectionPath,
 }
 
 impl Connection {
+    /// Calculates the path for an innerr matrix connection.
     fn get_inner_path(
         direction: &Directions,
         r: &CoordinateT,
@@ -86,6 +90,7 @@ impl Connection {
         }
     }
 
+    /// Calculates the paths (input and output at once) for an edge router connection.
     fn get_edge_paths(
         direction: &Directions,
         r: &CoordinateT,
@@ -227,6 +232,7 @@ impl Connection {
         EdgePath { input, output }
     }
 
+    /// Creates a new [`Connection`] instance given a [`ConnectionPath`]. Remaining parameters are default.
     fn new(connection_path: ConnectionPath) -> Self {
         Self {
             d: connection_path.path,
@@ -238,12 +244,14 @@ impl Connection {
     }
 }
 
+/// Wrapper around [`Connection`] to serialise them all as SVG `<path>`.
 #[derive(Serialize, Default, Getters, Debug)]
-pub struct Connections {
+pub(crate) struct Connections {
     #[getset(get = "pub")]
     path: Vec<Connection>,
 }
 
+/// Object rpresentation fo the edge connections SVG group.
 #[derive(Serialize, Getters)]
 pub struct EdgeConnections {
     #[serde(rename = "@id")]
@@ -269,13 +277,15 @@ impl Default for EdgeConnections {
     }
 }
 
-pub enum ConnectionType {
+/// Enum variants to describe [`Connection`] types. Variant content is index of element.
+pub(crate) enum ConnectionType {
     EdgeConnection(usize),
     Connection(usize),
 }
 
+/// Enum variants to describe a connection direction. Variant content is cardinal [`Directions`].
 #[derive(Hash, PartialEq, Eq)]
-pub enum DirectionType {
+pub(crate) enum DirectionType {
     Out(Directions),
     Source(Directions),
 }
@@ -289,26 +299,30 @@ impl Display for DirectionType {
     }
 }
 
+/// Object representation of the SVG group that contains channel connections.
 #[derive(Serialize, Getters, Default)]
 #[getset(get = "pub")]
-pub struct ConnectionsParentGroup {
+pub(crate) struct ConnectionsParentGroup {
     #[serde(rename = "g")]
     connections: Connections,
     #[serde(rename = "g")]
     edge_connections: EdgeConnections,
+    /// A double map to quickly retrieve a core's (router) connections in the SVG.
     #[serde(skip)]
     core_connections_map: HashMap<u8, HashMap<DirectionType, ConnectionType>>,
 }
 
 impl ConnectionsParentGroup {
+    /// Inserts an SVG core connection in the core_connections_map.
     fn insert_in_map(&mut self, core_id: &u8, direction: DirectionType, element: ConnectionType) {
-        // Each core has 4 connections
         self.core_connections_map
             .entry(*core_id)
+            // Each core has 4 connections, so we preallocate 4 slots in the inner map.
             .or_insert(HashMap::with_capacity(4))
             .insert(direction, element);
     }
 
+    /// Generates edge SVG connections for a given core.
     fn add_edge_connection(
         &mut self,
         core_id: &u8,
@@ -324,6 +338,9 @@ impl ConnectionsParentGroup {
         self.edge_connections.source.push(Connection::new(input));
         self.edge_connections.sink.push(Connection::new(output));
 
+        // When we insert in map, we store direction and the index of the element in its
+        // respective vector so we can grab it quickly in case we need to display its load,
+        // and hence need its coordinates.
         self.insert_in_map(
             core_id,
             DirectionType::Source(*direction),
@@ -336,6 +353,7 @@ impl ConnectionsParentGroup {
         );
     }
 
+    /// Generates inner SVG connections (so output only) for a given core.
     fn add_inner_connection(
         &mut self,
         core_id: &u8,
@@ -349,6 +367,9 @@ impl ConnectionsParentGroup {
 
         self.connections.path.push(Connection::new(path));
 
+        // When we insert in map, we store direction and the index of the element in its
+        // respective vector so we can grab it quickly in case we need to display its load,
+        // and hence need its coordinates.
         self.insert_in_map(
             core_id,
             DirectionType::Out(*direction),
@@ -356,7 +377,8 @@ impl ConnectionsParentGroup {
         );
     }
 
-    pub fn add_connections(
+    // Generates a core's SVG connections.
+    pub(crate) fn add_connections(
         &mut self,
         core: &Core,
         r: &CoordinateT,
@@ -365,10 +387,14 @@ impl ConnectionsParentGroup {
         rows: u8,
         top_left: &TopLeft,
     ) {
+        // Does this core have edge connections?
         let on_edge = core.is_on_edge(columns, rows);
 
+        // For each core's channel direction in the provided manycore system
         for direction in core.channels().channel().keys() {
             if let Some(edge_position) = on_edge.as_ref() {
+                // Here we match against the direction and the edge position to decide
+                // what kind of SVG connection (inner (core->core) or edge (core->border, border->core)) to generate.
                 match direction {
                     Directions::North => match edge_position {
                         EdgePosition::Top | EdgePosition::TopLeft | EdgePosition::TopRight => {
@@ -400,6 +426,7 @@ impl ConnectionsParentGroup {
                     },
                 }
             } else {
+                // This core is not on edge so this is just a core->core connection.
                 self.add_inner_connection(core.id(), direction, r, c, top_left);
             }
         }

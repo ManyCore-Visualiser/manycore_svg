@@ -1,17 +1,17 @@
 /// SVG marker useed in connection lines.
 /// This just gets deserialiseed as-is. No logic here.
-
 use const_format::concatcp;
 use serde::Serialize;
 
-use crate::{CoordinateT, CommonAttributes};
+use crate::{CommonAttributes, CoordinateT};
 
-pub static MARKER_PATH: &str = "M0,0 M0,0 V8 L8,4 Z";
-pub static MARKER_REFERENCE: &str = "url(#arrowHead)";
-pub const MARKER_HEIGHT: CoordinateT = 8;
+pub(crate) static MARKER_PATH: &str = "M0,0 M0,0 V8 L8,4 Z";
+pub(crate) static MARKER_REFERENCE: &str = "url(#arrowHead)";
+pub(crate) const MARKER_HEIGHT: CoordinateT = 8;
 static MARKER_DIMEN: &'static str = concatcp!(MARKER_HEIGHT);
 static MARKER_REF_Y: &'static str = concatcp!(MARKER_HEIGHT.saturating_div(2));
 
+/// Object representation of the marker path (arow).
 #[derive(Serialize)]
 struct MarkerPath {
     #[serde(rename = "@d")]
@@ -32,8 +32,9 @@ impl Default for MarkerPath {
     }
 }
 
+/// Object repersentation of an SVG maker element.
 #[derive(Serialize)]
-pub struct Marker {
+pub(crate) struct Marker {
     #[serde(rename = "@id")]
     id: &'static str,
     #[serde(rename = "@orient")]

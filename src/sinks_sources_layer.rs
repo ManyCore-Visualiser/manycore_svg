@@ -37,15 +37,16 @@ static SOURCE_FILL: &str = "#fbbf24";
 pub const SINK_SOURCES_ID: &'static str = "sinksSources";
 
 impl TextInformation {
+    /// Utility function to generate a [`TextInformation`] instance that contains a task id.
     fn sink_source_text(
-        cx: CoordinateT,
-        cy: CoordinateT,
+        centre_x: CoordinateT,
+        centre_y: CoordinateT,
         text_content: Option<String>,
     ) -> Option<Self> {
         if let Some(text) = text_content {
             return Some(TextInformation::new(
-                cx,
-                cy,
+                centre_x,
+                centre_y,
                 TASK_FONT_SIZE,
                 "middle",
                 "central",
@@ -59,6 +60,7 @@ impl TextInformation {
     }
 }
 
+/// Object representation of an SVG `<rect>`, the "shell" of an edge router.
 #[derive(Serialize)]
 struct Rect {
     #[serde(rename = "@x")]
@@ -80,15 +82,16 @@ struct Rect {
 }
 
 impl Rect {
+    /// Generates a new [`Rect`] instance from the given parameters.
     fn new(
-        x: CoordinateT,
-        y: CoordinateT,
+        centre_x: CoordinateT,
+        centre_y: CoordinateT,
         variant: SinkSourceVariant,
         text_width: CoordinateT,
     ) -> Self {
         Self {
-            x: x.saturating_sub(text_width.saturating_div(2)),
-            y: y - SINKS_SOURCES_HALF_SHORT_SIDE_LENGTH,
+            x: centre_x.saturating_sub(text_width.saturating_div(2)),
+            y: centre_y - SINKS_SOURCES_HALF_SHORT_SIDE_LENGTH,
             width: text_width,
             height: SINKS_SOURCES_SHORT_SIDE_LENGTH_STR,
             rx: SINKS_SOURCES_RX,
@@ -133,8 +136,9 @@ static WEST_DELTA_X: CoordinateT = 0i32
     .saturating_sub(MARKER_HEIGHT)
     .saturating_sub(ROUTER_OFFSET);
 
+/// Enum to describe an router variant. Variant content is task id, if any.
 #[derive(Clone, Copy)]
-pub enum SinkSourceVariant {
+pub(crate) enum SinkSourceVariant {
     Sink(u16),
     Source(u16),
     None,
@@ -149,15 +153,17 @@ impl From<&BorderEntry> for SinkSourceVariant {
     }
 }
 
+/// Object representation of an SVG border router `<g>`.
 #[derive(Serialize)]
-pub struct SinkSource {
+pub(crate) struct SinkSource {
     rect: Rect,
     #[serde(skip_serializing_if = "Option::is_none")]
     text: Option<TextInformation>,
 }
 
 impl SinkSource {
-    pub fn new(
+    /// Generates a new [`SinkSource`] instance according to the provided parameters.
+    pub(crate) fn new(
         router_x: &CoordinateT,
         router_y: &CoordinateT,
         direction: &SinkSourceDirection,
@@ -205,18 +211,19 @@ impl SinkSource {
             }
         };
 
-        let cx = delta_x.wrapping_add(*router_x);
-        let cy = delta_y.wrapping_add(*router_y);
+        let centre_x = delta_x.wrapping_add(*router_x);
+        let centre_y = delta_y.wrapping_add(*router_y);
 
         SinkSource {
-            rect: Rect::new(cx, cy, variant, text_width),
-            text: TextInformation::sink_source_text(cx, cy, text_content),
+            rect: Rect::new(centre_x, centre_y, variant, text_width),
+            text: TextInformation::sink_source_text(centre_x, centre_y, text_content),
         }
     }
 }
 
+/// Object representation of an SVG `<g>` that contains all instance of [`SinkSource`].
 #[derive(Serialize)]
-pub struct SinksSourcesGroup {
+pub(crate) struct SinksSourcesGroup {
     #[serde(rename = "@id")]
     id: &'static str,
     #[serde(rename = "@class")]
@@ -225,15 +232,18 @@ pub struct SinksSourcesGroup {
 }
 
 impl SinksSourcesGroup {
-    pub fn new(rows: u8, columns: u8) -> Self {
+    /// Generates a new [`SinksSourcesGroup`] instance with capacity for all border router,
+    /// calculated fom the number of rows and columns.
+    pub(crate) fn new(rows: u8, columns: u8) -> Self {
         Self {
             id: SINK_SOURCES_ID,
             class: EDGE_DATA_CLASS_NAME,
-            // Formula worksout because we ignore the corners
+            // Formula worksout because we ignore the corners. Obv, only on 2D matrix.
             g: Vec::with_capacity(usize::from((rows + columns) * 2)),
         }
     }
 
+    /// Utility to retrieve edge router variant.
     fn get_variant(
         &self,
         core_borders: Option<&HashMap<SinkSourceDirection, BorderEntry>>,
@@ -248,7 +258,8 @@ impl SinksSourcesGroup {
         }
     }
 
-    pub fn insert(
+    /// Generates and inserts all edge routers ([`SinkSource`]s) connected to the [`Router`] located at the given coordinates.
+    pub(crate) fn insert(
         &mut self,
         edge_position: EdgePosition,
         router_x: &CoordinateT,
@@ -258,6 +269,8 @@ impl SinksSourcesGroup {
         let mut variant;
         let mut direction;
 
+        // We generate the required edge routers based on the edge position.
+        // Some edges have two routers connected, while most have one.
         match edge_position {
             EdgePosition::Top => {
                 direction = SinkSourceDirection::North;

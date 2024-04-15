@@ -4,6 +4,27 @@ use getset::{Getters, MutGetters};
 use manycore_parser::RoutingAlgorithms;
 use serde::{Deserialize, Serialize};
 
+/// Configuration colour settings
+/// * `bounds`: Numerical boundaries. Used to determine colour.
+/// * `colours`: List of colours (hexadecimal) corresponding to each boundary.
+///
+/// Example, given:
+/// ```ignore
+/// let colour_settings = ColourSettings {
+///     bounds: [10, 20, 30, 40],
+///     colours: ["#22c55e", "#eab308", "#f97316", "#dc2626"],
+/// };
+/// ```
+/// **Warning:** Above is pseudo-code, all those fields are private and `colours` expects [`String`] not [`str`].
+///
+/// We would have:
+///
+/// | Attribute value | Colour    |
+/// |-----------------|-----------|
+/// | `9`             | `#22c55e` |
+/// | `11`            | `#eab308` |
+/// | `35`            | `#f97316` |
+/// | `50`            | `#dc2626` |
 #[derive(Serialize, Deserialize, Getters, PartialEq, Debug, PartialOrd, Eq, Ord)]
 #[getset(get = "pub")]
 pub struct ColourSettings {
@@ -11,12 +32,20 @@ pub struct ColourSettings {
     colours: [String; 4],
 }
 
+/// Configuration coordinates orientation settins.
+/// * [`T`][`CoordinatesOrientation::T`]: Top to bottom
+/// * [`B`][`CoordinatesOrientation::B`]: Bottom to top
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub enum CoordinatesOrientation {
     T,
     B,
 }
 
+/// Object representation of requested routing configuration.
+/// * `algorithm`: [`RoutingAlgorithms`]
+/// * `load_configuration`: [`LoadConfiguration`]
+/// * `load_colours`: [`ColourSettings`]
+/// * `display`: [`String`], the display key of channel loads.
 #[derive(Serialize, Deserialize, Getters, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]
 #[getset(get = "pub")]
@@ -27,22 +56,39 @@ pub struct RoutingConfiguration {
     display: String,
 }
 
+/// Possible ways a field can be configured.
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub enum FieldConfiguration {
+    /// Text only.
     Text(String),
+    /// Coloured Text according to provided [`ColourSettings`].
     ColouredText(String, ColourSettings),
+    /// Fill colour of associated element, according to provided [`ColourSettings`].
     Fill(ColourSettings),
+    /// This variant can be used to configure coordinates display only.
     Coordinates(CoordinatesOrientation),
+    /// This variant can be used to configure routing only.
     Routing(RoutingConfiguration),
+    /// This variant can be used to configure boolean properties, e.g. displaying border routers.
     Boolean(bool),
 }
 
+/// Channel load configuration.
 #[derive(Serialize, Deserialize, PartialEq, Debug, PartialOrd, Eq, Ord)]
 pub enum LoadConfiguration {
+    /// Display loads as percentage of bandwidth, e.g. 5%.
     Percentage,
+    /// Display loads as frraction of bandwith, e.g. 20/400.
     Fraction,
 }
 
+#[cfg(doc)]
+use manycore_parser::{Channel, Core, Router};
+
+/// Object representation of user-defined configurration.
+/// * `core_config`: A [`BTreeMap`] with [`String`] attribute key and [`FieldConfiguration`] value. Controls what [`Core`] information to display and how.
+/// * `router_config`: A [`BTreeMap`] with [`String`] attribute key and [`FieldConfiguration`] value. Controls what [`Router`] information to display and how.
+/// * `channel_config`: A [`BTreeMap`] with [`String`] attribute key and [`FieldConfiguration`] value. Controls what [`Channel`] information to display and how.
 #[derive(Serialize, Deserialize, Getters, MutGetters, Default, PartialEq, Debug)]
 #[serde(rename_all = "camelCase")]
 #[getset(get = "pub", get_mut = "pub")]

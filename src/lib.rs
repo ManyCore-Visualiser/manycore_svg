@@ -6,79 +6,46 @@ mod clip_path;
 mod connections_group;
 mod defs;
 mod error;
+mod information_group;
 mod information_layer;
 mod marker;
+mod offsets;
 mod processing_group;
 mod render_settings;
 mod sinks_sources_layer;
 mod style;
+mod svg_conversions;
 mod text_background;
 mod view_box;
 
-use std::{
-    cmp::{max, min},
-    collections::BTreeSet,
-};
+use std::collections::BTreeSet;
 
 pub use clip_path::*;
 use connections_group::*;
 use defs::*;
 pub use error::*;
 use getset::{Getters, MutGetters, Setters};
+use information_group::*;
 use information_layer::*;
 use marker::*;
+use offsets::*;
 use processing_group::*;
 pub use render_settings::*;
 use sinks_sources_layer::SinksSourcesGroup;
 pub use view_box::*;
 
-use manycore_parser::{ManycoreSystem, RoutingTarget, WithID, BORDER_ROUTERS_KEY, ROUTING_KEY};
+use manycore_parser::{ManycoreSystem, RoutingTarget, BORDER_ROUTERS_KEY, ROUTING_KEY};
 
-use quick_xml::DeError;
 use serde::Serialize;
 use style::Style;
 
+/// Type alias for SVG elements coordinates.
 pub type CoordinateT = i32;
 
-#[derive(Serialize)]
-struct InformationGroup {
-    #[serde(rename = "g", skip_serializing_if = "Vec::is_empty")]
-    groups: Vec<InformationLayer>,
-    #[serde(rename = "@id")]
-    id: &'static str,
-}
-
-impl InformationGroup {
-    fn new(number_of_cores: &usize) -> Self {
-        Self {
-            groups: Vec::with_capacity(*number_of_cores),
-            id: "information",
-        }
-    }
-
-    pub fn update_string(&self) -> Result<String, DeError> {
-        let dummy_xml = quick_xml::se::to_string_with_root("g", &self.groups)?;
-        // 0-2+1...dummy_xml.len() - 4
-        // <g>...</g>
-        // e.g <g>hello</g> = 3..8
-        // Start is inclusive, end is exclusive
-        let dummy_len = dummy_xml.len();
-        let inner_content;
-
-        if dummy_len > 6 {
-            inner_content = &dummy_xml[3..(dummy_xml.len() - 4)];
-        } else {
-            inner_content = "";
-        }
-
-        // We must return a string here because without allocation the string slice would be dropped.
-
-        Ok(String::from(inner_content))
-    }
-}
-
+/// Object representation of the [`SVG`] main group. Everything goes in here.
+/// Cores, (border) routers, channels and information are all inner groups of this group.
 #[derive(Serialize, Setters)]
-pub struct Root {
+struct Root {
     #[serde(rename = "@id")]
     id: &'static str,
     #[serde(rename = "@clip-path", skip_serializing_if = "Option::is_none")]
@@ -93,6 +60,8 @@ pub struct Root {
     sinks_sources_group: SinksSourcesGroup,
 }
 
+/// An Object representation of the [`ViewBox`] top left coordinate.
+/// Primarily used to derive paths coordinates.
 #[derive(Getters, Clone, Copy)]
 #[getset(get = "pub")]
 struct TopLeft {
@@ -100,33 +69,7 @@ struct TopLeft {
     y: CoordinateT,
 }
 
-#[derive(Getters, Clone, Copy, Debug)]
-#[getset(get = "pub")]
-struct Offsets {
-    left: CoordinateT,
-    top: CoordinateT,
-    right: CoordinateT,
-    bottom: CoordinateT,
-}
-
-impl Offsets {
-    fn new() -> Self {
-        Self {
-            left: 0,
-            top: 0,
-            right: 0,
-            bottom: 0,
-        }
-    }
-
-    pub fn update(&mut self, other: Offsets) {
-        self.left = min(self.left, other.left);
-        self.top = min(self.top, other.top);
-        self.right = max(self.right, other.right);
-        self.bottom = max(self.bottom, other.bottom);
-    }
-}
-
+/// Object representation of the generated SVGs.
 #[derive(Serialize, Getters, MutGetters)]
 #[serde(rename = "svg")]
 pub struct SVG {
@@ -164,6 +107,8 @@ pub struct SVG {
     base_view_box: ViewBox,
 }
 
+/// This struct is provided as a result of requesting an [`SVG`] update based on a particular [`Configuration`].
+/// Fields are kept private as no modification of this is ever expected. It's just a convenient wrapper for serialisation.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateResult {
@@ -172,137 +117,15 @@ pub struct UpdateResult {
     view_box: String,
 }
 
-impl TryFrom<&SVG> for String {
-    type Error = DeError;
-
-    fn try_from(svg: &SVG) -> Result<Self, Self::Error> {
-        quick_xml::se::to_string(svg)
-    }
-}
-
-impl TryFrom<&ManycoreSystem> for SVG {
-    type Error = SVGError;
-    fn try_from(manycore: &ManycoreSystem) -> Result<Self, Self::Error> {
-        let columns = *manycore.columns();
-        let rows = *manycore.rows();
-
-        let columns_coord: CoordinateT = columns.into();
-        let rows_coord: CoordinateT = rows.into();
-
-        let width = (columns_coord * BLOCK_LENGTH)
-            + ((columns_coord - 1) * BLOCK_DISTANCE)
-            + CORE_ROUTER_STROKE_WIDTH.saturating_mul(2);
-        let height = (rows_coord * BLOCK_LENGTH)
-            + ((rows_coord - 1) * BLOCK_DISTANCE)
-            + CORE_ROUTER_STROKE_WIDTH.saturating_mul(2);
-
-        let top_left = TopLeft {
-            x: width.saturating_div(2).saturating_mul(-1),
-            y: height.saturating_div(2).saturating_mul(-1),
-        };
-
-        let mut ret = SVG::new(
-            &manycore.cores().list().len(),
-            rows,
-            columns,
-            width,
-            height,
-            top_left,
-        );
-
-        let mut r: u8 = 0;
-
-        let cores = manycore.cores().list();
-        let borders = manycore.borders();
-
-        let mut min_task_start = None;
-        let mut has_bottom_task = false;
-        for (i, core) in cores.iter().enumerate() {
-            let c = u8::try_from(i % usize::try_from(columns).expect("8 bits must fit in a usize. I have no idea what you're trying to run this on, TI TMS 1000?")).expect(
-                "Somehow, modulus on an 8 bit number gave a number that does not fit in 8 bits (your ALU re-invented mathematics).",
-            );
-
-            if i > 0 && c == 0 {
-                r += 1;
-            }
-
-            let r_coord: CoordinateT = r.into();
-            let c_coord: CoordinateT = c.into();
-
-            // Generate processing group
-            let processing_group = ProcessingGroup::new(
-                &r_coord,
-                &c_coord,
-                core.id(),
-                core.allocated_task(),
-                &top_left,
-            )?;
-
-            // Check if viewBox needs to be extended left
-            if c == 0 {
-                if let Some(task_start) = processing_group.task_start() {
-                    if let Some(min_task_start_value) = min_task_start {
-                        min_task_start = Some(min(min_task_start_value, task_start));
-                    } else {
-                        min_task_start = Some(task_start);
-                    }
-                }
-            }
-
-            // Check if viewBox needs to be extended bottom
-            if r == (rows - 1) {
-                if let Some(_) = core.allocated_task() {
-                    has_bottom_task = true;
-                }
-            }
-
-            // Generate connections group
-            ret.root
-                .connections_group
-                .add_connections(core, &r_coord, &c_coord, columns, rows, &top_left);
-
-            // Generate borders
-            if let Some(edge_position) = core.is_on_edge(columns, rows) {
-                let (router_x, router_y) = processing_group.router().move_coordinates();
-
-                // Remember that index always corresponts to core ID.
-                ret.root.sinks_sources_group.insert(
-                    edge_position,
-                    router_x,
-                    router_y,
-                    match borders {
-                        Some(borders) => borders.core_border_map().get(&i),
-                        None => None,
-                    },
-                );
-            }
-
-            // Store processing group
-            ret.root.processing_group.g_mut().push(processing_group);
-        }
-
-        // Extend viewBox
-        if let Some(min_task_start) = min_task_start {
-            ret.extend_base_view_box_left(
-                min_task_start
-                    .abs()
-                    .saturating_sub(ret.top_left.x.abs())
-                    .saturating_add(TASK_RECT_STROKE),
-            );
-        }
-        if has_bottom_task {
-            ret.extend_base_view_box_bottom(TASK_BOTTOM_OFFSET);
-        }
-
-        Ok(ret)
-    }
-}
-
+/// Error thrown when we can't get to the requested processing group.
+/// Realistically, it should never happen, unless an invalid [`ManycoreSystem`] is provided.
+/// However, the manycore_parser library should guard against this.
 fn no_processing_group(index: usize) -> SVGError {
     SVGError::new(SVGErrorKind::GenerationError(format!("Could not retrieve SVG group for core with ID {}. Something weent wrong generating the SVG, please try again.", index)))
 }
 
 impl SVG {
+    /// Creates a new [`SVG`] instance with the given parameters.
     fn new(
         number_of_cores: &usize,
         rows: u8,
@@ -339,18 +162,21 @@ impl SVG {
         }
     }
 
+    /// Extends the [`SVG`]'s base and current viewBox left coordinate and adjusts width accordingly.
     fn extend_base_view_box_left(&mut self, left: CoordinateT) {
         self.view_box.extend_left(left);
         self.base_view_box.extend_left(left);
         self.width = self.width.saturating_add(left);
     }
 
+    /// Extends the [`SVG`]'s base and current viewBox left height.
     fn extend_base_view_box_bottom(&mut self, bottom: CoordinateT) {
         self.view_box.extend_bottom(bottom);
         self.base_view_box.extend_bottom(bottom);
         self.height = self.height.saturating_add(bottom);
     }
 
+    /// Generates an [`UpdateResult`] based on a provided [`Configuration`] and a reference [`ManycoreSystem`].
     pub fn update_configurable_information(
         &mut self,
         manycore: &mut ManycoreSystem,
@@ -375,7 +201,7 @@ impl SVG {
             };
 
         // Clear information groups. Clear will keep memory allocated, hopefully less heap allocation penalties.
-        self.root.information_group.groups.clear();
+        self.root.information_group.groups_mut().clear();
         // Reset viewbox
         self.view_box.restore_from(&self.base_view_box);
 
@@ -431,7 +257,8 @@ impl SVG {
             None
         };
 
-        let mut offsets = Offsets::new();
+        let mut offsets = Offsets::default();
+        // Compute all requested attributes at information layer
         if not_empty_configuration {
             let borders = manycore.borders();
             let sources = match borders {
@@ -451,7 +278,7 @@ impl SVG {
 
                 self.root
                     .information_group
-                    .groups
+                    .groups_mut()
                     .push(InformationLayer::new(
                         self.rows,
                         self.columns,
@@ -476,30 +303,30 @@ impl SVG {
         // If edge routers are displayed any channel text is bound to fit.
         if !has_edge_routers {
             let mut updated_view_box = self.view_box;
-            if *self.view_box.x() > offsets.left {
+            if *self.view_box.x() > *offsets.left() {
                 updated_view_box
-                    .extend_left(offsets.left.abs().saturating_sub(self.view_box.x().abs()));
+                    .extend_left(offsets.left().abs().saturating_sub(self.view_box.x().abs()));
             }
 
             let far_end = self
                 .view_box
                 .width()
                 .saturating_sub(self.view_box.x().abs());
-            if far_end < offsets.right {
-                updated_view_box.extend_right(offsets.right.saturating_sub(far_end));
+            if far_end < *offsets.right() {
+                updated_view_box.extend_right(offsets.right().saturating_sub(far_end));
             }
 
-            if *self.view_box.y() > offsets.top {
+            if *self.view_box.y() > *offsets.top() {
                 updated_view_box
-                    .extend_top(offsets.top.abs().saturating_sub(self.view_box.y().abs()));
+                    .extend_top(offsets.top().abs().saturating_sub(self.view_box.y().abs()));
             }
 
             let far_bottom = self
                 .view_box
                 .height()
                 .saturating_sub(self.view_box.y().abs());
-            if far_bottom < offsets.bottom {
-                updated_view_box.extend_bottom(offsets.bottom.saturating_sub(far_bottom))
+            if far_bottom < *offsets.bottom() {
+                updated_view_box.extend_bottom(offsets.bottom().saturating_sub(far_bottom))
             }
 
             self.view_box.restore_from(&updated_view_box);
@@ -512,11 +339,13 @@ impl SVG {
         })
     }
 
+    /// Adds a [`ClipPath`] to the [`SVG`]. Used in FreeForm exporting.
     pub fn add_clip_path(&mut self, polygon_points: String) {
         self.clip_path = Some(ClipPath::new(polygon_points));
         self.root.clip_path = Some(USE_CLIP_PATH);
     }
 
+    /// Removes [`ClipPath`] from the [`SVG`].
     pub fn clear_clip_path(&mut self) {
         self.clip_path = None;
         self.root.clip_path = None;

@@ -7,12 +7,12 @@ use crate::{
     CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING, CHAR_V_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
-pub const SIDE_LENGTH: CoordinateT = 100;
-pub const ROUTER_OFFSET: CoordinateT = SIDE_LENGTH.saturating_div(4).saturating_mul(3);
-pub static BLOCK_LENGTH: CoordinateT = SIDE_LENGTH + ROUTER_OFFSET;
-pub static HALF_SIDE_LENGTH: CoordinateT = SIDE_LENGTH.saturating_div(2);
-pub static HALF_ROUTER_OFFSET: CoordinateT = ROUTER_OFFSET.saturating_div(2);
-pub static BLOCK_DISTANCE: CoordinateT = CONNECTION_LENGTH
+pub(crate) const SIDE_LENGTH: CoordinateT = 100;
+pub(crate) const ROUTER_OFFSET: CoordinateT = SIDE_LENGTH.saturating_div(4).saturating_mul(3);
+pub(crate) static BLOCK_LENGTH: CoordinateT = SIDE_LENGTH + ROUTER_OFFSET;
+pub(crate) static HALF_SIDE_LENGTH: CoordinateT = SIDE_LENGTH.saturating_div(2);
+pub(crate) static HALF_ROUTER_OFFSET: CoordinateT = ROUTER_OFFSET.saturating_div(2);
+pub(crate) static BLOCK_DISTANCE: CoordinateT = CONNECTION_LENGTH
     .saturating_sub(ROUTER_OFFSET)
     .saturating_add(MARKER_HEIGHT);
 static TASK_RECT_X_OFFSET: CoordinateT = 10;
@@ -49,22 +49,23 @@ static ROUTER_PATH: &'static str = concatcp!(
     ",0 Z"
 );
 
-pub const CORE_ROUTER_STROKE_WIDTH: CoordinateT = 1;
+pub(crate) const CORE_ROUTER_STROKE_WIDTH: CoordinateT = 1;
 static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
 
-pub static TASK_FONT_SIZE: f32 = 22.0;
-pub static TASK_RECT_STROKE: CoordinateT = 1;
+pub(crate) static TASK_FONT_SIZE: f32 = 22.0;
+pub(crate) static TASK_RECT_STROKE: CoordinateT = 1;
 static TASK_RECT_HEIGHT: CoordinateT = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
-pub static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(2);
-pub static TASK_RECT_CENTRE_OFFSET: CoordinateT =
+pub(crate) static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(2);
+pub(crate) static TASK_RECT_CENTRE_OFFSET: CoordinateT =
     HALF_TASK_RECT_HEIGHT.saturating_sub(TASK_RECT_HEIGHT.saturating_div(3));
 static TASK_RECT_FILL: &'static str = "#bfdbfe";
-pub static TASK_BOTTOM_OFFSET: CoordinateT = TASK_RECT_CENTRE_OFFSET
+pub(crate) static TASK_BOTTOM_OFFSET: CoordinateT = TASK_RECT_CENTRE_OFFSET
     .saturating_add(HALF_TASK_RECT_HEIGHT)
     .saturating_add(TASK_RECT_STROKE);
 
+/// Wrapper around attributes shared by different elements.
 #[derive(Serialize, Setters, Debug)]
-pub struct CommonAttributes {
+pub(crate) struct CommonAttributes {
     #[serde(rename = "@class", skip_serializing_if = "Option::is_none")]
     class: Option<&'static str>,
     #[serde(rename = "@fill-rule")]
@@ -90,7 +91,8 @@ impl Default for CommonAttributes {
 }
 
 impl CommonAttributes {
-    pub fn with_no_class() -> Self {
+    /// Generates  a [`CommonAttributes`] instance with no class.
+    pub(crate) fn with_no_class() -> Self {
         Self {
             class: None,
             fill_rule: "evenodd",
@@ -101,6 +103,7 @@ impl CommonAttributes {
     }
 }
 
+/// Object representation of the SVG `<rect>` that wraps a task id.
 #[derive(Serialize)]
 struct TaskRect {
     #[serde(rename = "@x")]
@@ -122,10 +125,11 @@ struct TaskRect {
 }
 
 impl TaskRect {
-    fn new(cx: CoordinateT, cy: CoordinateT, text_width: CoordinateT) -> Self {
+    /// Generates a new [`TaskRect`] instance from the given parameters.
+    fn new(centre_x: CoordinateT, centre_y: CoordinateT, text_width: CoordinateT) -> Self {
         Self {
-            x: cx - (text_width.saturating_div(2)),
-            y: cy - HALF_TASK_RECT_HEIGHT,
+            x: centre_x - (text_width.saturating_div(2)),
+            y: centre_y - HALF_TASK_RECT_HEIGHT,
             width: text_width,
             height: TASK_RECT_HEIGHT,
             rx: "15",
@@ -136,6 +140,7 @@ impl TaskRect {
     }
 }
 
+/// Helper struct to group [`TaskRect`] and its corresponding [`TextInformation`] together, forms the task bubble in the SVG.
 #[derive(Serialize)]
 struct Task {
     rect: TaskRect,
@@ -143,23 +148,27 @@ struct Task {
 }
 
 impl Task {
+    /// Generates a new [`Task`] instance from the given parameters.
     fn new(
-        r: &CoordinateT,
-        c: &CoordinateT,
-        task: &Option<u16>,
+        row: &CoordinateT,
+        column: &CoordinateT,
+        task_id: &Option<u16>,
         top_left: &TopLeft,
     ) -> Result<Option<Self>, SVGError> {
-        match task {
+        match task_id {
             Some(task) => {
                 let text = format!("T{}", task);
 
+                // Get an approx text width
                 let text_width = TextInformation::calculate_length_util(
                     TASK_FONT_SIZE,
                     text.len(),
                     Some(CHAR_H_PADDING),
                 )?;
 
-                let (cx, cy) = Self::get_centre_coordinates(r, c, text_width, top_left);
+                // Get centre coordinates
+                let (cx, cy) = Self::get_centre_coordinates(row, column, text_width, top_left);
+
                 Ok(Some(Self {
                     rect: TaskRect::new(cx, cy, text_width),
                     text: TextInformation::new(
@@ -178,28 +187,30 @@ impl Task {
         }
     }
 
+    /// Calculates centre coordinates of a [`Task`] group by leveraging the provided approximate text width.
     fn get_centre_coordinates(
-        r: &CoordinateT,
-        c: &CoordinateT,
+        row: &CoordinateT,
+        column: &CoordinateT,
         text_width: CoordinateT,
         top_left: &TopLeft,
     ) -> (CoordinateT, CoordinateT) {
-        let cx = c * BLOCK_LENGTH + c * BLOCK_DISTANCE - (text_width.saturating_div(2))
+        let cx = column * BLOCK_LENGTH + column * BLOCK_DISTANCE - (text_width.saturating_div(2))
             + TASK_RECT_X_OFFSET
             + top_left.x();
         let cy = TASK_RECT_CENTRE_OFFSET
-            + r * BLOCK_LENGTH
+            + row * BLOCK_LENGTH
             + ROUTER_OFFSET
             + SIDE_LENGTH
-            + r * BLOCK_DISTANCE
+            + row * BLOCK_DISTANCE
             + top_left.y();
 
         (cx, cy)
     }
 }
 
+/// Object representattion of the SVG `<path>` that makes up a router.
 #[derive(Serialize, MutGetters, Getters)]
-pub struct Router {
+pub(crate) struct Router {
     /// Router coordinates, (x, y)
     #[serde(skip)]
     #[getset(get = "pub")]
@@ -214,8 +225,14 @@ pub struct Router {
 }
 
 impl Router {
-    pub fn new(r: &CoordinateT, c: &CoordinateT, id: &u8, top_left: &TopLeft) -> Self {
-        let (move_x, move_y) = Self::get_move_coordinates(r, c, top_left);
+    /// Generates a new [`Router`] instance from the given parameters.
+    pub(crate) fn new(
+        row: &CoordinateT,
+        column: &CoordinateT,
+        id: &u8,
+        top_left: &TopLeft,
+    ) -> Self {
+        let (move_x, move_y) = Self::get_move_coordinates(row, column, top_left);
 
         Self {
             move_coordinates: (move_x, move_y),
@@ -225,19 +242,20 @@ impl Router {
         }
     }
 
-    pub fn get_move_coordinates(
-        r: &CoordinateT,
-        c: &CoordinateT,
+    /// Calculates the move coordinates for a [`Router`] path given current row, column and the viewBox [`TopLeft`].
+    pub(crate) fn get_move_coordinates(
+        row: &CoordinateT,
+        column: &CoordinateT,
         top_left: &TopLeft,
     ) -> (CoordinateT, CoordinateT) {
-        let move_x = (c * BLOCK_LENGTH)
+        let move_x = (column * BLOCK_LENGTH)
             + ROUTER_OFFSET
-            + c * BLOCK_DISTANCE
+            + column * BLOCK_DISTANCE
             + top_left.x()
             + CORE_ROUTER_STROKE_WIDTH;
-        let move_y = r * BLOCK_LENGTH
+        let move_y = row * BLOCK_LENGTH
             + ROUTER_OFFSET
-            + r * BLOCK_DISTANCE
+            + row * BLOCK_DISTANCE
             + top_left.y()
             + CORE_ROUTER_STROKE_WIDTH;
 
@@ -245,6 +263,7 @@ impl Router {
     }
 }
 
+/// Object representattion of the SVG `<path>` that makes up a core.
 #[derive(Serialize, MutGetters, Getters)]
 pub struct Core {
     /// Core coordinates, (x, y)
@@ -261,23 +280,28 @@ pub struct Core {
 }
 
 impl Core {
-    pub fn get_move_coordinates(
-        r: &CoordinateT,
-        c: &CoordinateT,
+    /// Calculates the move coordinates for a [`Core`] path given current row, column and the viewBox [`TopLeft`].
+    pub(crate) fn get_move_coordinates(
+        row: &CoordinateT,
+        column: &CoordinateT,
         top_left: &TopLeft,
     ) -> (CoordinateT, CoordinateT) {
-        let move_x =
-            c * BLOCK_LENGTH + c * BLOCK_DISTANCE + top_left.x() + CORE_ROUTER_STROKE_WIDTH;
-        let move_y = r * BLOCK_LENGTH
+        let move_x = column * BLOCK_LENGTH
+            + column * BLOCK_DISTANCE
+            + top_left.x()
+            + CORE_ROUTER_STROKE_WIDTH;
+        let move_y = row * BLOCK_LENGTH
             + ROUTER_OFFSET
-            + r * BLOCK_DISTANCE
+            + row * BLOCK_DISTANCE
             + top_left.y()
             + CORE_ROUTER_STROKE_WIDTH;
 
         (move_x, move_y)
     }
-    fn new(r: &CoordinateT, c: &CoordinateT, id: &u8, top_left: &TopLeft) -> Self {
-        let (move_x, move_y) = Self::get_move_coordinates(r, c, top_left);
+
+    /// Generates a new [`Core`] instance from the given parameters.
+    fn new(row: &CoordinateT, column: &CoordinateT, id: &u8, top_left: &TopLeft) -> Self {
+        let (move_x, move_y) = Self::get_move_coordinates(row, column, top_left);
 
         Self {
             move_coordinates: (move_x, move_y),
@@ -288,8 +312,9 @@ impl Core {
     }
 }
 
+/// Object representation of an SVG `<g>` that contains a [`Core`], [`Router`] and [`Task`].
 #[derive(Serialize, MutGetters, Getters)]
-pub struct ProcessingGroup {
+pub(crate) struct ProcessingGroup {
     #[serde(skip)]
     #[getset(get = "pub")]
     /// Coordinates (row, column)
@@ -297,33 +322,35 @@ pub struct ProcessingGroup {
     #[serde(rename = "@id")]
     id: u8,
     #[serde(rename = "path")]
-    #[getset(get = "pub", get_mut = "pub")]
+    #[getset(get = "pub")]
     core: Core,
     #[serde(rename = "path")]
-    #[getset(get_mut = "pub", get = "pub")]
+    #[getset(get = "pub")]
     router: Router,
     #[serde(rename = "g", skip_serializing_if = "Option::is_none")]
     task: Option<Task>,
 }
 
 impl ProcessingGroup {
-    pub fn new(
-        r: &CoordinateT,
-        c: &CoordinateT,
+    /// Generates a new [`ProcessingGroup`] instance from the given parameters.
+    pub(crate) fn new(
+        row: &CoordinateT,
+        column: &CoordinateT,
         id: &u8,
         allocated_task: &Option<u16>,
         top_left: &TopLeft,
     ) -> Result<Self, SVGError> {
         Ok(Self {
-            coordinates: (*r, *c),
+            coordinates: (*row, *column),
             id: *id,
-            core: Core::new(r, c, id, top_left),
-            router: Router::new(r, c, id, top_left),
-            task: Task::new(r, c, allocated_task, top_left)?,
+            core: Core::new(row, column, id, top_left),
+            router: Router::new(row, column, id, top_left),
+            task: Task::new(row, column, allocated_task, top_left)?,
         })
     }
 
-    pub fn task_start(&self) -> Option<CoordinateT> {
+    /// Returns this [`ProcessingGroup`]'s [`Task`] `x` coordinate, if any.
+    pub(crate) fn task_start(&self) -> Option<CoordinateT> {
         match &self.task {
             Some(task) => Some(task.rect.x),
             None => None,
@@ -331,16 +358,18 @@ impl ProcessingGroup {
     }
 }
 
+/// An SVG `<g>` that wraps all [`ProcessingGroup`] instances.
 #[derive(Serialize, MutGetters, Getters)]
 #[getset(get_mut = "pub", get = "pub")]
-pub struct ProcessingParentGroup {
+pub(crate) struct ProcessingParentGroup {
     #[serde(rename = "@id")]
     id: &'static str,
     g: Vec<ProcessingGroup>,
 }
 
 impl ProcessingParentGroup {
-    pub fn new(number_of_cores: &usize) -> Self {
+    /// Generates a new [`ProcessingParentGroup`] with capacity for `number_of_cores` instances of [`ProcessingGroup`]s.
+    pub(crate) fn new(number_of_cores: &usize) -> Self {
         Self {
             id: "processingGroup",
             g: Vec::with_capacity(*number_of_cores),

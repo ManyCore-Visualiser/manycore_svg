@@ -7,7 +7,8 @@ use crate::{
     DEFAULT_FONT_SIZE, HALF_SIDE_LENGTH, SIDE_LENGTH,
 };
 
-pub fn make_coordinates(
+/// Generates coordinates text.
+pub(crate) fn make_coordinates(
     core_config: &BTreeMap<String, FieldConfiguration>,
     core_x: &CoordinateT,
     core_y: &CoordinateT,
@@ -17,9 +18,12 @@ pub fn make_coordinates(
     ret: &mut InformationLayer,
 ) {
     if let Some(order_config) = core_config.get(COORDINATES_KEY) {
+        // Text coordinates
         let x = core_x + HALF_SIDE_LENGTH;
         let y = core_y + SIDE_LENGTH;
 
+        // (X, Y) text repesentation
+        // TODO: This is actually (Y, X), we want (X, Y)
         let (cx, cy) = match order_config {
             FieldConfiguration::Coordinates(order) => match order {
                 CoordinatesOrientation::B => (CoordinateT::from(rows) - r, c + 1),

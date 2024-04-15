@@ -2,9 +2,9 @@ use const_format::concatcp;
 use getset::{Getters, MutGetters};
 use serde::Serialize;
 
-pub const DEFAULT_FILL: &str = "#e5e5e5";
-pub const BASE_FILL_CLASS_NAME: &'static str = "baseFill";
-pub const EDGE_DATA_CLASS_NAME: &'static str = "edgeData";
+pub(crate) const DEFAULT_FILL: &str = "#e5e5e5";
+pub(crate) const BASE_FILL_CLASS_NAME: &'static str = "baseFill";
+pub(crate) const EDGE_DATA_CLASS_NAME: &'static str = "edgeData";
 static DEFAULT_STYLE: &str = concatcp!(
     ".",
     BASE_FILL_CLASS_NAME,
@@ -18,15 +18,17 @@ static DEFAULT_STYLE: &str = concatcp!(
 
 static BASE_STYLE: &str = concatcp!(".", BASE_FILL_CLASS_NAME, "{fill: ", DEFAULT_FILL, ";}");
 
+/// Object representation of SVG `<style>`.
 #[derive(Serialize, MutGetters, Getters)]
-pub struct Style {
+pub(crate) struct Style {
     #[serde(rename = "$text")]
     #[getset(get_mut = "pub", get = "pub")]
     css: String,
 }
 
 impl Style {
-    pub fn base() -> Self {
+    /// Generates a new [`Style`] instance with only [`BASE_STYLE`].
+    pub(crate) fn base() -> Self {
         Self {
             css: BASE_STYLE.into(),
         }

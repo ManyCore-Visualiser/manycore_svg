@@ -2,8 +2,9 @@ use serde::Serialize;
 
 use crate::style::DEFAULT_FILL;
 
-pub const TEXT_BACKGROUND_ID: &'static str = "textBackground";
+pub(crate) const TEXT_BACKGROUND_ID: &'static str = "textBackground";
 
+/// Object representation of SVG `<feComposite>`.
 #[derive(Serialize)]
 struct Composite {
     #[serde(rename = "@in")]
@@ -21,6 +22,7 @@ impl Default for Composite {
     }
 }
 
+/// Object representation of SVG `<feFlood>`.
 #[derive(Serialize)]
 struct Flood {
     #[serde(rename = "@flood-color")]
@@ -35,8 +37,9 @@ impl Default for Flood {
     }
 }
 
+/// Object representation of SVG `<filter>` for text background.
 #[derive(Serialize)]
-pub struct TextBackground {
+pub(crate) struct TextBackground {
     #[serde(rename = "@x")]
     x: u8,
     #[serde(rename = "@y")]

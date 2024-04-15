@@ -17,14 +17,15 @@ static OFFSET_FROM_FIRST: CoordinateT = 20;
 static HALF_CONNECTION_LENGTH: CoordinateT = CONNECTION_LENGTH
     .saturating_add(MARKER_HEIGHT)
     .saturating_div(2);
-pub static CHAR_HEIGHT_AT_22_PX: CoordinateT = 30;
-pub static CHAR_V_PADDING: CoordinateT = 3;
-pub static CHAR_H_PADDING: f32 = 2.0;
-pub static DEFAULT_FONT_SIZE: f32 = 16.0;
+pub(crate) static CHAR_HEIGHT_AT_22_PX: CoordinateT = 30;
+pub(crate) static CHAR_V_PADDING: CoordinateT = 3;
+pub(crate) static CHAR_H_PADDING: f32 = 2.0;
+pub(crate) static DEFAULT_FONT_SIZE: f32 = 16.0;
 
 static ROBOTO_RATIO: f32 = 1.665;
 
-pub struct FontSize {
+/// Wrapper around font size
+pub(crate) struct FontSize {
     px: f32,
 }
 
@@ -33,10 +34,13 @@ impl Serialize for FontSize {
     where
         S: serde::Serializer,
     {
+        // This conversion will truncate the font size as an f32 does not fit in a u32.
+        // However, values that big should not be provided.
         serializer.serialize_str(format!("{}px", self.px as u32).as_str())
     }
 }
 
+/// Object representation of an SVG `<text>` element.
 #[derive(Serialize)]
 pub struct TextInformation {
     #[serde(rename = "@x")]
@@ -60,14 +64,8 @@ pub struct TextInformation {
 }
 
 impl TextInformation {
-    // pub fn calculate_length_at_22_px(text: &String) -> Result<CoordinateT, SVGError> {
-    //     Ok(
-    //         (CHAR_WIDTH_AT_22_PX * u16::try_from(text.len())? as f32 + CHAR_H_PADDING).round()
-    //             as CoordinateT,
-    //     )
-    // }
-
-    pub fn calculate_length_util(
+    /// Calculates the approximate length in pixels of a `<text>` element.
+    pub(crate) fn calculate_length_util(
         font_size: f32,
         length: usize,
         pad: Option<f32>,
@@ -83,11 +81,13 @@ impl TextInformation {
         .round() as CoordinateT)
     }
 
-    pub fn calculate_length(&self, pad: Option<f32>) -> Result<CoordinateT, SVGError> {
+    /// Calculates the apprroximate length in pixels of a [`TextInformation`] instance.
+    pub(crate) fn calculate_length(&self, pad: Option<f32>) -> Result<CoordinateT, SVGError> {
         TextInformation::calculate_length_util(self.font_size.px, self.value.len(), pad)
     }
 
-    pub fn new(
+    /// Creates a new [`TextInformation`] instance from the given parameters.
+    pub(crate) fn new(
         x: CoordinateT,
         y: CoordinateT,
         font_size: f32,
@@ -113,7 +113,9 @@ impl TextInformation {
         }
     }
 
-    fn common_link_primary(
+    /// Shared logic used when generating "primary" [`TextInformation`] for a channel.
+    /// The `relevant_delta` can either be x orr y and is chosen depending on `direction`.
+    fn common_channel_primary(
         link_x: &CoordinateT,
         link_y: &CoordinateT,
         direction: &Directions,
@@ -182,12 +184,14 @@ impl TextInformation {
         }
     }
 
+    /// Calculates the fill and load percentage of a channel.
     fn calculate_load_fill_and_percentage<'a>(
         load: &u16,
         bandwidth: &u16,
         routing_configuration: &'a RoutingConfiguration,
     ) -> (Option<u16>, Option<&'a String>) {
         if *bandwidth > 0 {
+            // We can only calculaye load percentage if the bandwidth is above 0.
             let percentage = ((f32::from(*load) / f32::from(*bandwidth)) * 100.0).round() as u16;
 
             let fill_idx = utils::binary_search_left_insertion_point(
@@ -198,6 +202,7 @@ impl TextInformation {
             let fill = &routing_configuration.load_colours().colours()[fill_idx];
             return (Some(percentage), Some(fill));
         } else {
+            // If we can't calculate a load percentage, the channel is overloaded so we pick the last colour.
             return (
                 None,
                 Some(&routing_configuration.load_colours().colours()[3]),
@@ -205,15 +210,18 @@ impl TextInformation {
         }
     }
 
-    fn calculate_load_data(
+    /// Generates the text to display for a channel's load based on user provided configuration (`routing_configuration`).
+    fn generate_load_data(
         load: &u16,
         bandwidth: &u16,
         percentage: Option<u16>,
         routing_configuration: &RoutingConfiguration,
     ) -> String {
+        // Does the user want fraction or percentage?
         match routing_configuration.load_configuration() {
             LoadConfiguration::Percentage => match percentage {
                 Some(value) => format!("{}: {}%", routing_configuration.display(), value),
+                // We can't give them a percentage for a channel with no bandwidth -> default to fraction.
                 None => format!(
                     "{}: {}/{}",
                     routing_configuration.display(),
@@ -230,7 +238,8 @@ impl TextInformation {
         }
     }
 
-    pub fn source_load(
+    /// Generates [`TextInformation`] for a source load.
+    pub(crate) fn source_load(
         direction: &Directions,
         link_x: &CoordinateT,
         link_y: &CoordinateT,
@@ -253,14 +262,10 @@ impl TextInformation {
             bandwidth,
             routing_configuration,
         );
-        let data = TextInformation::calculate_load_data(
-            load,
-            bandwidth,
-            percentage,
-            routing_configuration,
-        );
+        let data =
+            TextInformation::generate_load_data(load, bandwidth, percentage, routing_configuration);
 
-        TextInformation::common_link_primary(
+        TextInformation::common_channel_primary(
             link_x,
             link_y,
             direction,
@@ -271,6 +276,7 @@ impl TextInformation {
         )
     }
 
+    /// Calculates the coordinate delta and required class for a link data.
     fn link_delta_and_class(
         edge: bool,
         direction: &Directions,
@@ -296,7 +302,8 @@ impl TextInformation {
         (HALF_CONNECTION_LENGTH, None)
     }
 
-    pub fn link_load(
+    /// Generates [`TextInformation`] for an inner link load.
+    pub(crate) fn link_load(
         direction: &Directions,
         link_x: &CoordinateT,
         link_y: &CoordinateT,
@@ -312,14 +319,10 @@ impl TextInformation {
             bandwidth,
             routing_configuration,
         );
-        let data = TextInformation::calculate_load_data(
-            load,
-            bandwidth,
-            percentage,
-            routing_configuration,
-        );
+        let data =
+            TextInformation::generate_load_data(load, bandwidth, percentage, routing_configuration);
 
-        TextInformation::common_link_primary(
+        TextInformation::common_channel_primary(
             link_x,
             link_y,
             direction,
@@ -330,7 +333,8 @@ impl TextInformation {
         )
     }
 
-    pub fn link_primary(
+    /// Generates [`TextInformation`] for a channel field as primary channel text attribute.
+    pub(crate) fn link_primary(
         direction: &Directions,
         link_x: &CoordinateT,
         link_y: &CoordinateT,
@@ -340,7 +344,7 @@ impl TextInformation {
     ) -> Self {
         let (relevant_delta, class) = TextInformation::link_delta_and_class(edge, direction);
 
-        let (fill, display) = match field_configuration {
+        let (fill, data) = match field_configuration {
             FieldConfiguration::ColouredText(display_key, colour_config) => (
                 utils::get_attribute_colour(colour_config.bounds(), colour_config.colours(), data),
                 format!("{}: {}", display_key, data),
@@ -349,25 +353,27 @@ impl TextInformation {
             _ => (None, "".into()), // Unsupported
         };
 
-        TextInformation::common_link_primary(
+        TextInformation::common_channel_primary(
             link_x,
             link_y,
             direction,
             relevant_delta,
             fill,
             class,
-            display,
+            data,
         )
     }
 
-    pub fn link_secondary(
+    /// Generates [`TextInformation`] for a channel field as secondary channel text attribute.
+    pub(crate) fn link_secondary(
         direction: &Directions,
         link_x: &CoordinateT,
         link_y: &CoordinateT,
         data: &String,
         field_configuration: &FieldConfiguration,
     ) -> Self {
-        // This function is called only for non edge links
+        // This function is called only for non edge links. Core output edge links cannot have secondary information, even if present,
+        // due to simmetry. The information would be missing on their input counterpart as that channel is not present in the XML file.
         let (relevant_delta, class) = TextInformation::link_delta_and_class(false, direction);
 
         let (fill, display) = match field_configuration {
@@ -376,7 +382,7 @@ impl TextInformation {
                 format!("{}: {}", display_key, data),
             ),
             FieldConfiguration::Text(display_key) => (None, format!("{}: {}", display_key, data)),
-            _ => (None, "".into()), // Unsupported
+            _ => (None, "".into()), // Any other variant shouldn't be used.
         };
 
         match direction {
@@ -448,11 +454,11 @@ impl TryFrom<&TextInformation> for Offsets {
     type Error = SVGError;
 
     fn try_from(value: &TextInformation) -> Result<Self, Self::Error> {
-        Ok(Self {
-            top: value.y,
-            left: value.x,
-            bottom: value.y.saturating_add(CHAR_HEIGHT_AT_22_PX),
-            right: value.x.saturating_add(value.calculate_length(None)?),
-        })
+        Ok(Offsets::new(
+            value.x,
+            value.y,
+            value.x.saturating_add(value.calculate_length(None)?),
+            value.y.saturating_add(CHAR_HEIGHT_AT_22_PX),
+        ))
     }
 }
