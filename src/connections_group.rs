@@ -383,12 +383,10 @@ impl ConnectionsParentGroup {
         core: &Core,
         r: &CoordinateT,
         c: &CoordinateT,
-        columns: u8,
-        rows: u8,
         top_left: &TopLeft,
     ) {
         // Does this core have edge connections?
-        let on_edge = core.is_on_edge(columns, rows);
+        let on_edge = core.matrix_edge();
 
         // For each core's channel direction in the provided manycore system
         for direction in core.channels().channel().keys() {

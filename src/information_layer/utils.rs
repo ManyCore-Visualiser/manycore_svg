@@ -214,18 +214,26 @@ pub(crate) fn missing_connection(idx: &usize) -> SVGError {
     )))
 }
 
-/// Wrapper to generate error when we expected a source and did not find one.
-pub(crate) fn missing_source(task_id: &u16) -> SVGError {
-    SVGError::new(SVGErrorKind::ManycoreMismatch(format!(
-        "Could not retrieve Source for Task {}",
-        task_id
-    )))
-}
-
 /// Wrapper to generate error when we expected a channel and did not find one.
 pub(crate) fn missing_channel(core_id: &u8, direction: &Directions) -> SVGError {
     SVGError::new(SVGErrorKind::ManycoreMismatch(format!(
         "Could not retrieve {} channel for Core {}",
+        direction, core_id
+    )))
+}
+
+/// Wrapper to generate error when we expected source loads and did not find any.
+pub(crate) fn missing_source_loads(core_id: &u8) -> SVGError {
+    SVGError::new(SVGErrorKind::ManycoreMismatch(format!(
+        "Could not retrieve source loads for Core {}",
+        core_id
+    )))
+}
+
+/// Wrapper to generate error when we expected a source channel load and did not find one.
+pub(crate) fn missing_source_load(core_id: &u8, direction: &Directions) -> SVGError {
+    SVGError::new(SVGErrorKind::ManycoreMismatch(format!(
+        "Could not retrieve {} source channel load for Core {}",
         direction, core_id
     )))
 }

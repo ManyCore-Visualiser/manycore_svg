@@ -106,10 +106,10 @@ impl TryFrom<&ManycoreSystem> for SVG {
             // Generate connections group
             ret.root
                 .connections_group
-                .add_connections(core, &r_coord, &c_coord, columns, rows, &top_left);
+                .add_connections(core, &r_coord, &c_coord, &top_left);
 
             // Generate borders
-            if let Some(edge_position) = core.is_on_edge(columns, rows) {
+            if let Some(edge_position) = core.matrix_edge() {
                 let (router_x, router_y) = processing_group.router().move_coordinates();
 
                 // Remember that index always corresponts to core ID (collections is sorted when converting manycore into SVG).

@@ -1,7 +1,5 @@
-use std::collections::{BTreeMap, BTreeSet, HashMap};
-
 use const_format::concatcp;
-use manycore_parser::{source::Source, BorderEntry, Directions, SinkSourceDirection};
+use manycore_parser::RoutingMap;
 use serde::Serialize;
 
 use crate::{
@@ -84,15 +82,12 @@ use channel_data::*;
 
 impl InformationLayer {
     /// Generates a new [`InformationLayer`] instance.
-    pub fn new(
+    pub(crate) fn new(
         rows: u8,
-        columns: u8,
         configuration: &mut Configuration,
         core: &manycore_parser::Core,
-        border_routers_ids: Option<&HashMap<SinkSourceDirection, BorderEntry>>,
-        sources: Option<&BTreeMap<u16, Source>>,
+        links_with_load: Option<&RoutingMap>,
         css: &mut String,
-        core_loads: Option<&BTreeSet<Directions>>,
         processing_group: &ProcessingGroup,
         connections_group: &ConnectionsParentGroup,
         routing_configuration: Option<&RoutingConfiguration>,
@@ -141,13 +136,9 @@ impl InformationLayer {
 
         // Channels
         generate_channel_data(
-            rows,
-            columns,
             configuration,
             core,
-            border_routers_ids,
-            sources,
-            core_loads,
+            links_with_load,
             connections_group,
             routing_configuration,
             offsets,

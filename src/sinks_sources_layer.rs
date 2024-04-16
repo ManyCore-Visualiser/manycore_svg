@@ -261,7 +261,7 @@ impl SinksSourcesGroup {
     /// Generates and inserts all edge routers ([`SinkSource`]s) connected to the [`Router`] located at the given coordinates.
     pub(crate) fn insert(
         &mut self,
-        edge_position: EdgePosition,
+        edge_position: &EdgePosition,
         router_x: &CoordinateT,
         router_y: &CoordinateT,
         core_borders: Option<&HashMap<SinkSourceDirection, BorderEntry>>,

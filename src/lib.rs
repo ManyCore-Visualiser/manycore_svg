@@ -18,8 +18,6 @@ mod svg_conversions;
 mod text_background;
 mod view_box;
 
-use std::collections::BTreeSet;
-
 pub use clip_path::*;
 use connections_group::*;
 use defs::*;
@@ -34,7 +32,7 @@ pub use render_settings::*;
 use sinks_sources_layer::SinksSourcesGroup;
 pub use view_box::*;
 
-use manycore_parser::{ManycoreSystem, RoutingTarget, BORDER_ROUTERS_KEY, ROUTING_KEY};
+use manycore_parser::{ManycoreSystem, BORDER_ROUTERS_KEY, ROUTING_KEY};
 
 use serde::Serialize;
 use style::Style;
@@ -93,8 +91,8 @@ pub struct SVG {
     root: Root,
     #[serde(skip)]
     rows: u8,
-    #[serde(skip)]
-    columns: u8,
+    // #[serde(skip)]
+    // columns: u8,
     #[serde(skip)]
     #[getset(get = "pub")]
     width: CoordinateT,
@@ -156,7 +154,7 @@ impl SVG {
                 sinks_sources_group: SinksSourcesGroup::new(rows, columns),
             },
             rows,
-            columns,
+            // columns,
             top_left,
             base_view_box: view_box,
         }
@@ -233,42 +231,10 @@ impl SVG {
             self.style = Style::default(); // CSS
         }
 
-        // Closure to get core loads
-        let get_core_loads = |i: &usize| {
-            if let Some(links_loads) = links_with_load.as_ref() {
-                let mut ret = BTreeSet::new();
-
-                let core_key = RoutingTarget::Core(*i);
-                let sink_key = RoutingTarget::Sink(*i);
-
-                if let Some(core_loads) = links_loads.get(&core_key) {
-                    ret.extend(core_loads);
-                }
-
-                if let Some(sink_loads) = links_loads.get(&sink_key) {
-                    ret.extend(sink_loads);
-                }
-
-                if ret.len() > 0 {
-                    return Some(ret);
-                }
-            }
-
-            None
-        };
-
         let mut offsets = Offsets::default();
         // Compute all requested attributes at information layer
         if not_empty_configuration {
-            let borders = manycore.borders();
-            let sources = match borders {
-                Some(borders) => Some(borders.sources()),
-                None => None,
-            };
-
             for (i, core) in manycore.cores().list().iter().enumerate() {
-                let core_loads = get_core_loads(&i);
-
                 let processing_group = self
                     .root
                     .processing_group
@@ -281,16 +247,10 @@ impl SVG {
                     .groups_mut()
                     .push(InformationLayer::new(
                         self.rows,
-                        self.columns,
                         configuration,
                         core,
-                        match borders {
-                            Some(borders) => borders.core_border_map().get(&i),
-                            None => None,
-                        },
-                        sources,
+                        links_with_load.as_ref(),
                         self.style.css_mut(),
-                        core_loads.as_ref(),
                         processing_group,
                         &self.root.connections_group,
                         routing_configuration.as_ref(),

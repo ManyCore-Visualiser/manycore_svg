@@ -32,6 +32,7 @@ pub struct SVGError {
 }
 
 impl SVGError {
+    /// Instantiates a new [`SVGError`] instance.
     pub(crate) fn new(error_kind: SVGErrorKind) -> Self {
         Self { error_kind }
     }
