@@ -6,7 +6,8 @@ use manycore_parser::{
 
 use crate::{
     Configuration, ConnectionType, ConnectionsParentGroup, CoordinateT, DirectionType,
-    FieldConfiguration, InformationLayer, Offsets, RoutingConfiguration, SVGError, TextInformation,
+    FieldConfiguration, InformationLayer, Offsets, ProcessedBaseConfiguration,
+    RoutingConfiguration, SVGError, TextInformation,
 };
 
 use super::{
@@ -65,6 +66,7 @@ fn get_secondary_channel_attribute(
     configuration_iterator: &mut Iter<'_, String, FieldConfiguration>,
     channel: &Channel,
     direction: &Directions,
+    prrocessed_base_configuration: &ProcessedBaseConfiguration,
 ) -> Option<TextInformation> {
     if !edge {
         if let (Some((key, field_configuration)), Some(channel_attributes)) =
@@ -78,6 +80,7 @@ fn get_secondary_channel_attribute(
                         y,
                         attribute_value,
                         field_configuration,
+                        prrocessed_base_configuration,
                     );
 
                     Some(link_secondary_text)
@@ -102,6 +105,7 @@ pub(crate) fn generate_channel_data(
     routing_configuration: Option<&RoutingConfiguration>,
     offsets: &mut Offsets,
     ret: &mut InformationLayer,
+    processed_base_configuration: &ProcessedBaseConfiguration,
 ) -> Result<(), SVGError> {
     // We use this set to keep track of directions we can add information to.
     let mut remaining_directions: BTreeSet<&Directions> =
@@ -172,6 +176,7 @@ pub(crate) fn generate_channel_data(
                             channel.bandwidth(),
                             edge,
                             routing_configuration,
+                            processed_base_configuration,
                         ),
                         RoutingTarget::Source => {
                             // Grab load from core source channels
@@ -198,12 +203,13 @@ pub(crate) fn generate_channel_data(
                                 load,
                                 channel.bandwidth(),
                                 routing_configuration,
+                                processed_base_configuration,
                             )
                         }
                     };
 
                     // This channel data might need the viewBox extended to be fully displayed.
-                    offsets.update(Offsets::try_from(&link_load_text)?);
+                    offsets.update(Offsets::try_from_channel(&link_load_text, direction)?);
                     // Add the generated text to the result
                     ret.links_load.push(link_load_text);
 
@@ -215,9 +221,10 @@ pub(crate) fn generate_channel_data(
                         &mut configuration.channel_config().iter(),
                         channel,
                         direction,
+                        processed_base_configuration,
                     ) {
                         // This channel data might need the viewBox extended to be fully displayed.
-                        offsets.update(Offsets::try_from(&link_secondary_text)?);
+                        offsets.update(Offsets::try_from_channel(&link_secondary_text, direction)?);
                         ret.links_load.push(link_secondary_text);
                     }
                 }
@@ -251,9 +258,10 @@ pub(crate) fn generate_channel_data(
                                 attribute_value,
                                 false,
                                 field_configuration,
+                                processed_base_configuration,
                             );
                             // This channel data might need the viewBox extended to be fully displayed.
-                            offsets.update(Offsets::try_from(&link_text)?);
+                            offsets.update(Offsets::try_from_channel(&link_text, direction)?);
                             ret.links_load.push(link_text);
                         }
                         None => {
@@ -266,11 +274,17 @@ pub(crate) fn generate_channel_data(
         }
 
         // Second element, if any, but only if this is not an edge connection.
-        if let Some(link_secondary_text) =
-            get_secondary_channel_attribute(x, y, edge, &mut iter, channel, direction)
-        {
+        if let Some(link_secondary_text) = get_secondary_channel_attribute(
+            x,
+            y,
+            edge,
+            &mut iter,
+            channel,
+            direction,
+            processed_base_configuration,
+        ) {
             // This channel data might need the viewBox extended to be fully displayed.
-            offsets.update(Offsets::try_from(&link_secondary_text)?);
+            offsets.update(Offsets::try_from_channel(&link_secondary_text, direction)?);
             ret.links_load.push(link_secondary_text);
         }
     }

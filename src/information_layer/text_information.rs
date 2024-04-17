@@ -1,12 +1,13 @@
 use std::ops::Div;
 
+use getset::Getters;
 use manycore_parser::Directions;
 use serde::Serialize;
 
 use crate::{
     sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME, CoordinateT,
-    FieldConfiguration, LoadConfiguration, Offsets, RoutingConfiguration, SVGError,
-    CONNECTION_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET,
+    FieldConfiguration, FontSizeT, LoadConfiguration, ProcessedBaseConfiguration,
+    RoutingConfiguration, SVGError, CONNECTION_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET,
 };
 
 use super::utils;
@@ -17,16 +18,18 @@ static OFFSET_FROM_FIRST: CoordinateT = 20;
 static HALF_CONNECTION_LENGTH: CoordinateT = CONNECTION_LENGTH
     .saturating_add(MARKER_HEIGHT)
     .saturating_div(2);
-pub(crate) static CHAR_HEIGHT_AT_22_PX: CoordinateT = 30;
-pub(crate) static CHAR_V_PADDING: CoordinateT = 3;
-pub(crate) static CHAR_H_PADDING: f32 = 2.0;
-pub(crate) static DEFAULT_FONT_SIZE: f32 = 16.0;
+// pub(crate) static CHAR_HEIGHT_AT_22_PX: CoordinateT = 30;
+pub(crate) static CHAR_V_PADDING: CoordinateT = 6;
+pub(crate) static CHAR_H_PADDING: FontSizeT = 2.0;
+pub(crate) const DEFAULT_ATTRIBUTE_FONT_SIZE: FontSizeT = 16.0;
 
-static ROBOTO_RATIO: f32 = 1.665;
+static ROBOTO_RATIO: FontSizeT = 1.665;
 
 /// Wrapper around font size
+#[derive(Getters)]
 pub(crate) struct FontSize {
-    px: f32,
+    #[getset(get = "pub")]
+    px: FontSizeT,
 }
 
 impl Serialize for FontSize {
@@ -41,13 +44,16 @@ impl Serialize for FontSize {
 }
 
 /// Object representation of an SVG `<text>` element.
-#[derive(Serialize)]
+#[derive(Serialize, Getters)]
 pub struct TextInformation {
     #[serde(rename = "@x")]
+    #[getset(get = "pub")]
     x: CoordinateT,
     #[serde(rename = "@y")]
+    #[getset(get = "pub")]
     y: CoordinateT,
     #[serde(rename = "@font-size")]
+    #[getset(get = "pub")]
     font_size: FontSize,
     #[serde(rename = "@font-family")]
     font_family: &'static str,
@@ -66,13 +72,13 @@ pub struct TextInformation {
 impl TextInformation {
     /// Calculates the approximate length in pixels of a `<text>` element.
     pub(crate) fn calculate_length_util(
-        font_size: f32,
+        font_size: FontSizeT,
         length: usize,
-        pad: Option<f32>,
+        pad: Option<FontSizeT>,
     ) -> Result<CoordinateT, SVGError> {
         let char_width = font_size.div(ROBOTO_RATIO);
 
-        Ok((char_width * u16::try_from(length)? as f32
+        Ok((char_width * u16::try_from(length)? as FontSizeT
             + if let Some(pad) = pad {
                 char_width * pad
             } else {
@@ -82,7 +88,7 @@ impl TextInformation {
     }
 
     /// Calculates the apprroximate length in pixels of a [`TextInformation`] instance.
-    pub(crate) fn calculate_length(&self, pad: Option<f32>) -> Result<CoordinateT, SVGError> {
+    pub(crate) fn calculate_length(&self, pad: Option<FontSizeT>) -> Result<CoordinateT, SVGError> {
         TextInformation::calculate_length_util(self.font_size.px, self.value.len(), pad)
     }
 
@@ -90,7 +96,7 @@ impl TextInformation {
     pub(crate) fn new(
         x: CoordinateT,
         y: CoordinateT,
-        font_size: f32,
+        font_size: FontSizeT,
         text_anchor: &'static str,
         dominant_baseline: &'static str,
         fill: Option<&String>,
@@ -123,6 +129,7 @@ impl TextInformation {
         fill: Option<&String>,
         class: Option<&'static str>,
         data: String,
+        processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Self {
         match direction {
             Directions::North => {
@@ -131,7 +138,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_add(HORIZONTAL_OFFSET_FROM_LINK),
                     link_y.saturating_sub(delta_y),
-                    DEFAULT_FONT_SIZE,
+                    *processed_base_configuration.attribute_font_size(),
                     "start",
                     "middle",
                     fill,
@@ -145,7 +152,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_add(delta_x),
                     link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK),
-                    DEFAULT_FONT_SIZE,
+                    *processed_base_configuration.attribute_font_size(),
                     "middle",
                     "text-after-edge",
                     fill,
@@ -159,7 +166,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_sub(HORIZONTAL_OFFSET_FROM_LINK),
                     link_y.saturating_add(delta_y),
-                    DEFAULT_FONT_SIZE,
+                    *processed_base_configuration.attribute_font_size(),
                     "end",
                     "middle",
                     fill,
@@ -173,7 +180,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_sub(delta_x),
                     link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK),
-                    DEFAULT_FONT_SIZE,
+                    *processed_base_configuration.attribute_font_size(),
                     "middle",
                     "text-after-edge",
                     fill,
@@ -192,7 +199,8 @@ impl TextInformation {
     ) -> (Option<u16>, Option<&'a String>) {
         if *bandwidth > 0 {
             // We can only calculaye load percentage if the bandwidth is above 0.
-            let percentage = ((f32::from(*load) / f32::from(*bandwidth)) * 100.0).round() as u16;
+            let percentage =
+                ((FontSizeT::from(*load) / FontSizeT::from(*bandwidth)) * 100.0).round() as u16;
 
             let fill_idx = utils::binary_search_left_insertion_point(
                 routing_configuration.load_colours().bounds(),
@@ -246,6 +254,7 @@ impl TextInformation {
         load: &u16,
         bandwidth: &u16,
         routing_configuration: &RoutingConfiguration,
+        processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Self {
         let relevant_delta: i32 = match direction {
             Directions::South | Directions::West => SINKS_SOURCES_CONNECTION_LENGTH
@@ -273,6 +282,7 @@ impl TextInformation {
             fill,
             Some(EDGE_DATA_CLASS_NAME),
             data,
+            processed_base_configuration,
         )
     }
 
@@ -311,6 +321,7 @@ impl TextInformation {
         bandwidth: &u16,
         edge: bool,
         routing_configuration: &RoutingConfiguration,
+        prrocessed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Self {
         let (relevant_delta, class) = TextInformation::link_delta_and_class(edge, direction);
 
@@ -330,6 +341,7 @@ impl TextInformation {
             fill,
             class,
             data,
+            prrocessed_base_configuration,
         )
     }
 
@@ -341,6 +353,7 @@ impl TextInformation {
         data: &String,
         edge: bool,
         field_configuration: &FieldConfiguration,
+        processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Self {
         let (relevant_delta, class) = TextInformation::link_delta_and_class(edge, direction);
 
@@ -361,6 +374,7 @@ impl TextInformation {
             fill,
             class,
             data,
+            processed_base_configuration,
         )
     }
 
@@ -371,6 +385,7 @@ impl TextInformation {
         link_y: &CoordinateT,
         data: &String,
         field_configuration: &FieldConfiguration,
+        processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Self {
         // This function is called only for non edge links. Core output edge links cannot have secondary information, even if present,
         // due to simmetry. The information would be missing on their input counterpart as that channel is not present in the XML file.
@@ -394,7 +409,7 @@ impl TextInformation {
                     link_y
                         .saturating_sub(delta_y)
                         .saturating_add(OFFSET_FROM_FIRST),
-                    DEFAULT_FONT_SIZE,
+                    *processed_base_configuration.attribute_font_size(),
                     "start",
                     "middle",
                     fill,
@@ -408,7 +423,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_add(delta_x),
                     link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK),
-                    DEFAULT_FONT_SIZE,
+                    *processed_base_configuration.attribute_font_size(),
                     "middle",
                     "text-before-edge",
                     fill,
@@ -424,7 +439,7 @@ impl TextInformation {
                     link_y
                         .saturating_add(delta_y)
                         .saturating_add(OFFSET_FROM_FIRST),
-                    DEFAULT_FONT_SIZE,
+                    *processed_base_configuration.attribute_font_size(),
                     "end",
                     "middle",
                     fill,
@@ -438,7 +453,7 @@ impl TextInformation {
                 TextInformation::new(
                     link_x.saturating_sub(delta_x),
                     link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK),
-                    DEFAULT_FONT_SIZE,
+                    *processed_base_configuration.attribute_font_size(),
                     "middle",
                     "text-before-edge",
                     fill,
@@ -447,18 +462,5 @@ impl TextInformation {
                 )
             }
         }
-    }
-}
-
-impl TryFrom<&TextInformation> for Offsets {
-    type Error = SVGError;
-
-    fn try_from(value: &TextInformation) -> Result<Self, Self::Error> {
-        Ok(Offsets::new(
-            value.x,
-            value.y,
-            value.x.saturating_add(value.calculate_length(None)?),
-            value.y.saturating_add(CHAR_HEIGHT_AT_22_PX),
-        ))
     }
 }

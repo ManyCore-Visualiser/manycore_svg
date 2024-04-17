@@ -1,10 +1,10 @@
 use getset::{Getters, Setters};
 use serde::Serialize;
 
-use crate::{sinks_sources_layer::SINKS_SOURCES_GROUP_OFFSET, CoordinateT, TopLeft};
+use crate::{sinks_sources_layer::SINKS_SOURCES_GROUP_OFFSET, CoordinateT, Offsets, TopLeft};
 
 /// Object representation of the SVG `viewBox` attribute. Allows for maths operations.
-#[derive(Getters, Setters, Clone, Copy, Debug)]
+#[derive(Getters, Setters, Clone, Copy, Debug, PartialEq, Eq)]
 #[getset(get = "pub", set = "pub")]
 pub struct ViewBox {
     x: CoordinateT,
@@ -80,6 +80,36 @@ impl ViewBox {
     pub(crate) fn extend_top(&mut self, top: CoordinateT) {
         self.y = self.y.saturating_sub(top);
         self.height = self.height.saturating_add(top);
+    }
+
+    /// Utility function to extend whole [`ViewBox`] to fit provided [`Offsets`], if required.
+    pub(crate) fn fit_offsets(&mut self, offsets: &Offsets) {
+        let mut updated_view_box = *self;
+        // Left
+        if self.x > *offsets.left() {
+            updated_view_box.extend_left(offsets.left().abs().saturating_sub(self.x.abs()));
+        }
+
+        // Right
+        let far_end = self.width.saturating_sub(self.x.abs());
+        if far_end < *offsets.right() {
+            updated_view_box.extend_right(offsets.right().saturating_sub(far_end));
+        }
+
+        // Top
+        if self.y > *offsets.top() {
+            updated_view_box.extend_top(offsets.top().abs().saturating_sub(self.y.abs()));
+        }
+
+        // Bottom
+        let far_bottom = self.height.saturating_sub(self.y.abs());
+        if far_bottom < *offsets.bottom() {
+            updated_view_box.extend_bottom(offsets.bottom().saturating_sub(far_bottom))
+        }
+
+        if *self != updated_view_box {
+            self.restore_from(&updated_view_box);
+        }
     }
 }
 

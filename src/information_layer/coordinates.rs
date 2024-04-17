@@ -3,8 +3,9 @@ use std::collections::BTreeMap;
 use manycore_parser::COORDINATES_KEY;
 
 use crate::{
-    CoordinateT, CoordinatesOrientation, FieldConfiguration, InformationLayer, TextInformation,
-    DEFAULT_FONT_SIZE, HALF_SIDE_LENGTH, SIDE_LENGTH,
+    CoordinateT, CoordinatesOrientation, FieldConfiguration, InformationLayer,
+    ProcessedBaseConfiguration, TextInformation, HALF_SIDE_LENGTH,
+    SIDE_LENGTH,
 };
 
 /// Generates coordinates text.
@@ -16,6 +17,7 @@ pub(crate) fn make_coordinates(
     r: &CoordinateT,
     c: &CoordinateT,
     ret: &mut InformationLayer,
+    processed_base_configuration: &ProcessedBaseConfiguration,
 ) {
     if let Some(order_config) = core_config.get(COORDINATES_KEY) {
         // Text coordinates
@@ -35,7 +37,7 @@ pub(crate) fn make_coordinates(
         ret.coordinates = Some(TextInformation::new(
             x,
             y,
-            DEFAULT_FONT_SIZE,
+            *processed_base_configuration.attribute_font_size(),
             "middle",
             "text-before-edge",
             None,

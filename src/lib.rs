@@ -39,6 +39,8 @@ use style::Style;
 
 /// Type alias for SVG elements coordinates.
 pub type CoordinateT = i32;
+/// Type alias for SVG text font size.
+pub type FontSizeT = f32;
 
 /// Object representation of the [`SVG`] main group. Everything goes in here.
 /// Cores, (border) routers, channels and information are all inner groups of this group.
@@ -103,6 +105,10 @@ pub struct SVG {
     top_left: TopLeft,
     #[serde(skip)]
     base_view_box: ViewBox,
+    #[serde(skip)]
+    base_configuration: BaseConfiguration,
+    #[serde(skip)]
+    processed_base_configuration: ProcessedBaseConfiguration,
 }
 
 /// This struct is provided as a result of requesting an [`SVG`] update based on a particular [`Configuration`].
@@ -131,6 +137,7 @@ impl SVG {
         width: CoordinateT,
         height: CoordinateT,
         top_left: TopLeft,
+        base_configuration: BaseConfiguration,
     ) -> Self {
         let view_box = ViewBox::new(width, height, &top_left);
 
@@ -157,6 +164,8 @@ impl SVG {
             // columns,
             top_left,
             base_view_box: view_box,
+            base_configuration,
+            processed_base_configuration: ProcessedBaseConfiguration::from(&base_configuration),
         }
     }
 
@@ -174,13 +183,18 @@ impl SVG {
         self.height = self.height.saturating_add(bottom);
     }
 
-    /// Generates an [`UpdateResult`] based on a provided [`Configuration`] and a reference [`ManycoreSystem`].
+    /// Generates an [`UpdateResult`] based on a provided [`Configuration`], a possibly updated [`BaseConfiguration`] and a reference [`ManycoreSystem`].
     pub fn update_configurable_information(
         &mut self,
         manycore: &mut ManycoreSystem,
         configuration: &mut Configuration,
+        base_configuration: &BaseConfiguration,
     ) -> Result<UpdateResult, SVGError> {
-        // let show_sinks_sources = configuration.sinks_sources().is_some_and(|is_true| is_true);
+        // Did the base configuration change? If so, we need to regenerate the whole SVG
+        if *base_configuration != self.base_configuration {
+            *self = SVG::try_from_manycore_with_base_config(manycore, base_configuration)?;
+        }
+
         let not_empty_configuration = !configuration.core_config().is_empty()
             || !configuration.router_config().is_empty()
             || !configuration.channel_config().is_empty();
@@ -205,7 +219,6 @@ impl SVG {
 
         // Expand viewBox and adjust css if required (Sinks and Sources)
         // Always reset CSS. If user deselects all options and clicks apply, they expect the base render to show.
-        let mut has_edge_routers = false;
         if let Some(border_routers_configuration) = configuration
             .channel_config_mut()
             .remove(BORDER_ROUTERS_KEY)
@@ -213,8 +226,6 @@ impl SVG {
             match border_routers_configuration {
                 FieldConfiguration::Boolean(show_border_routers) => {
                     if show_border_routers {
-                        has_edge_routers = true;
-
                         self.style = Style::base(); // CSS
 
                         // Expand viewBox for edges
@@ -255,42 +266,13 @@ impl SVG {
                         &self.root.connections_group,
                         routing_configuration.as_ref(),
                         &mut offsets,
+                        &self.processed_base_configuration,
                     )?);
             }
         }
 
-        // Extend viewBox to fit channel text iff no edge routers.
-        // If edge routers are displayed any channel text is bound to fit.
-        if !has_edge_routers {
-            let mut updated_view_box = self.view_box;
-            if *self.view_box.x() > *offsets.left() {
-                updated_view_box
-                    .extend_left(offsets.left().abs().saturating_sub(self.view_box.x().abs()));
-            }
-
-            let far_end = self
-                .view_box
-                .width()
-                .saturating_sub(self.view_box.x().abs());
-            if far_end < *offsets.right() {
-                updated_view_box.extend_right(offsets.right().saturating_sub(far_end));
-            }
-
-            if *self.view_box.y() > *offsets.top() {
-                updated_view_box
-                    .extend_top(offsets.top().abs().saturating_sub(self.view_box.y().abs()));
-            }
-
-            let far_bottom = self
-                .view_box
-                .height()
-                .saturating_sub(self.view_box.y().abs());
-            if far_bottom < *offsets.bottom() {
-                updated_view_box.extend_bottom(offsets.bottom().saturating_sub(far_bottom))
-            }
-
-            self.view_box.restore_from(&updated_view_box);
-        }
+        // Extend viewBox if required
+        self.view_box.fit_offsets(&offsets);
 
         Ok(UpdateResult {
             style: self.style.css().clone(),

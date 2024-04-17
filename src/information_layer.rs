@@ -4,7 +4,8 @@ use serde::Serialize;
 
 use crate::{
     text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionsParentGroup, CoordinateT,
-    Offsets, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET, SIDE_LENGTH,
+    Offsets, ProcessedBaseConfiguration, ProcessingGroup, RoutingConfiguration, SVGError,
+    ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: CoordinateT = 1;
@@ -92,6 +93,7 @@ impl InformationLayer {
         connections_group: &ConnectionsParentGroup,
         routing_configuration: Option<&RoutingConfiguration>,
         offsets: &mut Offsets,
+        processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Result<Self, SVGError> {
         let mut ret = InformationLayer::default();
 
@@ -107,6 +109,7 @@ impl InformationLayer {
             r,
             c,
             &mut ret,
+            processed_base_configuration,
         );
 
         // Core
@@ -118,6 +121,7 @@ impl InformationLayer {
             &mut ret.core_group,
             "start",
             css,
+            processed_base_configuration,
         );
         ret.core_group.clip_path = PROCESSOR_CLIP;
 
@@ -131,6 +135,7 @@ impl InformationLayer {
             &mut ret.router_group,
             "start",
             css,
+            processed_base_configuration,
         );
         ret.router_group.clip_path = ROUTER_CLIP;
 
@@ -143,6 +148,7 @@ impl InformationLayer {
             routing_configuration,
             offsets,
             &mut ret,
+            processed_base_configuration,
         )?;
 
         Ok(ret)

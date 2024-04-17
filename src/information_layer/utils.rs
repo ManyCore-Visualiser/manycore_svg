@@ -9,7 +9,7 @@ use manycore_parser::{Directions, WithID, WithXMLAttributes, COORDINATES_KEY, ID
 use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER};
 use crate::{
     ConnectionType, ConnectionsParentGroup, CoordinateT, DirectionType, FieldConfiguration,
-    SVGError, SVGErrorKind, DEFAULT_FONT_SIZE,
+    ProcessedBaseConfiguration, SVGError, SVGErrorKind,
 };
 
 pub(crate) static FONT_SIZE_WITH_OFFSET: CoordinateT = 18;
@@ -54,6 +54,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
     group: &mut ProcessingInformation,
     text_anchor: &'static str,
     css: &mut String,
+    processed_base_configuration: &ProcessedBaseConfiguration,
 ) {
     // Start by adding some padding between text and element border
     base_x = base_x.saturating_add(OFFSET_FROM_BORDER);
@@ -66,7 +67,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                 group.information.push(TextInformation::new(
                     base_x,
                     base_y,
-                    DEFAULT_FONT_SIZE,
+                    *processed_base_configuration.attribute_font_size(),
                     text_anchor,
                     "text-before-edge",
                     None,
@@ -100,7 +101,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                 group.information.push(TextInformation::new(
                                     base_x,
                                     base_y,
-                                    DEFAULT_FONT_SIZE,
+                                    *processed_base_configuration.attribute_font_size(),
                                     text_anchor,
                                     "text-before-edge",
                                     None,
@@ -147,7 +148,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                 group.information.push(TextInformation::new(
                                     base_x,
                                     base_y,
-                                    DEFAULT_FONT_SIZE,
+                                    *processed_base_configuration.attribute_font_size(),
                                     text_anchor,
                                     "text-before-edge",
                                     fill,

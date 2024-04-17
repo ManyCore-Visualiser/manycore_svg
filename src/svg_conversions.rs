@@ -4,8 +4,8 @@ use quick_xml::DeError;
 use std::cmp::min;
 
 use crate::{
-    CoordinateT, ProcessingGroup, SVGError, TopLeft, BLOCK_DISTANCE, BLOCK_LENGTH,
-    CORE_ROUTER_STROKE_WIDTH, SVG, TASK_BOTTOM_OFFSET, TASK_RECT_STROKE,
+    BaseConfiguration, CoordinateT, ProcessingGroup, SVGError, TopLeft, BLOCK_DISTANCE,
+    BLOCK_LENGTH, CORE_ROUTER_STROKE_WIDTH, SVG, TASK_RECT_STROKE,
 };
 
 impl TryFrom<&SVG> for String {
@@ -16,9 +16,11 @@ impl TryFrom<&SVG> for String {
     }
 }
 
-impl TryFrom<&ManycoreSystem> for SVG {
-    type Error = SVGError;
-    fn try_from(manycore: &ManycoreSystem) -> Result<Self, Self::Error> {
+impl SVG {
+    fn shared_try_from(
+        manycore: &ManycoreSystem,
+        base_configuration: BaseConfiguration,
+    ) -> Result<Self, SVGError> {
         let columns = *manycore.columns();
         let rows = *manycore.rows();
 
@@ -48,6 +50,7 @@ impl TryFrom<&ManycoreSystem> for SVG {
             width,
             height,
             top_left,
+            base_configuration,
         );
 
         // Row tracker for iteration
@@ -63,8 +66,8 @@ impl TryFrom<&ManycoreSystem> for SVG {
             // Realistically this conversion should never fail
             // Calculate current column from iteration index
             let c = u8::try_from(i % usize::try_from(columns).expect("8 bits must fit in a usize. I have no idea what you're trying to run this on, TI TMS 1000?")).expect(
-                "Somehow, modulus on an 8 bit number gave a number that does not fit in 8 bits (your ALU re-invented mathematics).",
-            );
+        "Somehow, modulus on an 8 bit number gave a number that does not fit in 8 bits (your ALU re-invented mathematics).",
+    );
 
             // Increment row when we wrap onto a new row
             if i > 0 && c == 0 {
@@ -80,7 +83,8 @@ impl TryFrom<&ManycoreSystem> for SVG {
                 &c_coord,
                 core.id(),
                 core.allocated_task(),
-                &top_left,
+                &ret.top_left,
+                &ret.processed_base_configuration,
             )?;
 
             // Check if viewBox needs to be extended left
@@ -106,7 +110,7 @@ impl TryFrom<&ManycoreSystem> for SVG {
             // Generate connections group
             ret.root
                 .connections_group
-                .add_connections(core, &r_coord, &c_coord, &top_left);
+                .add_connections(core, &r_coord, &c_coord, &ret.top_left);
 
             // Generate borders
             if let Some(edge_position) = core.matrix_edge() {
@@ -121,6 +125,7 @@ impl TryFrom<&ManycoreSystem> for SVG {
                         Some(borders) => borders.core_border_map().get(&i),
                         None => None,
                     },
+                    &ret.processed_base_configuration,
                 );
             }
 
@@ -138,9 +143,28 @@ impl TryFrom<&ManycoreSystem> for SVG {
             );
         }
         if has_bottom_task {
-            ret.extend_base_view_box_bottom(TASK_BOTTOM_OFFSET);
+            ret.extend_base_view_box_bottom(
+                *ret.processed_base_configuration.task_rect_bottom_padding(),
+            );
         }
 
         Ok(ret)
+    }
+
+    pub(crate) fn try_from_manycore_with_base_config(
+        manycore: &ManycoreSystem,
+        base_configuration: &BaseConfiguration,
+    ) -> Result<Self, SVGError> {
+        Ok(SVG::shared_try_from(manycore, *base_configuration)?)
+    }
+}
+
+impl TryFrom<&ManycoreSystem> for SVG {
+    type Error = SVGError;
+    fn try_from(manycore: &ManycoreSystem) -> Result<Self, Self::Error> {
+        Ok(SVG::shared_try_from(
+            manycore,
+            BaseConfiguration::default(),
+        )?)
     }
 }

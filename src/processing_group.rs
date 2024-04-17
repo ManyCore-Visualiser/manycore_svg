@@ -3,8 +3,8 @@ use getset::{Getters, MutGetters, Setters};
 use serde::Serialize;
 
 use crate::{
-    style::BASE_FILL_CLASS_NAME, CoordinateT, SVGError, TextInformation, TopLeft,
-    CHAR_HEIGHT_AT_22_PX, CHAR_H_PADDING, CHAR_V_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
+    style::BASE_FILL_CLASS_NAME, CoordinateT, FontSizeT, ProcessedBaseConfiguration, SVGError,
+    TextInformation, TopLeft, CHAR_H_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
 pub(crate) const SIDE_LENGTH: CoordinateT = 100;
@@ -52,16 +52,15 @@ static ROUTER_PATH: &'static str = concatcp!(
 pub(crate) const CORE_ROUTER_STROKE_WIDTH: CoordinateT = 1;
 static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
 
-pub(crate) static TASK_FONT_SIZE: f32 = 22.0;
+pub(crate) const DEFAULT_TASK_FONT_SIZE: FontSizeT = 22.0;
 pub(crate) static TASK_RECT_STROKE: CoordinateT = 1;
-static TASK_RECT_HEIGHT: CoordinateT = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
-pub(crate) static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(2);
-pub(crate) static TASK_RECT_CENTRE_OFFSET: CoordinateT =
-    HALF_TASK_RECT_HEIGHT.saturating_sub(TASK_RECT_HEIGHT.saturating_div(3));
+// static TASK_RECT_HEIGHT: CoordinateT = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
+// pub(crate) static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(2);
+// pub(crate) static TASK_RECT_CENTRE_OFFSET: CoordinateT = 10;
 static TASK_RECT_FILL: &'static str = "#bfdbfe";
-pub(crate) static TASK_BOTTOM_OFFSET: CoordinateT = TASK_RECT_CENTRE_OFFSET
-    .saturating_add(HALF_TASK_RECT_HEIGHT)
-    .saturating_add(TASK_RECT_STROKE);
+// pub(crate) static TASK_BOTTOM_OFFSET: CoordinateT = TASK_RECT_CENTRE_OFFSET
+//     .saturating_add(HALF_TASK_RECT_HEIGHT)
+//     .saturating_add(TASK_RECT_STROKE);
 
 /// Wrapper around attributes shared by different elements.
 #[derive(Serialize, Setters, Debug)]
@@ -126,13 +125,18 @@ struct TaskRect {
 
 impl TaskRect {
     /// Generates a new [`TaskRect`] instance from the given parameters.
-    fn new(centre_x: CoordinateT, centre_y: CoordinateT, text_width: CoordinateT) -> Self {
+    fn new(
+        centre_x: CoordinateT,
+        centre_y: CoordinateT,
+        text_width: CoordinateT,
+        processed_base_configuration: &ProcessedBaseConfiguration,
+    ) -> Self {
         Self {
             x: centre_x - (text_width.saturating_div(2)),
-            y: centre_y - HALF_TASK_RECT_HEIGHT,
+            y: centre_y - *processed_base_configuration.task_rect_half_height(),
             width: text_width,
-            height: TASK_RECT_HEIGHT,
-            rx: "15",
+            height: *processed_base_configuration.task_rect_height(),
+            rx: "10",
             fill: TASK_RECT_FILL,
             stroke: "black",
             stroke_width: CORE_ROUTER_STROKE_WIDTH_STR,
@@ -154,6 +158,7 @@ impl Task {
         column: &CoordinateT,
         task_id: &Option<u16>,
         top_left: &TopLeft,
+        processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Result<Option<Self>, SVGError> {
         match task_id {
             Some(task) => {
@@ -161,20 +166,26 @@ impl Task {
 
                 // Get an approx text width
                 let text_width = TextInformation::calculate_length_util(
-                    TASK_FONT_SIZE,
+                    *processed_base_configuration.task_font_size(),
                     text.len(),
                     Some(CHAR_H_PADDING),
                 )?;
 
                 // Get centre coordinates
-                let (cx, cy) = Self::get_centre_coordinates(row, column, text_width, top_left);
+                let (cx, cy) = Self::get_centre_coordinates(
+                    row,
+                    column,
+                    text_width,
+                    top_left,
+                    processed_base_configuration,
+                );
 
                 Ok(Some(Self {
-                    rect: TaskRect::new(cx, cy, text_width),
+                    rect: TaskRect::new(cx, cy, text_width, processed_base_configuration),
                     text: TextInformation::new(
                         cx,
                         cy,
-                        TASK_FONT_SIZE,
+                        *processed_base_configuration.task_font_size(),
                         "middle",
                         "central",
                         None,
@@ -193,11 +204,12 @@ impl Task {
         column: &CoordinateT,
         text_width: CoordinateT,
         top_left: &TopLeft,
+        processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> (CoordinateT, CoordinateT) {
         let cx = column * BLOCK_LENGTH + column * BLOCK_DISTANCE - (text_width.saturating_div(2))
             + TASK_RECT_X_OFFSET
             + top_left.x();
-        let cy = TASK_RECT_CENTRE_OFFSET
+        let cy = processed_base_configuration.task_rect_centre_offset()
             + row * BLOCK_LENGTH
             + ROUTER_OFFSET
             + SIDE_LENGTH
@@ -339,13 +351,20 @@ impl ProcessingGroup {
         id: &u8,
         allocated_task: &Option<u16>,
         top_left: &TopLeft,
+        prrocessed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Result<Self, SVGError> {
         Ok(Self {
             coordinates: (*row, *column),
             id: *id,
             core: Core::new(row, column, id, top_left),
             router: Router::new(row, column, id, top_left),
-            task: Task::new(row, column, allocated_task, top_left)?,
+            task: Task::new(
+                row,
+                column,
+                allocated_task,
+                top_left,
+                prrocessed_base_configuration,
+            )?,
         })
     }
 

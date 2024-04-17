@@ -13,7 +13,7 @@
         <Task id="2" computationCost="40" />
         <Task id="3" computationCost="80" />
         <Task id="4" computationCost="60" />
-        <Task id="69" computationCost="42" />
+        <Task id="123" computationCost="42" />
         <Edge from="0" to="2" communicationCost="30" />
         <Edge from="1" to="2" communicationCost="20" />
         <Edge from="2" to="3" communicationCost="50" />
@@ -67,7 +67,7 @@
         </Core>
 
         <Core id="3" age="225" status="High" actualFrequency="Low" temperature="30"
-            allocatedTask="69">
+            allocatedTask="123">
             <Router age="30" status="Normal" temperature="30" />
             <Channels>
                 <Channel direction="North" age="30" actualComCost="4" status="Normal"
