@@ -1,7 +1,7 @@
 use std::collections::{btree_map::Iter, BTreeSet};
 
 use manycore_parser::{
-    Channel, Core, Directions, EdgePosition, RoutingMap, RoutingTarget, WithID, WithXMLAttributes,
+    Channel, Core, Directions, RoutingMap, RoutingTarget, WithID, WithXMLAttributes,
 };
 
 use crate::{
@@ -111,40 +111,6 @@ pub(crate) fn generate_channel_data(
     let mut remaining_directions: BTreeSet<&Directions> =
         core.channels().channel().keys().collect();
 
-    // Remove edge channels from remaining ones
-    if let Some(edge_position) = core.matrix_edge() {
-        match edge_position {
-            EdgePosition::Top => {
-                remaining_directions.remove(&Directions::North);
-            }
-            EdgePosition::TopLeft => {
-                remaining_directions.remove(&Directions::North);
-                remaining_directions.remove(&Directions::West);
-            }
-            EdgePosition::TopRight => {
-                remaining_directions.remove(&Directions::North);
-                remaining_directions.remove(&Directions::East);
-            }
-            EdgePosition::Bottom => {
-                remaining_directions.remove(&Directions::South);
-            }
-            EdgePosition::BottomLeft => {
-                remaining_directions.remove(&Directions::South);
-                remaining_directions.remove(&Directions::West);
-            }
-            EdgePosition::BottomRight => {
-                remaining_directions.remove(&Directions::South);
-                remaining_directions.remove(&Directions::East);
-            }
-            EdgePosition::Left => {
-                remaining_directions.remove(&Directions::West);
-            }
-            EdgePosition::Right => {
-                remaining_directions.remove(&Directions::East);
-            }
-        }
-    }
-
     if let (Some(links_with_load), Some(routing_configuration)) =
         (links_with_load, routing_configuration)
     {
@@ -232,13 +198,21 @@ pub(crate) fn generate_channel_data(
         }
     }
 
-    // Render additional parameter(s) if requested for non-routed directions
-    for direction in remaining_directions {
+    let edge_directions = match core.matrix_edge() {
+        Some(edge_position) => BTreeSet::from(edge_position),
+        None => BTreeSet::new(),
+    };
+
+    // Render additional parameter(s) if requested for non-routed directions, ignoring
+    // edge connections, if any. Note that direction has type &&Direrctions but get coerced
+    // into &Directions.
+    // See https://web.mit.edu/rust-lang_v1.25/arch/amd64_ubuntu1404/share/doc/rust/html/book/first-edition/deref-coercions.html#deref-and-method-calls
+    for direction in remaining_directions.difference(&edge_directions) {
         let channel = core
             .channels()
             .channel()
             .get(direction)
-            .ok_or(missing_channel(core.id(), &direction))?;
+            .ok_or(missing_channel(core.id(), direction))?;
 
         let mut iter = configuration.channel_config().iter();
 

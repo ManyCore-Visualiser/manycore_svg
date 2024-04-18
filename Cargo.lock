@@ -48,8 +48,8 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "manycore_parser"
-version = "0.4.8"
-source = "git+https://github.com/joe2k01/manycore_parser.git#e152d8ce432fb68f0c8e5f787351dde862e447a8"
+version = "0.4.9"
+source = "git+https://github.com/joe2k01/manycore_parser.git#2e8be4b18aa07d5a50dc55fcfb714ef5b67e36ef"
 dependencies = [
  "getset",
  "manycore_utils",
