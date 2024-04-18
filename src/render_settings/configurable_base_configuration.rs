@@ -7,7 +7,7 @@ use crate::{
 
 /// Enum whose variants represents specific attribute configuration details for
 /// [`ConfigurableBaseConfiguration`] attributes.
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Copy)]
 #[serde(tag = "type")]
 pub(crate) enum ConfigurableBaseConfigurationAttributeSpecifics {
     FontSize {
@@ -21,7 +21,7 @@ pub(crate) enum ConfigurableBaseConfigurationAttributeSpecifics {
 /// This struct is used to inform the front-end of what fields are part
 /// of the [`BaseConfiguration`].
 /// We serialise fields in snake_case because we process them on the frontend.
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Copy)]
 #[serde(rename_all = "snake_case")]
 pub struct ConfigurableBaseConfiguration {
     attribute_font_size: ConfigurableBaseConfigurationAttributeSpecifics,
