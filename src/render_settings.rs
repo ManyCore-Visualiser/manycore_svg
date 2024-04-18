@@ -4,90 +4,15 @@ use std::{
 };
 
 use getset::{Getters, MutGetters};
-use manycore_parser::RoutingAlgorithms;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     CoordinateT, FontSizeT, CHAR_V_PADDING, DEFAULT_ATTRIBUTE_FONT_SIZE, DEFAULT_TASK_FONT_SIZE,
 };
 
-/// Configuration colour settings
-/// * `bounds`: Numerical boundaries. Used to determine colour.
-/// * `colours`: List of colours (hexadecimal) corresponding to each boundary.
-///
-/// Example, given:
-/// ```ignore
-/// let colour_settings = ColourSettings {
-///     bounds: [10, 20, 30, 40],
-///     colours: ["#22c55e", "#eab308", "#f97316", "#dc2626"],
-/// };
-/// ```
-/// **Warning:** Above is pseudo-code, all those fields are private and `colours` expects [`String`] not [`str`].
-///
-/// We would have:
-///
-/// | Attribute value | Colour    |
-/// |-----------------|-----------|
-/// | `9`             | `#22c55e` |
-/// | `11`            | `#eab308` |
-/// | `35`            | `#f97316` |
-/// | `50`            | `#dc2626` |
-#[derive(Serialize, Deserialize, Getters, PartialEq, Debug, PartialOrd, Eq, Ord)]
-#[getset(get = "pub")]
-pub struct ColourSettings {
-    bounds: [u64; 4],
-    colours: [String; 4],
-}
+mod field_configuration;
 
-/// Configuration coordinates orientation settins.
-/// * [`T`][`CoordinatesOrientation::T`]: Top to bottom
-/// * [`B`][`CoordinatesOrientation::B`]: Bottom to top
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub enum CoordinatesOrientation {
-    T,
-    B,
-}
-
-/// Object representation of requested routing configuration.
-/// * `algorithm`: [`RoutingAlgorithms`]
-/// * `load_configuration`: [`LoadConfiguration`]
-/// * `load_colours`: [`ColourSettings`]
-/// * `display`: [`String`], the display key of channel loads.
-#[derive(Serialize, Deserialize, Getters, PartialEq, Debug)]
-#[serde(rename_all = "camelCase")]
-#[getset(get = "pub")]
-pub struct RoutingConfiguration {
-    algorithm: RoutingAlgorithms,
-    load_configuration: LoadConfiguration,
-    load_colours: ColourSettings,
-    display: String,
-}
-
-/// Possible ways a field can be configured.
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub enum FieldConfiguration {
-    /// Text only.
-    Text(String),
-    /// Coloured Text according to provided [`ColourSettings`].
-    ColouredText(String, ColourSettings),
-    /// Fill colour of associated element, according to provided [`ColourSettings`].
-    Fill(ColourSettings),
-    /// This variant can be used to configure coordinates display only.
-    Coordinates(CoordinatesOrientation),
-    /// This variant can be used to configure routing only.
-    Routing(RoutingConfiguration),
-    /// This variant can be used to configure boolean properties, e.g. displaying border routers.
-    Boolean(bool),
-}
-
-/// Channel load configuration.
-#[derive(Serialize, Deserialize, PartialEq, Debug, PartialOrd, Eq, Ord)]
-pub enum LoadConfiguration {
-    /// Display loads as percentage of bandwidth, e.g. 5%.
-    Percentage,
-    /// Display loads as frraction of bandwith, e.g. 20/400.
-    Fraction,
-}
+pub use field_configuration::*;
 
 #[cfg(doc)]
 use manycore_parser::{Channel, Core, Router};
@@ -132,6 +57,8 @@ impl BaseConfiguration {
     }
 }
 
+/// This struct is used to hold values derived from the user provided [`BaseConfiguration`]
+/// to avoid repeated calculations.
 #[derive(Getters)]
 #[getset(get = "pub")]
 pub(crate) struct ProcessedBaseConfiguration {
@@ -156,6 +83,36 @@ impl From<&BaseConfiguration> for ProcessedBaseConfiguration {
             task_rect_half_height: task_rect_height.div(2),
             task_rect_centre_offset,
             task_rect_bottom_padding: task_rect_height.sub(task_rect_centre_offset),
+        }
+    }
+}
+
+#[cfg(doc)]
+use manycore_parser::AttributeType;
+
+/// Enum to describe types of [`ConfigurableBaseConfiguration`] attributes.
+/// These are serialised in camelCase for consistency with [`AttributeType`].
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ConfigurableBaseConfigurationAttrributeType {
+    FontSize,
+}
+
+/// This struct is used to inform the front-end of what fields are part
+/// of the [`BaseConfiguration`].
+/// We serialise fields in snake_case because we process them on the frontend.
+#[derive(Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct ConfigurableBaseConfiguration {
+    attribute_font_size: ConfigurableBaseConfigurationAttrributeType,
+    task_font_size: ConfigurableBaseConfigurationAttrributeType,
+}
+
+impl Default for ConfigurableBaseConfiguration {
+    fn default() -> Self {
+        Self {
+            attribute_font_size: ConfigurableBaseConfigurationAttrributeType::FontSize,
+            task_font_size: ConfigurableBaseConfigurationAttrributeType::FontSize,
         }
     }
 }
@@ -191,58 +148,58 @@ mod tests {
                 ),
                 (
                     "@age".to_string(),
-                    FieldConfiguration::Fill(ColourSettings {
-                        bounds: [30, 100, 200, 300],
-                        colours: [
+                    FieldConfiguration::Fill(ColourSettings::new(
+                        [30, 100, 200, 300],
+                        [
                             "#22c55e".to_string(),
                             "#eab308".to_string(),
                             "#f97316".to_string(),
                             "#dc2626".to_string(),
                         ],
-                    }),
+                    )),
                 ),
                 (
                     "@temperature".to_string(),
                     FieldConfiguration::ColouredText(
                         "Temp".to_string(),
-                        ColourSettings {
-                            bounds: [30, 31, 50, 75],
-                            colours: [
+                        ColourSettings::new(
+                            [30, 31, 50, 75],
+                            [
                                 "#22c55e".to_string(),
                                 "#eab308".to_string(),
                                 "#f97316".to_string(),
                                 "#dc2626".to_string(),
                             ],
-                        },
+                        ),
                     ),
                 ),
             ]),
             router_config: BTreeMap::from([
                 (
                     "@age".to_string(),
-                    FieldConfiguration::Fill(ColourSettings {
-                        bounds: [30, 100, 200, 300],
-                        colours: [
+                    FieldConfiguration::Fill(ColourSettings::new(
+                        [30, 100, 200, 300],
+                        [
                             "#22c55e".to_string(),
                             "#eab308".to_string(),
                             "#f97316".to_string(),
                             "#dc2626".to_string(),
                         ],
-                    }),
+                    )),
                 ),
                 (
                     "@temperature".to_string(),
                     FieldConfiguration::ColouredText(
                         "Temp".to_string(),
-                        ColourSettings {
-                            bounds: [30, 31, 50, 75],
-                            colours: [
+                        ColourSettings::new(
+                            [30, 31, 50, 75],
+                            [
                                 "#22c55e".to_string(),
                                 "#eab308".to_string(),
                                 "#f97316".to_string(),
                                 "#dc2626".to_string(),
                             ],
-                        },
+                        ),
                     ),
                 ),
             ]),
@@ -251,15 +208,15 @@ mod tests {
                     "@age".to_string(),
                     FieldConfiguration::ColouredText(
                         "Age".to_string(),
-                        ColourSettings {
-                            bounds: [30, 100, 200, 300],
-                            colours: [
+                        ColourSettings::new(
+                            [30, 100, 200, 300],
+                            [
                                 "#22c55e".to_string(),
                                 "#eab308".to_string(),
                                 "#f97316".to_string(),
                                 "#dc2626".to_string(),
                             ],
-                        },
+                        ),
                     ),
                 ),
                 (
@@ -268,20 +225,20 @@ mod tests {
                 ),
                 (
                     ROUTING_KEY.to_string(),
-                    FieldConfiguration::Routing(RoutingConfiguration {
-                        algorithm: RoutingAlgorithms::RowFirst,
-                        load_configuration: LoadConfiguration::Percentage,
-                        load_colours: ColourSettings {
-                            bounds: [20, 50, 70, 90],
-                            colours: [
+                    FieldConfiguration::Routing(RoutingConfiguration::new(
+                        RoutingAlgorithms::RowFirst,
+                        LoadConfiguration::Percentage,
+                        ColourSettings::new(
+                            [20, 50, 70, 90],
+                            [
                                 "#1a5fb4".to_string(),
                                 "#26a269".to_string(),
                                 "#c64600".to_string(),
                                 "#a51d2d".to_string(),
                             ],
-                        },
-                        display: String::from("L"),
-                    }),
+                        ),
+                        String::from("L"),
+                    )),
                 ),
             ]),
         };

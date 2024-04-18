@@ -1,7 +1,7 @@
 use std::collections::{btree_map::Iter, BTreeSet};
 
 use manycore_parser::{
-    Channel, Core, Directions, RoutingMap, RoutingTarget, WithID, WithXMLAttributes,
+    Channel, Core, Directions, RoutingMap, RoutingType, WithID, WithXMLAttributes,
 };
 
 use crate::{
@@ -20,7 +20,7 @@ fn channel_info_details<'a>(
     direction: &Directions,
     connections_group: &'a ConnectionsParentGroup,
     core: &manycore_parser::Core,
-    target: &RoutingTarget,
+    routing_type: &RoutingType,
 ) -> Result<(&'a i32, &'a i32, bool), SVGError> {
     // We are looking for output only, source links are handled separately.
     let direction_type = DirectionType::Out(*direction);
@@ -38,15 +38,15 @@ fn channel_info_details<'a>(
             Ok((connection.x(), connection.y(), false))
         }
         ConnectionType::EdgeConnection(idx) => {
-            let connection = match target {
+            let connection = match routing_type {
                 // Get sink connection
-                RoutingTarget::CoreSink => connections_group
+                RoutingType::OutputChannel => connections_group
                     .edge_connections()
                     .sink()
                     .get(*idx)
                     .ok_or(missing_connection(idx))?,
                 // Get source connection
-                RoutingTarget::Source => connections_group
+                RoutingType::SourceChannel => connections_group
                     .edge_connections()
                     .source()
                     .get(*idx)
@@ -134,7 +134,7 @@ pub(crate) fn generate_channel_data(
 
                     // Generate load text
                     let link_load_text = match target {
-                        RoutingTarget::CoreSink => TextInformation::link_load(
+                        RoutingType::OutputChannel => TextInformation::link_load(
                             direction,
                             x,
                             y,
@@ -144,7 +144,7 @@ pub(crate) fn generate_channel_data(
                             routing_configuration,
                             processed_base_configuration,
                         ),
-                        RoutingTarget::Source => {
+                        RoutingType::SourceChannel => {
                             // Grab load from core source channels
                             let load = core
                                 .source_loads()
@@ -153,7 +153,7 @@ pub(crate) fn generate_channel_data(
                                 .get(direction)
                                 .ok_or(missing_source_load(core.id(), direction))?;
 
-                            // Flip direction. The renderring logic assumes direrction from the source
+                            // Flip direction. The rendering logic assumes direction from the source
                             // point of view, not the core's.
                             let flipped_direction = match direction {
                                 Directions::North => Directions::South,
@@ -216,42 +216,48 @@ pub(crate) fn generate_channel_data(
 
         let mut iter = configuration.channel_config().iter();
 
-        let (x, y, edge) =
-            channel_info_details(direction, connections_group, core, &RoutingTarget::CoreSink)?;
+        let (x, y, _) = channel_info_details(
+            direction,
+            connections_group,
+            core,
+            &RoutingType::OutputChannel,
+        )?;
 
-        if !edge {
-            if let Some(channel_attributes) = channel.other_attributes() {
-                // First element
-                if let Some((key, field_configuration)) = iter.next() {
-                    match channel_attributes.get(key) {
-                        Some(attribute_value) => {
-                            let link_text = TextInformation::link_primary(
-                                direction,
-                                x,
-                                y,
-                                attribute_value,
-                                false,
-                                field_configuration,
-                                processed_base_configuration,
-                            );
-                            // This channel data might need the viewBox extended to be fully displayed.
-                            offsets.update(Offsets::try_from_channel(&link_text, direction)?);
-                            ret.links_load.push(link_text);
-                        }
-                        None => {
-                            // Not all attributes must be present on every channel I suppose.
-                            // Do nothing if this channel does not have the requested one.
-                        }
+        if let Some(channel_attributes) = channel.other_attributes() {
+            // First element
+            if let Some((key, field_configuration)) = iter.next() {
+                match channel_attributes.get(key) {
+                    Some(attribute_value) => {
+                        let link_text = TextInformation::link_primary(
+                            direction,
+                            x,
+                            y,
+                            attribute_value,
+                            // Edge is always false, we are not walking over any edge direction.
+                            // Set difference iterator removes them.
+                            false,
+                            field_configuration,
+                            processed_base_configuration,
+                        );
+                        // This channel data might need the viewBox extended to be fully displayed.
+                        offsets.update(Offsets::try_from_channel(&link_text, direction)?);
+                        ret.links_load.push(link_text);
+                    }
+                    None => {
+                        // Not all attributes must be present on every channel I suppose.
+                        // Do nothing if this channel does not have the requested one.
                     }
                 }
             }
         }
 
-        // Second element, if any, but only if this is not an edge connection.
+        // Second element, if any.
         if let Some(link_secondary_text) = get_secondary_channel_attribute(
             x,
             y,
-            edge,
+            // Edge is always false, we are not walking over any edge direction.
+            // Set difference iterator removes them.
+            false,
             &mut iter,
             channel,
             direction,
