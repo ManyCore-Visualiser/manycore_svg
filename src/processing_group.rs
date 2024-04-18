@@ -53,14 +53,10 @@ pub(crate) const CORE_ROUTER_STROKE_WIDTH: CoordinateT = 1;
 static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
 
 pub(crate) const DEFAULT_TASK_FONT_SIZE: FontSizeT = 22.0;
+pub(crate) static MINIMUM_TASK_FONT_SIZE: FontSizeT = 16.0;
+pub(crate) static MAXIMUM_TASK_FONT_SIZE: FontSizeT = 32.0;
 pub(crate) static TASK_RECT_STROKE: CoordinateT = 1;
-// static TASK_RECT_HEIGHT: CoordinateT = CHAR_HEIGHT_AT_22_PX + CHAR_V_PADDING * 2;
-// pub(crate) static HALF_TASK_RECT_HEIGHT: CoordinateT = TASK_RECT_HEIGHT.saturating_div(2);
-// pub(crate) static TASK_RECT_CENTRE_OFFSET: CoordinateT = 10;
 static TASK_RECT_FILL: &'static str = "#bfdbfe";
-// pub(crate) static TASK_BOTTOM_OFFSET: CoordinateT = TASK_RECT_CENTRE_OFFSET
-//     .saturating_add(HALF_TASK_RECT_HEIGHT)
-//     .saturating_add(TASK_RECT_STROKE);
 
 /// Wrapper around attributes shared by different elements.
 #[derive(Serialize, Setters, Debug)]

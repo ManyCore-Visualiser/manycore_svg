@@ -183,11 +183,6 @@ impl SVG {
         self.height = self.height.saturating_add(bottom);
     }
 
-    /// Retrieves the [`ConfigurableBaseConfiguration`] supporrted by the library.
-    pub fn get_base_configurable_configuration() -> ConfigurableBaseConfiguration {
-        ConfigurableBaseConfiguration::default()
-    }
-
     /// Generates an [`UpdateResult`] based on a provided [`Configuration`], a possibly updated [`BaseConfiguration`] and a reference [`ManycoreSystem`].
     pub fn update_configurable_information(
         &mut self,

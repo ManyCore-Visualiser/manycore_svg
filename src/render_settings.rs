@@ -11,8 +11,10 @@ use crate::{
 };
 
 mod field_configuration;
+mod configurable_base_configuration;
 
 pub use field_configuration::*;
+pub use configurable_base_configuration::*;
 
 #[cfg(doc)]
 use manycore_parser::{Channel, Core, Router};
@@ -83,40 +85,6 @@ impl From<&BaseConfiguration> for ProcessedBaseConfiguration {
             task_rect_half_height: task_rect_height.div(2),
             task_rect_centre_offset,
             task_rect_bottom_padding: task_rect_height.sub(task_rect_centre_offset),
-        }
-    }
-}
-
-#[cfg(doc)]
-use manycore_parser::AttributeType;
-
-/// Enum to describe types of [`ConfigurableBaseConfiguration`] attributes.
-/// These are serialised in camelCase for consistency with [`AttributeType`].
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub enum ConfigurableBaseConfigurationAttributeType {
-    FontSize(FontSizeT),
-}
-
-/// This struct is used to inform the front-end of what fields are part
-/// of the [`BaseConfiguration`].
-/// We serialise fields in snake_case because we process them on the frontend.
-#[derive(Serialize)]
-#[serde(rename_all = "snake_case")]
-pub struct ConfigurableBaseConfiguration {
-    attribute_font_size: ConfigurableBaseConfigurationAttributeType,
-    task_font_size: ConfigurableBaseConfigurationAttributeType,
-}
-
-impl Default for ConfigurableBaseConfiguration {
-    fn default() -> Self {
-        Self {
-            attribute_font_size: ConfigurableBaseConfigurationAttributeType::FontSize(
-                DEFAULT_ATTRIBUTE_FONT_SIZE,
-            ),
-            task_font_size: ConfigurableBaseConfigurationAttributeType::FontSize(
-                DEFAULT_TASK_FONT_SIZE,
-            ),
         }
     }
 }

@@ -2,8 +2,6 @@ use getset::Getters;
 use manycore_parser::RoutingAlgorithms;
 use serde::{Deserialize, Serialize};
 
-use crate::FontSizeT;
-
 /// Configuration colour settings
 /// * `bounds`: Numerical boundaries. Used to determine colour.
 /// * `colours`: List of colours (hexadecimal) corresponding to each boundary.

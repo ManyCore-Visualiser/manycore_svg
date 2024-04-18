@@ -18,10 +18,12 @@ static OFFSET_FROM_FIRST: CoordinateT = 20;
 static HALF_CONNECTION_LENGTH: CoordinateT = CONNECTION_LENGTH
     .saturating_add(MARKER_HEIGHT)
     .saturating_div(2);
-// pub(crate) static CHAR_HEIGHT_AT_22_PX: CoordinateT = 30;
 pub(crate) static CHAR_V_PADDING: CoordinateT = 6;
 pub(crate) static CHAR_H_PADDING: FontSizeT = 2.0;
+
 pub(crate) const DEFAULT_ATTRIBUTE_FONT_SIZE: FontSizeT = 16.0;
+pub(crate) static MINIMUM_ATTRIBUTE_FONT_SIZE: FontSizeT = 10.0;
+pub(crate) static MAXIMUM_ATTRIBUTE_FONT_SIZE: FontSizeT = 24.0;
 
 static ROBOTO_RATIO: FontSizeT = 1.665;
 
