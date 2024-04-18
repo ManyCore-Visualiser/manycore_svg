@@ -119,6 +119,7 @@ pub struct UpdateResult {
     style: String,
     information_group: String,
     view_box: String,
+    svg: Option<String>,
 }
 
 /// Error thrown when we can't get to the requested processing group.
@@ -191,7 +192,8 @@ impl SVG {
         base_configuration: &BaseConfiguration,
     ) -> Result<UpdateResult, SVGError> {
         // Did the base configuration change? If so, we need to regenerate the whole SVG
-        if *base_configuration != self.base_configuration {
+        let has_new_base_config = *base_configuration != self.base_configuration;
+        if has_new_base_config {
             *self = SVG::try_from_manycore_with_base_config(manycore, base_configuration)?;
         }
 
@@ -278,6 +280,12 @@ impl SVG {
             style: self.style.css().clone(),
             information_group: self.root.information_group.update_string()?,
             view_box: String::from(&self.view_box),
+            // Include whole SVG if it's been updated. It will inherrently contain the updated data above
+            svg: if has_new_base_config {
+                Some(quick_xml::se::to_string(self)?)
+            } else {
+                None
+            },
         })
     }
 
