@@ -94,8 +94,8 @@ use manycore_parser::AttributeType;
 /// These are serialised in camelCase for consistency with [`AttributeType`].
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-pub enum ConfigurableBaseConfigurationAttrributeType {
-    FontSize,
+pub enum ConfigurableBaseConfigurationAttributeType {
+    FontSize(FontSizeT),
 }
 
 /// This struct is used to inform the front-end of what fields are part
@@ -104,15 +104,19 @@ pub enum ConfigurableBaseConfigurationAttrributeType {
 #[derive(Serialize)]
 #[serde(rename_all = "snake_case")]
 pub struct ConfigurableBaseConfiguration {
-    attribute_font_size: ConfigurableBaseConfigurationAttrributeType,
-    task_font_size: ConfigurableBaseConfigurationAttrributeType,
+    attribute_font_size: ConfigurableBaseConfigurationAttributeType,
+    task_font_size: ConfigurableBaseConfigurationAttributeType,
 }
 
 impl Default for ConfigurableBaseConfiguration {
     fn default() -> Self {
         Self {
-            attribute_font_size: ConfigurableBaseConfigurationAttrributeType::FontSize,
-            task_font_size: ConfigurableBaseConfigurationAttrributeType::FontSize,
+            attribute_font_size: ConfigurableBaseConfigurationAttributeType::FontSize(
+                DEFAULT_ATTRIBUTE_FONT_SIZE,
+            ),
+            task_font_size: ConfigurableBaseConfigurationAttributeType::FontSize(
+                DEFAULT_TASK_FONT_SIZE,
+            ),
         }
     }
 }

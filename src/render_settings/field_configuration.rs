@@ -105,6 +105,4 @@ pub enum FieldConfiguration {
     Routing(RoutingConfiguration),
     /// This variant can be used to configure boolean properties, e.g. displaying border routers.
     Boolean(bool),
-    /// This variant can be used to configure font size.
-    FontSize(FontSizeT),
 }
