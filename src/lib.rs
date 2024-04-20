@@ -113,6 +113,7 @@ pub struct SVG {
 
 /// This struct is provided as a result of requesting an [`SVG`] update based on a particular [`Configuration`].
 /// Fields are kept private as no modification of this is ever expected. It's just a convenient wrapper for serialisation.
+/// TODO: Possibly replace with untagged enum. Two variants. SVG and regular update.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateResult {
@@ -205,7 +206,9 @@ impl SVG {
         let (links_with_load, routing_configuration) =
             match configuration.channel_config_mut().remove(ROUTING_KEY) {
                 Some(configuration) => match configuration {
-                    FieldConfiguration::Routing(routing_configuration) => (
+                    FieldConfiguration::Routing {
+                        configuration: routing_configuration,
+                    } => (
                         Some(manycore.route(routing_configuration.algorithm())?),
                         Some(routing_configuration),
                     ),
@@ -226,7 +229,9 @@ impl SVG {
             .remove(BORDER_ROUTERS_KEY)
         {
             match border_routers_configuration {
-                FieldConfiguration::Boolean(show_border_routers) => {
+                FieldConfiguration::Boolean {
+                    value: show_border_routers,
+                } => {
                     if show_border_routers {
                         self.style = Style::base(); // CSS
 

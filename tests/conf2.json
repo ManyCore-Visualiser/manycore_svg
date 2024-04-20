@@ -1,43 +1,36 @@
 {
   "coreConfig": {
-    "@coordinates": { "Text": "T" },
-    "@id": { "Text": "ID" },
+    "@coordinates": { "type": "Coordinates", "orientation": "T" },
+    "@id": { "type": "Text", "display": "ID" },
     "@age": {
-      "Fill": {
-        "bounds": [30, 100, 200, 300],
-        "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-      }
+      "type": "Fill",
+      "bounds": [30, 100, 200, 300],
+      "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
     },
     "@temperature": {
-      "ColouredText": [
-        "Temp",
-        {
-          "bounds": [30, 31, 50, 75],
-          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-        }
-      ]
+      "type": "ColouredText",
+      "display": "Temp",
+      "bounds": [30, 31, 50, 75],
+      "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
     }
   },
   "routerConfig": {
     "@age": {
-      "Fill": {
-        "bounds": [30, 100, 200, 300],
-        "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-      }
+      "type": "Fill",
+      "bounds": [30, 100, 200, 300],
+      "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
     },
     "@temperature": {
-      "ColouredText": [
-        "Temp",
-        {
-          "bounds": [30, 31, 50, 75],
-          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-        }
-      ]
+      "type": "ColouredText",
+      "display": "Temp",
+      "bounds": [30, 31, 50, 75],
+      "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
     }
   },
   "channelConfig": {
     "@status": {
-      "Text": "Status"
+      "type": "Text",
+      "display": "Status"
     }
   }
 }

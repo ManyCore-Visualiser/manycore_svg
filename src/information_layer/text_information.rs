@@ -360,11 +360,18 @@ impl TextInformation {
         let (relevant_delta, class) = TextInformation::link_delta_and_class(edge, direction);
 
         let (fill, data) = match field_configuration {
-            FieldConfiguration::ColouredText(display_key, colour_config) => (
-                utils::get_attribute_colour(colour_config.bounds(), colour_config.colours(), data),
-                format!("{}: {}", display_key, data),
+            FieldConfiguration::ColouredText {
+                display: value,
+                colour_settings,
+            } => (
+                utils::get_attribute_colour(
+                    colour_settings.bounds(),
+                    colour_settings.colours(),
+                    data,
+                ),
+                format!("{}: {}", value, data),
             ),
-            FieldConfiguration::Text(display_key) => (None, format!("{}: {}", display_key, data)),
+            FieldConfiguration::Text { display } => (None, format!("{}: {}", display, data)),
             _ => (None, "".into()), // Unsupported
         };
 
@@ -394,11 +401,18 @@ impl TextInformation {
         let (relevant_delta, class) = TextInformation::link_delta_and_class(false, direction);
 
         let (fill, display) = match field_configuration {
-            FieldConfiguration::ColouredText(display_key, colour_config) => (
-                utils::get_attribute_colour(colour_config.bounds(), colour_config.colours(), data),
-                format!("{}: {}", display_key, data),
+            FieldConfiguration::ColouredText {
+                display: value,
+                colour_settings,
+            } => (
+                utils::get_attribute_colour(
+                    colour_settings.bounds(),
+                    colour_settings.colours(),
+                    data,
+                ),
+                format!("{}: {}", value, data),
             ),
-            FieldConfiguration::Text(display_key) => (None, format!("{}: {}", display_key, data)),
+            FieldConfiguration::Text { display } => (None, format!("{}: {}", display, data)),
             _ => (None, "".into()), // Any other variant shouldn't be used.
         };
 

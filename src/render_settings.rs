@@ -10,11 +10,11 @@ use crate::{
     CoordinateT, FontSizeT, CHAR_V_PADDING, DEFAULT_ATTRIBUTE_FONT_SIZE, DEFAULT_TASK_FONT_SIZE,
 };
 
-mod field_configuration;
 mod configurable_base_configuration;
+mod field_configuration;
 
-pub use field_configuration::*;
 pub use configurable_base_configuration::*;
+pub use field_configuration::*;
 
 #[cfg(doc)]
 use manycore_parser::{Channel, Core, Router};
@@ -112,75 +112,20 @@ mod tests {
             core_config: BTreeMap::from([
                 (
                     "@id".to_string(),
-                    FieldConfiguration::Text("ID".to_string()),
+                    FieldConfiguration::Text {
+                        display: "ID".to_string(),
+                    },
                 ),
                 (
                     "@coordinates".to_string(),
-                    FieldConfiguration::Coordinates(CoordinatesOrientation::T),
+                    FieldConfiguration::Coordinates {
+                        orientation: CoordinatesOrientation::T,
+                    },
                 ),
                 (
                     "@age".to_string(),
-                    FieldConfiguration::Fill(ColourSettings::new(
-                        [30, 100, 200, 300],
-                        [
-                            "#22c55e".to_string(),
-                            "#eab308".to_string(),
-                            "#f97316".to_string(),
-                            "#dc2626".to_string(),
-                        ],
-                    )),
-                ),
-                (
-                    "@temperature".to_string(),
-                    FieldConfiguration::ColouredText(
-                        "Temp".to_string(),
-                        ColourSettings::new(
-                            [30, 31, 50, 75],
-                            [
-                                "#22c55e".to_string(),
-                                "#eab308".to_string(),
-                                "#f97316".to_string(),
-                                "#dc2626".to_string(),
-                            ],
-                        ),
-                    ),
-                ),
-            ]),
-            router_config: BTreeMap::from([
-                (
-                    "@age".to_string(),
-                    FieldConfiguration::Fill(ColourSettings::new(
-                        [30, 100, 200, 300],
-                        [
-                            "#22c55e".to_string(),
-                            "#eab308".to_string(),
-                            "#f97316".to_string(),
-                            "#dc2626".to_string(),
-                        ],
-                    )),
-                ),
-                (
-                    "@temperature".to_string(),
-                    FieldConfiguration::ColouredText(
-                        "Temp".to_string(),
-                        ColourSettings::new(
-                            [30, 31, 50, 75],
-                            [
-                                "#22c55e".to_string(),
-                                "#eab308".to_string(),
-                                "#f97316".to_string(),
-                                "#dc2626".to_string(),
-                            ],
-                        ),
-                    ),
-                ),
-            ]),
-            channel_config: BTreeMap::from([
-                (
-                    "@age".to_string(),
-                    FieldConfiguration::ColouredText(
-                        "Age".to_string(),
-                        ColourSettings::new(
+                    FieldConfiguration::Fill {
+                        colour_settings: ColourSettings::new(
                             [30, 100, 200, 300],
                             [
                                 "#22c55e".to_string(),
@@ -189,28 +134,93 @@ mod tests {
                                 "#dc2626".to_string(),
                             ],
                         ),
-                    ),
+                    },
+                ),
+                (
+                    "@temperature".to_string(),
+                    FieldConfiguration::ColouredText {
+                        display: "Temp".to_string(),
+                        colour_settings: ColourSettings::new(
+                            [30, 31, 50, 75],
+                            [
+                                "#22c55e".to_string(),
+                                "#eab308".to_string(),
+                                "#f97316".to_string(),
+                                "#dc2626".to_string(),
+                            ],
+                        ),
+                    },
+                ),
+            ]),
+            router_config: BTreeMap::from([
+                (
+                    "@age".to_string(),
+                    FieldConfiguration::Fill {
+                        colour_settings: ColourSettings::new(
+                            [30, 100, 200, 300],
+                            [
+                                "#22c55e".to_string(),
+                                "#eab308".to_string(),
+                                "#f97316".to_string(),
+                                "#dc2626".to_string(),
+                            ],
+                        ),
+                    },
+                ),
+                (
+                    "@temperature".to_string(),
+                    FieldConfiguration::ColouredText {
+                        display: "Temp".to_string(),
+                        colour_settings: ColourSettings::new(
+                            [30, 31, 50, 75],
+                            [
+                                "#22c55e".to_string(),
+                                "#eab308".to_string(),
+                                "#f97316".to_string(),
+                                "#dc2626".to_string(),
+                            ],
+                        ),
+                    },
+                ),
+            ]),
+            channel_config: BTreeMap::from([
+                (
+                    "@age".to_string(),
+                    FieldConfiguration::ColouredText {
+                        display: "Age".to_string(),
+                        colour_settings: ColourSettings::new(
+                            [30, 100, 200, 300],
+                            [
+                                "#22c55e".to_string(),
+                                "#eab308".to_string(),
+                                "#f97316".to_string(),
+                                "#dc2626".to_string(),
+                            ],
+                        ),
+                    },
                 ),
                 (
                     BORDER_ROUTERS_KEY.to_string(),
-                    FieldConfiguration::Boolean(true),
+                    FieldConfiguration::Boolean { value: true },
                 ),
                 (
                     ROUTING_KEY.to_string(),
-                    FieldConfiguration::Routing(RoutingConfiguration::new(
-                        RoutingAlgorithms::RowFirst,
-                        LoadConfiguration::Percentage,
-                        ColourSettings::new(
-                            [20, 50, 70, 90],
-                            [
-                                "#1a5fb4".to_string(),
-                                "#26a269".to_string(),
-                                "#c64600".to_string(),
-                                "#a51d2d".to_string(),
-                            ],
+                    FieldConfiguration::Routing {
+                        configuration: RoutingConfiguration::new(
+                            RoutingAlgorithms::RowFirst,
+                            LoadConfiguration::Percentage,
+                            ColourSettings::new(
+                                [20, 50, 70, 90],
+                                [
+                                    "#1a5fb4".to_string(),
+                                    "#26a269".to_string(),
+                                    "#c64600".to_string(),
+                                    "#a51d2d".to_string(),
+                                ],
+                            ),
+                            String::from("L"),
                         ),
-                        String::from("L"),
-                    )),
+                    },
                 ),
             ]),
         };
@@ -221,6 +231,7 @@ mod tests {
             serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf_test.json\"");
 
         assert_eq!(configuration, expected_configuration)
+        // println!("{}", serde_json::to_string(&expected_configuration).unwrap())
     }
 
     #[test]

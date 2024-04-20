@@ -1,61 +1,47 @@
 {
   "coreConfig": {
-    "@coordinates": { "Coordinates": "T" },
-    "@id": { "Text": "ID" },
+    "@coordinates": { "type": "Coordinates", "orientation": "T" },
+    "@id": { "type": "Text", "display": "ID" },
     "@age": {
-      "Fill": {
-        "bounds": [30, 100, 200, 300],
-        "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-      }
+      "type": "Fill",
+      "bounds": [30, 100, 200, 300],
+      "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
     },
     "@temperature": {
-      "ColouredText": [
-        "Temp",
-        {
-          "bounds": [30, 31, 50, 75],
-          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-        }
-      ]
+      "type": "ColouredText",
+      "display": "Temp",
+      "bounds": [30, 31, 50, 75],
+      "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
     }
   },
   "routerConfig": {
     "@age": {
-      "Fill": {
-        "bounds": [30, 100, 200, 300],
-        "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-      }
+      "type": "Fill",
+      "bounds": [30, 100, 200, 300],
+      "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
     },
     "@temperature": {
-      "ColouredText": [
-        "Temp",
-        {
-          "bounds": [30, 31, 50, 75],
-          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-        }
-      ]
+      "type": "ColouredText",
+      "display": "Temp",
+      "bounds": [30, 31, 50, 75],
+      "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
     }
   },
   "channelConfig": {
     "@age": {
-      "ColouredText": [
-        "Age",
-        {
-          "bounds": [30, 100, 200, 300],
-          "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
-        }
-      ]
+      "type": "ColouredText",
+      "display": "Age",
+      "bounds": [30, 100, 200, 300],
+      "colours": ["#22c55e", "#eab308", "#f97316", "#dc2626"]
     },
-    "@borderRouters": { "Boolean": true },
+    "@borderRouters": { "type": "Boolean", "value": true },
     "@routingAlgorithm": {
-      "Routing": {
-        "algorithm": "RowFirst",
-        "loadConfiguration": "Percentage",
-        "loadColours": {
-          "bounds": [20, 50, 70, 90],
-          "colours": ["#1a5fb4", "#26a269", "#c64600", "#a51d2d"]
-        },
-        "display": "L"
-      }
+      "type": "Routing",
+      "algorithm": "RowFirst",
+      "loadConfiguration": "Percentage",
+      "bounds": [20, 50, 70, 90],
+      "colours": ["#1a5fb4", "#26a269", "#c64600", "#a51d2d"],
+      "display": "L"
     }
   }
 }

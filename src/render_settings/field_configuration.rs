@@ -58,6 +58,7 @@ pub enum CoordinatesOrientation {
 pub struct RoutingConfiguration {
     algorithm: RoutingAlgorithms,
     load_configuration: LoadConfiguration,
+    #[serde(flatten)]
     load_colours: ColourSettings,
     display: String,
 }
@@ -90,17 +91,28 @@ pub enum LoadConfiguration {
 
 /// Possible ways a field can be configured.
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[serde(tag = "type")]
 pub enum FieldConfiguration {
     /// Text only.
-    Text(String),
+    Text { display: String },
     /// Coloured Text according to provided [`ColourSettings`].
-    ColouredText(String, ColourSettings),
+    ColouredText {
+        display: String,
+        #[serde(rename = "colourSettings", flatten)]
+        colour_settings: ColourSettings,
+    },
     /// Fill colour of associated element, according to provided [`ColourSettings`].
-    Fill(ColourSettings),
+    Fill {
+        #[serde(rename = "colourSettings", flatten)]
+        colour_settings: ColourSettings,
+    },
     /// This variant can be used to configure coordinates display only.
-    Coordinates(CoordinatesOrientation),
+    Coordinates { orientation: CoordinatesOrientation },
     /// This variant can be used to configure routing only.
-    Routing(RoutingConfiguration),
+    Routing {
+        #[serde(flatten)]
+        configuration: RoutingConfiguration,
+    },
     /// This variant can be used to configure boolean properties, e.g. displaying border routers.
-    Boolean(bool),
+    Boolean { value: bool },
 }

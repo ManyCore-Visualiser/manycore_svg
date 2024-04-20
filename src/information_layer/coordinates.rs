@@ -4,8 +4,7 @@ use manycore_parser::COORDINATES_KEY;
 
 use crate::{
     CoordinateT, CoordinatesOrientation, FieldConfiguration, InformationLayer,
-    ProcessedBaseConfiguration, TextInformation, HALF_SIDE_LENGTH,
-    SIDE_LENGTH,
+    ProcessedBaseConfiguration, TextInformation, HALF_SIDE_LENGTH, SIDE_LENGTH,
 };
 
 /// Generates coordinates text.
@@ -27,7 +26,7 @@ pub(crate) fn make_coordinates(
         // (X, Y) text repesentation
         // TODO: This is actually (Y, X), we want (X, Y)
         let (cx, cy) = match order_config {
-            FieldConfiguration::Coordinates(order) => match order {
+            FieldConfiguration::Coordinates { orientation } => match orientation {
                 CoordinatesOrientation::B => (CoordinateT::from(rows) - r, c + 1),
                 CoordinatesOrientation::T => (r + 1, c + 1),
             },

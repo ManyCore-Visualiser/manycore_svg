@@ -63,7 +63,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
     // ID value is outside of attributes map
     if let Some(configuration) = configuration.get(ID_KEY) {
         match configuration {
-            FieldConfiguration::Text(title) => {
+            FieldConfiguration::Text { display } => {
                 group.information.push(TextInformation::new(
                     base_x,
                     base_y,
@@ -72,7 +72,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                     "text-before-edge",
                     None,
                     None,
-                    format!("{}: {}", title, target.id()),
+                    format!("{}: {}", display, target.id()),
                 ));
                 base_y = base_y.saturating_add(FONT_SIZE_WITH_OFFSET);
             }
@@ -96,7 +96,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                         (configuration.get(valid_key), map.get(k))
                     {
                         match field_configuration {
-                            FieldConfiguration::Text(title) => {
+                            FieldConfiguration::Text { display } => {
                                 // Simple Text
                                 group.information.push(TextInformation::new(
                                     base_x,
@@ -106,15 +106,15 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                     "text-before-edge",
                                     None,
                                     None,
-                                    format!("{}: {}", title, value),
+                                    format!("{}: {}", display, value),
                                 ));
 
                                 // Increase y for next element, if any
                                 base_y = base_y.saturating_add(FONT_SIZE_WITH_OFFSET);
                             }
-                            FieldConfiguration::Fill(colour_config) => {
+                            FieldConfiguration::Fill { colour_settings } => {
                                 // Fill colour
-                                let bounds = colour_config.bounds();
+                                let bounds = colour_settings.bounds();
 
                                 // If we can't parse it as a number, we can't calculate what the fill colour should be.
                                 // TODO: Conversion error instead?
@@ -128,7 +128,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                             "\n#{}{} {{fill: {};}}",
                                             target.variant(),
                                             target.id(),
-                                            colour_config.colours()[fill_idx]
+                                            colour_settings.colours()[fill_idx]
                                         )
                                         .as_str(),
                                     );
@@ -137,11 +137,14 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                     group.filter = Some(TEXT_GROUP_FILTER);
                                 }
                             }
-                            FieldConfiguration::ColouredText(title, colour_config) => {
+                            FieldConfiguration::ColouredText {
+                                display: title,
+                                colour_settings,
+                            } => {
                                 // Coloured text
                                 let fill = get_attribute_colour(
-                                    colour_config.bounds(),
-                                    colour_config.colours(),
+                                    colour_settings.bounds(),
+                                    colour_settings.colours(),
                                     value,
                                 );
 
