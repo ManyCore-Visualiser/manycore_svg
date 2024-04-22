@@ -6,7 +6,7 @@ use std::{
 
 use manycore_parser::{Directions, WithID, WithXMLAttributes, COORDINATES_KEY, ID_KEY};
 
-use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER, TEXT_GROUP_FILTER};
+use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER};
 use crate::{
     ConnectionType, ConnectionsParentGroup, CoordinateT, DirectionType, FieldConfiguration,
     ProcessedBaseConfiguration, SVGError, SVGErrorKind,
@@ -132,9 +132,6 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                         )
                                         .as_str(),
                                     );
-
-                                    // If we have a fill, then we need to add some background for any text element.
-                                    group.filter = Some(TEXT_GROUP_FILTER);
                                 }
                             }
                             FieldConfiguration::ColouredText {

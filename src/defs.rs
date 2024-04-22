@@ -1,12 +1,10 @@
 use serde::Serialize;
 
-use crate::{text_background::TextBackground, Marker};
+use crate::Marker;
 
 /// Object representation of SVG `<defs>`.
-/// Includes a default [`Marker`] and [`TextBackground`]
+/// Includes a default [`Marker`].
 #[derive(Serialize, Default)]
 pub(crate) struct Defs {
     marker: Marker,
-    #[serde(rename = "filter")]
-    text_background: TextBackground,
 }

@@ -3,13 +3,11 @@ use manycore_parser::RoutingMap;
 use serde::Serialize;
 
 use crate::{
-    text_background::TEXT_BACKGROUND_ID, Configuration, ConnectionsParentGroup, CoordinateT,
-    Offsets, ProcessedBaseConfiguration, ProcessingGroup, RoutingConfiguration, SVGError,
-    ROUTER_OFFSET, SIDE_LENGTH,
+    Configuration, ConnectionsParentGroup, CoordinateT, Offsets, ProcessedBaseConfiguration,
+    ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET, SIDE_LENGTH,
 };
 
 static OFFSET_FROM_BORDER: CoordinateT = 1;
-static TEXT_GROUP_FILTER: &str = concatcp!("url(#", TEXT_BACKGROUND_ID, ")");
 
 // Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
 // path('m0,0 l0,100 l98,0 l0,-75 l-25,-25 l-75,0 Z')
@@ -48,8 +46,6 @@ static ROUTER_CLIP: &'static str = concatcp!(
 /// Core or Router information SVG `<g>` wrapper.
 #[derive(Serialize, Default)]
 struct ProcessingInformation {
-    #[serde(rename = "@filter", skip_serializing_if = "Option::is_none")]
-    filter: Option<&'static str>,
     #[serde(rename = "@clip-path")]
     clip_path: &'static str,
     #[serde(rename = "text")]

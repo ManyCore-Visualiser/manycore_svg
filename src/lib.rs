@@ -15,7 +15,6 @@ mod render_settings;
 mod sinks_sources_layer;
 mod style;
 mod svg_conversions;
-mod text_background;
 mod view_box;
 
 pub use clip_path::*;
