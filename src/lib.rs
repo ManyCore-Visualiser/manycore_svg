@@ -47,8 +47,6 @@ pub type FontSizeT = f32;
 struct Root {
     #[serde(rename = "@id")]
     id: &'static str,
-    #[serde(rename = "@clip-path", skip_serializing_if = "Option::is_none")]
-    clip_path: Option<&'static str>,
     #[serde(rename = "g")]
     processing_group: ProcessingParentGroup,
     #[serde(rename = "g")]
@@ -85,8 +83,6 @@ pub struct SVG {
     view_box: ViewBox,
     defs: Defs,
     style: Style,
-    #[serde(rename = "clipPath", skip_serializing_if = "Option::is_none")]
-    clip_path: Option<ClipPath>,
     #[serde(rename = "g")]
     #[getset(get_mut = "pub")]
     root: Root,
@@ -152,10 +148,8 @@ impl SVG {
             view_box,
             defs: Defs::new(number_of_cores),
             style: Style::default(),
-            clip_path: None,
             root: Root {
                 id: "mainGroup",
-                clip_path: None,
                 processing_group: ProcessingParentGroup::new(number_of_cores),
                 connections_group: ConnectionsParentGroup::default(),
                 information_group: InformationGroup::new(number_of_cores),
@@ -293,16 +287,16 @@ impl SVG {
         })
     }
 
-    /// Adds a [`ClipPath`] to the [`SVG`]. Used in FreeForm exporting.
-    pub fn add_clip_path(&mut self, polygon_points: String) {
-        self.clip_path = Some(ClipPath::new(polygon_points));
-        self.root.clip_path = Some(USE_CLIP_PATH);
+    /// Adds a [`ClipPath`] to the [`SVG`]'s [`Defs`]. Used in FreeForm exporting.
+    pub fn add_freeform_clip_path(&mut self, polygon_points: String) {
+        self.defs
+            .clip_paths_mut()
+            .push(ClipPath::new(polygon_points));
     }
 
-    /// Removes [`ClipPath`] from the [`SVG`].
-    pub fn clear_clip_path(&mut self) {
-        self.clip_path = None;
-        self.root.clip_path = None;
+    /// Removes FreeForm exporting [`ClipPath`] from the [`SVG`]'s [`Defs`].
+    pub fn clear_freeform_clip_path(&mut self) {
+        self.defs.clip_paths_mut().pop();
     }
 }
 

@@ -4,7 +4,7 @@ use serde::Serialize;
 
 use crate::{
     style::BASE_FILL_CLASS_NAME, ClipPath, CoordinateT, FontSizeT, ProcessedBaseConfiguration,
-    SVGError, TextInformation, TopLeft, CHAR_H_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
+    SVGError, TextInformation, TopLeft, CHAR_H_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT, USE_FREEFORM_CLIP_PATH,
 };
 
 pub(crate) const SIDE_LENGTH: CoordinateT = 100;
@@ -394,6 +394,8 @@ impl ProcessingGroup {
 pub(crate) struct ProcessingParentGroup {
     #[serde(rename = "@id")]
     id: &'static str,
+    #[serde(rename = "@clip-path")]
+    clip_path: &'static str,
     g: Vec<ProcessingGroup>,
 }
 
@@ -403,6 +405,7 @@ impl ProcessingParentGroup {
         Self {
             id: "processingGroup",
             g: Vec::with_capacity(*number_of_cores),
+            clip_path: USE_FREEFORM_CLIP_PATH,
         }
     }
 }

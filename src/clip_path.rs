@@ -3,9 +3,9 @@ use serde::Serialize;
 
 use crate::{CoordinateT, ROUTER_OFFSET, SIDE_LENGTH};
 
-pub(crate) const CLIP_PATH_ID: &'static str = "crop";
+pub(crate) const FREEFORM_CLIP_PATH_ID: &'static str = "crop";
 
-pub(crate) static USE_CLIP_PATH: &'static str = concatcp!("url(#", CLIP_PATH_ID, ")");
+pub(crate) static USE_FREEFORM_CLIP_PATH: &'static str = concatcp!("url(#", FREEFORM_CLIP_PATH_ID, ")");
 
 /// Object representation of an SVG `<polygon>`.
 #[derive(Serialize)]
@@ -26,7 +26,7 @@ impl ClipPath {
     /// Creates a new [`ClipPath`] instance given the `points` of a polygon (as [`String`], i.e. already formatted as to be expected in an SVG).
     pub fn new(polygon_points: String) -> Self {
         Self {
-            id: CLIP_PATH_ID.to_string(),
+            id: FREEFORM_CLIP_PATH_ID.to_string(),
             polygon: Polygon {
                 points: polygon_points,
             },

@@ -5,7 +5,9 @@ use manycore_parser::{BorderEntry, EdgePosition, SinkSourceDirection};
 use serde::Serialize;
 
 use crate::{
-    style::{DEFAULT_FILL, EDGE_DATA_CLASS_NAME}, CoordinateT, ProcessedBaseConfiguration, TextInformation, CHAR_H_PADDING, HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH
+    style::{DEFAULT_FILL, EDGE_DATA_CLASS_NAME},
+    CoordinateT, ProcessedBaseConfiguration, TextInformation, CHAR_H_PADDING, HALF_ROUTER_OFFSET,
+    MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH, USE_FREEFORM_CLIP_PATH,
 };
 
 // Side lengths
@@ -231,6 +233,8 @@ impl SinkSource {
 pub(crate) struct SinksSourcesGroup {
     #[serde(rename = "@id")]
     id: &'static str,
+    #[serde(rename = "@clip-path")]
+    clip_path: &'static str,
     #[serde(rename = "@class")]
     class: &'static str,
     g: Vec<SinkSource>,
@@ -245,6 +249,7 @@ impl SinksSourcesGroup {
             class: EDGE_DATA_CLASS_NAME,
             // Formula worksout because we ignore the corners. Obv, only on 2D matrix.
             g: Vec::with_capacity(usize::from((rows + columns) * 2)),
+            clip_path: USE_FREEFORM_CLIP_PATH,
         }
     }
 

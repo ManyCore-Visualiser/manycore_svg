@@ -23,23 +23,10 @@ impl InformationGroup {
     }
 
     /// Generates a String to include in an SVG update by serialising [`InformationGroup`].
-    /// It returns the serialised [`InformationGroup`] with the main `<g>` stripped off.
+    /// It returns the serialised [`InformationGroup`] without the main `<g>`.
     pub(crate) fn update_string(&self) -> Result<String, DeError> {
-        let dummy_xml = quick_xml::se::to_string_with_root("g", &self.groups)?;
-        // 0-2+1...dummy_xml.len() - 4
-        // <g>...</g>
-        // e.g <g>hello</g> = 3..8
-        // Start is inclusive, end is exclusive
-        let dummy_len = dummy_xml.len();
-        let inner_content;
+        let groups = quick_xml::se::to_string_with_root("g", &self.groups)?;
 
-        if dummy_len > 6 {
-            inner_content = &dummy_xml[3..(dummy_xml.len() - 4)];
-        } else {
-            inner_content = "";
-        }
-
-        // We must return a string here because without allocation the string slice would be dropped.
-        Ok(String::from(inner_content))
+        Ok(groups)
     }
 }

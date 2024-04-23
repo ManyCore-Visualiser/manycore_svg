@@ -4,6 +4,7 @@ use serde::Serialize;
 use crate::{
     ClipPath, Configuration, ConnectionsParentGroup, CoordinateT, Offsets,
     ProcessedBaseConfiguration, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET,
+    USE_FREEFORM_CLIP_PATH,
 };
 
 static OFFSET_FROM_BORDER: CoordinateT = 1;
@@ -23,6 +24,8 @@ struct ProcessingInformation {
 #[derive(Serialize, Default)]
 #[serde(rename = "g")]
 pub(crate) struct InformationLayer {
+    #[serde(rename = "@clip-path")]
+    clip_path: &'static str,
     #[serde(rename = "g")]
     core_group: ProcessingInformation,
     #[serde(rename = "g")]
@@ -57,6 +60,7 @@ impl InformationLayer {
         processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Result<Self, SVGError> {
         let mut ret = InformationLayer::default();
+        ret.clip_path = USE_FREEFORM_CLIP_PATH;
 
         let (r, c) = processing_group.coordinates();
         let (core_x, core_y) = processing_group.core().move_coordinates();

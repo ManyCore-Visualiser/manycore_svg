@@ -22,7 +22,8 @@ impl Defs {
             marker: Default::default(),
             // We need capacity for twice the number of cores to fit
             // both cores and routers' clip paths.
-            clip_paths: Vec::with_capacity(number_of_cores.mul(2)),
+            // We add one to potentially store freeform clip path.
+            clip_paths: Vec::with_capacity(number_of_cores.mul(2).saturating_add(1)),
         }
     }
 }

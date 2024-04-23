@@ -7,7 +7,7 @@ use serde::Serialize;
 use crate::{
     sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME,
     CommonAttributes, CoordinateT, Router, TopLeft, HALF_ROUTER_OFFSET, MARKER_HEIGHT,
-    MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH,
+    MARKER_REFERENCE, ROUTER_OFFSET, SIDE_LENGTH, USE_FREEFORM_CLIP_PATH,
 };
 
 pub(crate) const EDGE_CONNECTIONS_ID: &'static str = "edgeConnetions";
@@ -34,6 +34,8 @@ pub(crate) struct Connection {
     #[serde(skip)]
     #[getset(get = "pub")]
     y: CoordinateT,
+    #[serde(rename = "@clip-path")]
+    clip_path: &'static str,
 }
 
 /// Helper struct used when calculating connection paths.
@@ -240,6 +242,7 @@ impl Connection {
             marker_end: MARKER_REFERENCE,
             x: connection_path.x,
             y: connection_path.y,
+            clip_path: USE_FREEFORM_CLIP_PATH,
         }
     }
 }
