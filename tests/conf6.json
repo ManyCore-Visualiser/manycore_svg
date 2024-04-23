@@ -1,0 +1,12 @@
+{
+  "coreConfig": {
+    "@id": { "type": "Text", "display": "ID", "colour": "#a51d2d" }
+  },
+  "routerConfig": {
+    "@age": { "type": "Text", "display": "Age", "colour": "#26a269" }
+  },
+  "channelConfig": {
+    "@borderRouters": { "type": "Boolean", "value": true },
+    "@age": { "type": "Text", "display": "Age", "colour": "#1a5fb4" }
+  }
+}

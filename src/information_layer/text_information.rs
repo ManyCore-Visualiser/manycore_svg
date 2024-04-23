@@ -371,7 +371,9 @@ impl TextInformation {
                 ),
                 format!("{}: {}", value, data),
             ),
-            FieldConfiguration::Text { display } => (None, format!("{}: {}", display, data)),
+            FieldConfiguration::Text { display, colour } => {
+                (colour.as_ref(), format!("{}: {}", display, data))
+            }
             _ => (None, "".into()), // Unsupported
         };
 
@@ -412,7 +414,9 @@ impl TextInformation {
                 ),
                 format!("{}: {}", value, data),
             ),
-            FieldConfiguration::Text { display } => (None, format!("{}: {}", display, data)),
+            FieldConfiguration::Text { display, colour } => {
+                (colour.as_ref(), format!("{}: {}", display, data))
+            }
             _ => (None, "".into()), // Any other variant shouldn't be used.
         };
 

@@ -94,7 +94,10 @@ pub enum LoadConfiguration {
 #[serde(tag = "type")]
 pub enum FieldConfiguration {
     /// Text only.
-    Text { display: String },
+    Text {
+        display: String,
+        colour: Option<String>,
+    },
     /// Coloured Text according to provided [`ColourSettings`].
     ColouredText {
         display: String,

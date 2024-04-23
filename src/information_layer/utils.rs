@@ -63,14 +63,14 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
     // ID value is outside of attributes map
     if let Some(configuration) = configuration.get(ID_KEY) {
         match configuration {
-            FieldConfiguration::Text { display } => {
+            FieldConfiguration::Text { display, colour } => {
                 group.information.push(TextInformation::new(
                     base_x,
                     base_y,
                     *processed_base_configuration.attribute_font_size(),
                     text_anchor,
                     "text-before-edge",
-                    None,
+                    colour.as_ref(),
                     None,
                     format!("{}: {}", display, target.id()),
                 ));
@@ -96,7 +96,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                         (configuration.get(valid_key), map.get(k))
                     {
                         match field_configuration {
-                            FieldConfiguration::Text { display } => {
+                            FieldConfiguration::Text { display, colour } => {
                                 // Simple Text
                                 group.information.push(TextInformation::new(
                                     base_x,
@@ -104,7 +104,7 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                     *processed_base_configuration.attribute_font_size(),
                                     text_anchor,
                                     "text-before-edge",
-                                    None,
+                                    colour.as_ref(),
                                     None,
                                     format!("{}: {}", display, value),
                                 ));

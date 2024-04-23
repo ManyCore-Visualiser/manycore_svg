@@ -114,6 +114,7 @@ mod tests {
                     "@id".to_string(),
                     FieldConfiguration::Text {
                         display: "ID".to_string(),
+                        colour: None,
                     },
                 ),
                 (
@@ -376,5 +377,30 @@ mod tests {
 
         assert_eq!(res, expected)
         // println!("SVG5: {res}\n\n")
+    }
+
+    #[test]
+    fn can_colour_text() {
+        let conf_file: fs::File =
+            fs::File::open("tests/conf6.json").expect("Could not open \"tests/conf6.json\"");
+        let mut configuration: Configuration =
+            serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf6.json\"");
+
+        let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
+            .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
+
+        let mut svg: SVG = SVG::try_from(&manycore).expect("Could not convert Manycore to SVG.");
+
+        let _ = svg
+            .update_configurable_information(&mut manycore, &mut configuration, &BASE_CONFIG)
+            .expect("Could not generate SVG update");
+
+        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+
+        let expected = read_to_string("tests/SVG6.svg")
+            .expect("Could not read input test file \"tests/SVG6.svg\"");
+
+        assert_eq!(res, expected)
+        // println!("SVG6: {res}\n\n")
     }
 }
