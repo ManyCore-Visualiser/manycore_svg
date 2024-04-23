@@ -1,10 +1,28 @@
+use std::ops::Mul;
+
+use getset::MutGetters;
 use serde::Serialize;
 
-use crate::Marker;
+use crate::{ClipPath, Marker};
 
 /// Object representation of SVG `<defs>`.
-/// Includes a default [`Marker`].
-#[derive(Serialize, Default)]
+/// Includes a default [`Marker`] and the required [`ClipPath`]s for core and router information layer.
+#[derive(Serialize, MutGetters)]
 pub(crate) struct Defs {
     marker: Marker,
+    #[serde(rename = "clipPath")]
+    #[getset(get_mut = "pub")]
+    clip_paths: Vec<ClipPath>,
+}
+
+impl Defs {
+    /// Creates a new [`Defs`] instance with the required capacity for [`ClipPath`]s.
+    pub(crate) fn new(number_of_cores: &usize) -> Self {
+        Self {
+            marker: Default::default(),
+            // We need capacity for twice the number of cores to fit
+            // both cores and routers' clip paths.
+            clip_paths: Vec::with_capacity(number_of_cores.mul(2)),
+        }
+    }
 }

@@ -150,7 +150,7 @@ impl SVG {
             preserve_aspect_ratio: "xMidYMid meet",
             class: "mx-auto",
             view_box,
-            defs: Defs::default(),
+            defs: Defs::new(number_of_cores),
             style: Style::default(),
             clip_path: None,
             root: Root {

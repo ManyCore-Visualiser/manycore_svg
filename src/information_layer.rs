@@ -1,53 +1,18 @@
-use const_format::concatcp;
-use manycore_parser::RoutingMap;
+use manycore_parser::{RoutingMap, WithID};
 use serde::Serialize;
 
 use crate::{
-    Configuration, ConnectionsParentGroup, CoordinateT, Offsets, ProcessedBaseConfiguration,
-    ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET, SIDE_LENGTH,
+    ClipPath, Configuration, ConnectionsParentGroup, CoordinateT, Offsets,
+    ProcessedBaseConfiguration, ProcessingGroup, RoutingConfiguration, SVGError, ROUTER_OFFSET,
 };
 
 static OFFSET_FROM_BORDER: CoordinateT = 1;
-
-// Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
-// path('m0,0 l0,100 l98,0 l0,-75 l-25,-25 l-75,0 Z')
-static PROCESSOR_CLIP: &'static str = concatcp!(
-    "path('m0,0 l0,",
-    SIDE_LENGTH,
-    " l",
-    SIDE_LENGTH - 2,
-    ",0 l0,-",
-    ROUTER_OFFSET,
-    " l-",
-    SIDE_LENGTH - ROUTER_OFFSET,
-    ",-",
-    SIDE_LENGTH - ROUTER_OFFSET,
-    " l-",
-    ROUTER_OFFSET,
-    ",0 Z')"
-);
-
-// Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
-// path('m0,0 l0,74 l25,25 l73,0 l0,-100 Z')
-static ROUTER_CLIP: &'static str = concatcp!(
-    "path('m0,0 l0,",
-    ROUTER_OFFSET - 1,
-    " l",
-    SIDE_LENGTH - ROUTER_OFFSET,
-    ",",
-    SIDE_LENGTH - ROUTER_OFFSET,
-    " l",
-    ROUTER_OFFSET - 2,
-    ",0 l0,-",
-    SIDE_LENGTH,
-    " Z')"
-);
 
 /// Core or Router information SVG `<g>` wrapper.
 #[derive(Serialize, Default)]
 struct ProcessingInformation {
     #[serde(rename = "@clip-path")]
-    clip_path: &'static str,
+    clip_path: String,
     #[serde(rename = "text")]
     information: Vec<TextInformation>,
 }
@@ -119,7 +84,8 @@ impl InformationLayer {
             css,
             processed_base_configuration,
         );
-        ret.core_group.clip_path = PROCESSOR_CLIP;
+        // Clip path id
+        ret.core_group.clip_path = format!("url(#{})", ClipPath::make_core_id(core.id()));
 
         // Router
         let (router_x, router_y) = processing_group.router().move_coordinates();
@@ -133,7 +99,9 @@ impl InformationLayer {
             css,
             processed_base_configuration,
         );
-        ret.router_group.clip_path = ROUTER_CLIP;
+        // Clip path id
+        ret.router_group.clip_path =
+            format!("url(#{})", ClipPath::make_router_id(core.router().id()));
 
         // Channels
         generate_channel_data(

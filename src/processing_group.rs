@@ -3,8 +3,8 @@ use getset::{Getters, MutGetters, Setters};
 use serde::Serialize;
 
 use crate::{
-    style::BASE_FILL_CLASS_NAME, CoordinateT, FontSizeT, ProcessedBaseConfiguration, SVGError,
-    TextInformation, TopLeft, CHAR_H_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
+    style::BASE_FILL_CLASS_NAME, ClipPath, CoordinateT, FontSizeT, ProcessedBaseConfiguration,
+    SVGError, TextInformation, TopLeft, CHAR_H_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
 pub(crate) const SIDE_LENGTH: CoordinateT = 100;
@@ -347,19 +347,34 @@ impl ProcessingGroup {
         id: &u8,
         allocated_task: &Option<u16>,
         top_left: &TopLeft,
-        prrocessed_base_configuration: &ProcessedBaseConfiguration,
+        processed_base_configuration: &ProcessedBaseConfiguration,
+        clip_paths: &mut Vec<ClipPath>,
     ) -> Result<Self, SVGError> {
+        // Core
+        let core = Core::new(row, column, id, top_left);
+        let (core_x, core_y) = core.move_coordinates;
+        // Core clip path
+        let core_clip = ClipPath::for_core(*id, core_x, core_y);
+        clip_paths.push(core_clip);
+
+        // Router
+        let router = Router::new(row, column, id, top_left);
+        let (router_x, router_y) = router.move_coordinates;
+        // Router clip path
+        let router_clip = ClipPath::for_router(*id, router_x, router_y);
+        clip_paths.push(router_clip);
+
         Ok(Self {
             coordinates: (*row, *column),
             id: *id,
-            core: Core::new(row, column, id, top_left),
-            router: Router::new(row, column, id, top_left),
+            core,
+            router,
             task: Task::new(
                 row,
                 column,
                 allocated_task,
                 top_left,
-                prrocessed_base_configuration,
+                processed_base_configuration,
             )?,
         })
     }

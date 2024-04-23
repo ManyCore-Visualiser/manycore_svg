@@ -85,6 +85,7 @@ impl SVG {
                 core.allocated_task(),
                 &ret.top_left,
                 &ret.processed_base_configuration,
+                ret.defs.clip_paths_mut(),
             )?;
 
             // Check if viewBox needs to be extended left
