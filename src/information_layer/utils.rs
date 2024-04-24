@@ -1,7 +1,6 @@
 use std::{
     cmp::{max, min},
     collections::BTreeMap,
-    fmt::Display,
 };
 
 use manycore_parser::{Directions, WithID, WithXMLAttributes, COORDINATES_KEY, ID_KEY};
@@ -46,10 +45,11 @@ pub(crate) fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) ->
 }
 
 /// Generates [`InformationLayer`] content for a [`WithID`] element.
-pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
+pub(crate) fn generate_with_id<T: WithID<u8> + WithXMLAttributes>(
     mut base_x: CoordinateT,
     mut base_y: CoordinateT,
     configuration: &BTreeMap<String, FieldConfiguration>,
+    fill_override: &BTreeMap<u8, String>,
     target: &T,
     group: &mut ProcessingInformation,
     text_anchor: &'static str,
@@ -113,25 +113,28 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                                 base_y = base_y.saturating_add(FONT_SIZE_WITH_OFFSET);
                             }
                             FieldConfiguration::Fill { colour_settings } => {
-                                // Fill colour
-                                let bounds = colour_settings.bounds();
+                                // Do not compute if user requested override
+                                if let None = fill_override.get(target.id()) {
+                                    // Fill colour
+                                    let bounds = colour_settings.bounds();
 
-                                // If we can't parse it as a number, we can't calculate what the fill colour should be.
-                                // TODO: Conversion error instead?
-                                if let Ok(value_num) = value.parse::<u64>() {
-                                    let fill_idx =
-                                        binary_search_left_insertion_point(bounds, value_num);
+                                    // If we can't parse it as a number, we can't calculate what the fill colour should be.
+                                    // TODO: Conversion error instead?
+                                    if let Ok(value_num) = value.parse::<u64>() {
+                                        let fill_idx =
+                                            binary_search_left_insertion_point(bounds, value_num);
 
-                                    // Add fill colour in the [`SVG`] CSS
-                                    css.push_str(
-                                        format!(
-                                            "\n#{}{} {{fill: {};}}",
-                                            target.variant(),
-                                            target.id(),
-                                            colour_settings.colours()[fill_idx]
-                                        )
-                                        .as_str(),
-                                    );
+                                        // Add fill colour in the [`SVG`] CSS
+                                        css.push_str(
+                                            format!(
+                                                "\n#{}{} {{fill: {};}}",
+                                                target.variant(),
+                                                target.id(),
+                                                colour_settings.colours()[fill_idx]
+                                            )
+                                            .as_str(),
+                                        );
+                                    }
                                 }
                             }
                             FieldConfiguration::ColouredText {
@@ -167,6 +170,14 @@ pub(crate) fn generate_with_id<K: Display, T: WithID<K> + WithXMLAttributes>(
                 }
             }
         }
+    }
+
+    // Did the user request to override fill colour?
+    if let Some(fill) = fill_override.get(target.id()) {
+        // Add fill colour in the [`SVG`] CSS
+        css.push_str(
+            format!("\n#{}{} {{fill: {};}}", target.variant(), target.id(), fill).as_str(),
+        );
     }
 }
 

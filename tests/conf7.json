@@ -1,0 +1,19 @@
+{
+  "coreConfig": {
+    "@age": {
+      "type": "Fill",
+      "bounds": [0, 0, 0, 0],
+      "colours": ["#22c55e", "#22c55e", "#22c55e", "#22c55e"]
+    }
+  },
+  "routerConfig": {
+    "@age": {
+      "type": "Fill",
+      "bounds": [0, 0, 0, 0],
+      "colours": ["#22c55e", "#22c55e", "#22c55e", "#22c55e"]
+    }
+  },
+  "channelConfig": {},
+  "coreFills": { "3": "#e01b24" },
+  "routerFills": { "8": "#3584e4" }
+}

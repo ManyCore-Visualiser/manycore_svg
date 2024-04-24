@@ -43,5 +43,7 @@
       "colours": ["#1a5fb4", "#26a269", "#c64600", "#a51d2d"],
       "display": "L"
     }
-  }
+  },
+  "coreFills": {},
+  "routerFills": {}
 }

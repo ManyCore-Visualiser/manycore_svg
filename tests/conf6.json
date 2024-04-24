@@ -8,5 +8,7 @@
   "channelConfig": {
     "@borderRouters": { "type": "Boolean", "value": true },
     "@age": { "type": "Text", "display": "Age", "colour": "#1a5fb4" }
-  }
+  },
+  "coreFills": {},
+  "routerFills": {}
 }

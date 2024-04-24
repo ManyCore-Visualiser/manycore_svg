@@ -43,5 +43,7 @@
       "colours": ["#000", "#000", "#000", "#000"],
       "display": "Cost"
     }
-  }
+  },
+  "coreFills": {},
+  "routerFills": {}
 }

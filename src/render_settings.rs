@@ -30,6 +30,8 @@ pub struct Configuration {
     core_config: BTreeMap<String, FieldConfiguration>,
     router_config: BTreeMap<String, FieldConfiguration>,
     channel_config: BTreeMap<String, FieldConfiguration>,
+    core_fills: BTreeMap<u8, String>,
+    router_fills: BTreeMap<u8, String>,
 }
 
 /// Object representation of user-defined base configuration.
@@ -224,6 +226,8 @@ mod tests {
                     },
                 ),
             ]),
+            core_fills: BTreeMap::new(),
+            router_fills: BTreeMap::new(),
         };
 
         let conf_file = fs::File::open("tests/conf_test.json")
@@ -402,5 +406,30 @@ mod tests {
 
         assert_eq!(res, expected)
         // println!("SVG6: {res}\n\n")
+    }
+
+    #[test]
+    fn can_override_fill() {
+        let conf_file: fs::File =
+            fs::File::open("tests/conf7.json").expect("Could not open \"tests/conf7.json\"");
+        let mut configuration: Configuration =
+            serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf7.json\"");
+
+        let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
+            .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
+
+        let mut svg: SVG = SVG::try_from(&manycore).expect("Could not convert Manycore to SVG.");
+
+        let _ = svg
+            .update_configurable_information(&mut manycore, &mut configuration, &BASE_CONFIG)
+            .expect("Could not generate SVG update");
+
+        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+
+        let expected = read_to_string("tests/SVG7.svg")
+            .expect("Could not read input test file \"tests/SVG6.svg\"");
+
+        assert_eq!(res, expected)
+        // println!("SVG7: {res}\n\n")
     }
 }
