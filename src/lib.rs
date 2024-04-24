@@ -193,7 +193,9 @@ impl SVG {
 
         let not_empty_configuration = !configuration.core_config().is_empty()
             || !configuration.router_config().is_empty()
-            || !configuration.channel_config().is_empty();
+            || !configuration.channel_config().is_empty()
+            || !configuration.core_fills().is_empty()
+            || !configuration.router_fills().is_empty();
 
         // Compute routing if requested
         let (links_with_load, routing_configuration) =
