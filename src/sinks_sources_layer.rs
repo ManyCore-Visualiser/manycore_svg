@@ -23,10 +23,24 @@ static SINKS_SOURCES_STROKE_WIDTH_STR: &'static str = concatcp!(SINKS_SOURCES_ST
 static SINKS_SOURCES_RX: &str = "15";
 
 // Connection
-pub static SINKS_SOURCES_CONNECTION_LENGTH: CoordinateT = ROUTER_OFFSET.saturating_mul(3);
+pub(crate) static SINKS_SOURCES_CONNECTION_LENGTH: CoordinateT = ROUTER_OFFSET.saturating_mul(3);
+pub(crate) static NORTH_SINKS_SOURCES_CONNECTION_DELTA: CoordinateT =
+    SINKS_SOURCES_CONNECTION_LENGTH
+        .saturating_add(MARKER_HEIGHT)
+        .saturating_div(2);
+pub(crate) static SOUTH_SINKS_SOURCES_CONNECTION_DELTA: CoordinateT =
+    NORTH_SINKS_SOURCES_CONNECTION_DELTA.saturating_add(HALF_ROUTER_OFFSET);
+pub(crate) static EAST_SINKS_SOURCES_CONNECTION_DELTA: CoordinateT =
+    SINKS_SOURCES_CONNECTION_LENGTH
+        .saturating_add(MARKER_HEIGHT)
+        .saturating_div(4)
+        .saturating_mul(3);
+pub(crate) static WEST_SINKS_SOURCES_CONNECTION_DELTA: CoordinateT =
+    EAST_SINKS_SOURCES_CONNECTION_DELTA
+        .saturating_add(ROUTER_OFFSET.saturating_div(4).saturating_mul(3));
 
 // Viewbox Offset
-pub static SINKS_SOURCES_GROUP_OFFSET: CoordinateT = SINKS_SOURCES_CONNECTION_LENGTH
+pub(crate) static SINKS_SOURCES_GROUP_OFFSET: CoordinateT = SINKS_SOURCES_CONNECTION_LENGTH
     .saturating_add(SINKS_SOURCES_SHORT_SIDE_LENGTH)
     .saturating_add(SINKS_SOURCES_STROKE_WIDTH)
     .saturating_add(MARKER_HEIGHT);

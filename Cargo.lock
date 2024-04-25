@@ -48,12 +48,12 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "manycore_parser"
-version = "0.5.0"
-source = "git+https://github.com/joe2k01/manycore_parser.git#da6f2aa55c64ca6791d04564aa1fa476d0f1e9a5"
+version = "0.5.1"
+source = "git+https://github.com/joe2k01/manycore_parser.git#7cf46dc7ffb8b2b324f84c9793df3b7e94e44a13"
 dependencies = [
  "getset",
  "manycore_utils",
- "quick-xml 0.31.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quick-xml",
  "serde",
  "serde_json",
 ]
@@ -67,7 +67,7 @@ dependencies = [
  "lazy_static",
  "manycore_parser",
  "manycore_utils",
- "quick-xml 0.31.0 (git+https://github.com/tafia/quick-xml.git)",
+ "quick-xml",
  "serde",
  "serde_json",
 ]
@@ -117,16 +117,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d1597b0c024618f09a9c3b8655b7e430397a36d23fdafec26d6965e9eec3eba"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "quick-xml"
-version = "0.31.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1004a344b30a54e2ee58d66a71b32d2db2feb0a31f9a2d302bf0536f15de2a33"
-dependencies = [
- "memchr",
- "serde",
 ]
 
 [[package]]

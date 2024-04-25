@@ -5,9 +5,9 @@ use serde::Serialize;
 
 use crate::{CommonAttributes, CoordinateT};
 
-pub(crate) static MARKER_PATH: &str = "M0,0 M0,0 V8 L8,4 Z";
+pub(crate) static MARKER_PATH: &str = "M0,0 M0,0 V14 L14,7 Z";
 pub(crate) static MARKER_REFERENCE: &str = "url(#arrowHead)";
-pub(crate) const MARKER_HEIGHT: CoordinateT = 8;
+pub(crate) const MARKER_HEIGHT: CoordinateT = 14;
 static MARKER_DIMEN: &'static str = concatcp!(MARKER_HEIGHT);
 static MARKER_REF_Y: &'static str = concatcp!(MARKER_HEIGHT.saturating_div(2));
 

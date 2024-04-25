@@ -5,7 +5,7 @@ use std::{
     ops::Sub,
 };
 
-use crate::{CoordinateT, SVGError, TextInformation};
+use crate::{CoordinateT, SVGError, TextInformation, CHAR_V_PADDING};
 
 /// Helper struct to calculate viewBox offsets.
 #[derive(Getters, Clone, Copy, Debug, Default)]
@@ -46,15 +46,30 @@ impl Offsets {
         value: &TextInformation,
         direction: &Directions,
     ) -> Result<Self, SVGError> {
+        // East link is the only one that affects top
         let top = match direction {
-            Directions::North | Directions::South => *value.y(),
-            _ => value.y().sub(*value.font_size().px() as CoordinateT),
+            Directions::East => value
+                .y()
+                .sub(CHAR_V_PADDING.saturating_add(value.font_size().px().round() as CoordinateT)),
+            _ => *value.y(),
+        };
+
+        // For left and right we only care about South and North directions respectively.
+        // Remaining directions wouldn't affect viewBox.
+        let left = match direction {
+            Directions::South => value.x().saturating_sub(value.calculate_length(None)?),
+            _ => *value.x(),
+        };
+
+        let right = match direction {
+            Directions::North => value.x().saturating_add(value.calculate_length(None)?),
+            _ => *value.x(),
         };
 
         Ok(Offsets::new(
-            *value.x(),
+            left,
             top,
-            value.x().saturating_add(value.calculate_length(None)?),
+            right,
             value
                 .y()
                 .saturating_add(*value.font_size().px() as CoordinateT),

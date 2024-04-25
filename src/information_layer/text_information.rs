@@ -5,18 +5,26 @@ use manycore_parser::Directions;
 use serde::Serialize;
 
 use crate::{
-    sinks_sources_layer::SINKS_SOURCES_CONNECTION_LENGTH, style::EDGE_DATA_CLASS_NAME, CoordinateT,
-    FieldConfiguration, FontSizeT, LoadConfiguration, ProcessedBaseConfiguration,
-    RoutingConfiguration, SVGError, CONNECTION_LENGTH, MARKER_HEIGHT, ROUTER_OFFSET,
+    sinks_sources_layer::{
+        EAST_SINKS_SOURCES_CONNECTION_DELTA, NORTH_SINKS_SOURCES_CONNECTION_DELTA,
+        SOUTH_SINKS_SOURCES_CONNECTION_DELTA, WEST_SINKS_SOURCES_CONNECTION_DELTA,
+    },
+    style::EDGE_DATA_CLASS_NAME,
+    CoordinateT, FieldConfiguration, FontSizeT, LoadConfiguration, ProcessedBaseConfiguration,
+    RoutingConfiguration, SVGError, CONNECTION_LENGTH, MARKER_HEIGHT,
 };
 
 use super::utils;
 
 static HORIZONTAL_OFFSET_FROM_LINK: CoordinateT = 5;
-static VERTICAL_OFFSET_FROM_LINK: CoordinateT = 1;
+static VERTICAL_OFFSET_FROM_LINK: CoordinateT = 5;
 static HALF_CONNECTION_LENGTH: CoordinateT = CONNECTION_LENGTH
     .saturating_add(MARKER_HEIGHT)
     .saturating_div(2);
+static THREE_QUARTERS_CONNECTION_LENGTH: CoordinateT = CONNECTION_LENGTH
+    .saturating_add(MARKER_HEIGHT)
+    .saturating_div(4)
+    .saturating_mul(3);
 pub(crate) static CHAR_V_PADDING: CoordinateT = 6;
 pub(crate) static CHAR_H_PADDING: FontSizeT = 2.0;
 
@@ -124,7 +132,7 @@ impl TextInformation {
     }
 
     /// Shared logic used when generating "primary" [`TextInformation`] for a channel.
-    /// The `relevant_delta` can either be x orr y and is chosen depending on `direction`.
+    /// The `relevant_delta` can either be x or y and is chosen depending on `direction`.
     fn common_channel_primary(
         link_x: &CoordinateT,
         link_y: &CoordinateT,
@@ -183,10 +191,10 @@ impl TextInformation {
 
                 TextInformation::new(
                     link_x.saturating_sub(delta_x),
-                    link_y.saturating_sub(VERTICAL_OFFSET_FROM_LINK),
+                    link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK),
                     *processed_base_configuration.attribute_font_size(),
                     "middle",
-                    "text-after-edge",
+                    "text-before-edge",
                     fill,
                     class,
                     data,
@@ -261,13 +269,10 @@ impl TextInformation {
         processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Self {
         let relevant_delta: i32 = match direction {
-            Directions::South | Directions::West => SINKS_SOURCES_CONNECTION_LENGTH
-                .saturating_add(MARKER_HEIGHT)
-                .saturating_div(2),
-            _ => SINKS_SOURCES_CONNECTION_LENGTH
-                .saturating_add(ROUTER_OFFSET)
-                .saturating_add(MARKER_HEIGHT)
-                .saturating_div(2),
+            Directions::North => SOUTH_SINKS_SOURCES_CONNECTION_DELTA,
+            Directions::East => WEST_SINKS_SOURCES_CONNECTION_DELTA,
+            Directions::South => NORTH_SINKS_SOURCES_CONNECTION_DELTA,
+            Directions::West => EAST_SINKS_SOURCES_CONNECTION_DELTA,
         };
 
         let (percentage, fill) = TextInformation::calculate_load_fill_and_percentage(
@@ -296,24 +301,21 @@ impl TextInformation {
         direction: &Directions,
     ) -> (CoordinateT, Option<&'static str>) {
         if edge {
-            return match direction {
-                Directions::North | Directions::East => (
-                    SINKS_SOURCES_CONNECTION_LENGTH
-                        .saturating_add(MARKER_HEIGHT)
-                        .saturating_div(2),
-                    Some(EDGE_DATA_CLASS_NAME),
-                ),
-                _ => (
-                    SINKS_SOURCES_CONNECTION_LENGTH
-                        .saturating_add(ROUTER_OFFSET)
-                        .saturating_add(MARKER_HEIGHT)
-                        .saturating_div(2),
-                    Some(EDGE_DATA_CLASS_NAME),
-                ),
-            };
+            return (
+                match direction {
+                    Directions::North => NORTH_SINKS_SOURCES_CONNECTION_DELTA,
+                    Directions::West => WEST_SINKS_SOURCES_CONNECTION_DELTA,
+                    Directions::East => EAST_SINKS_SOURCES_CONNECTION_DELTA,
+                    Directions::South => SOUTH_SINKS_SOURCES_CONNECTION_DELTA,
+                },
+                Some(EDGE_DATA_CLASS_NAME),
+            );
         }
 
-        (HALF_CONNECTION_LENGTH, None)
+        return match direction {
+            Directions::North | Directions::South => (HALF_CONNECTION_LENGTH, None),
+            Directions::East | Directions::West => (THREE_QUARTERS_CONNECTION_LENGTH, None),
+        };
     }
 
     /// Generates [`TextInformation`] for an inner link load.
@@ -478,7 +480,11 @@ impl TextInformation {
 
                 TextInformation::new(
                     link_x.saturating_sub(delta_x),
-                    link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK),
+                    link_y
+                        .saturating_add(VERTICAL_OFFSET_FROM_LINK)
+                        .saturating_add(
+                            *processed_base_configuration.attribute_font_size_coordinate(),
+                        ),
                     *processed_base_configuration.attribute_font_size(),
                     "middle",
                     "text-before-edge",

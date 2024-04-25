@@ -3,7 +3,7 @@
 <ManycoreSystem
     xmlns="https://www.york.ac.uk/physics-engineering-technology/ManycoreSystems"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="https://www.york.ac.uk/physics-engineering-technology/ManycoreSystems https://gist.githubusercontent.com/joe2k01/718e437790047ca14447af3b8309ef76/raw/405336e08936e8ac19d5331603796c5bf928657e/manycore_schema.xsd"
+    xsi:schemaLocation="https://www.york.ac.uk/physics-engineering-technology/ManycoreSystems https://gist.githubusercontent.com/joe2k01/718e437790047ca14447af3b8309ef76/raw/3e0d9d40ecead18fe3967b831160edd3463908d1/manycore_schema.xsd"
     rows="3"
     columns="3"
     routingAlgo="RowFirst"
@@ -155,7 +155,7 @@
     </Cores>
 
     <Borders>
-        <Source coreID="1" direction="North" taskid="0" />
+        <Source coreID="1" direction="North" taskid="0" actualComCost="10" />
         <Source coreID="0" direction="West" taskid="1" />
         <Sink coreID="6" direction="West" taskid="5" />
     </Borders>

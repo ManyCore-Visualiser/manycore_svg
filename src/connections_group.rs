@@ -52,7 +52,7 @@ struct EdgePath {
 }
 
 impl Connection {
-    /// Calculates the path for an innerr matrix connection.
+    /// Calculates the path for an inner matrix connection.
     fn get_inner_path(
         direction: &Directions,
         r: &CoordinateT,
@@ -146,11 +146,11 @@ impl Connection {
 
                 // Input
                 let input_x = router_x.saturating_add(connection_length);
-                let input_y = router_y.saturating_sub(CONNECTION_GAP);
+                let input_y = router_y.saturating_add(CONNECTION_GAP);
                 let input_s = format!("M{},{} h-{}", input_x, input_y, render_length);
 
                 // Output
-                let output_y = router_y.saturating_add(CONNECTION_GAP);
+                let output_y = router_y.saturating_sub(CONNECTION_GAP);
                 let output_s = format!("M{},{} h{}", router_x, output_y, render_length);
 
                 (

@@ -231,7 +231,15 @@ impl SVG {
                         self.style = Style::base(); // CSS
 
                         // Expand viewBox for edges
-                        self.view_box.insert_edges();
+                        self.view_box.insert_edges(
+                            self.root
+                                .processing_group
+                                .g()
+                                .get(0)
+                                .ok_or(no_processing_group(0))?
+                                .core()
+                                .move_coordinates().0,
+                        );
                     } else {
                         self.style = Style::default(); // CSS
                     }
