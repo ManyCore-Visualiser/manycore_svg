@@ -16,3 +16,10 @@ serde_json = "1.0.113"
 
 [dev-dependencies]
 lazy_static = "1.4.0"
+
+[features]
+# Feature to print out SVGs in tests
+print = []
+
+[package.metadata.scripts]
+test = "cargo test --features print -- --nocapture"

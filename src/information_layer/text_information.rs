@@ -112,7 +112,7 @@ impl TextInformation {
             y,
             font_size: FontSize { px: font_size },
             font_family: "Roboto Mono",
-            font_weight: "bold",
+            font_weight: "500",
             text_anchor,
             dominant_baseline,
             fill: match fill {

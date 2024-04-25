@@ -238,8 +238,13 @@ mod tests {
         let configuration: Configuration =
             serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf_test.json\"");
 
+        #[cfg(feature = "print")]
+        println!(
+            "Conf: {}\n\n",
+            serde_json::to_string(&expected_configuration).unwrap()
+        );
+        #[cfg(not(feature = "print"))]
         assert_eq!(configuration, expected_configuration)
-        // println!("{}", serde_json::to_string(&expected_configuration).unwrap())
     }
 
     #[test]
@@ -268,8 +273,10 @@ mod tests {
         let expected = read_to_string("tests/SVG2.svg")
             .expect("Could not read input test file \"tests/SVG2.svg\"");
 
-        assert_eq!(res, expected)
-        // println!("SVG2: {res}\n\n")
+        #[cfg(feature = "print")]
+        println!("SVG2: {res}\n\n");
+        #[cfg(not(feature = "print"))]
+        assert_eq!(res, expected);
     }
 
     #[test]
@@ -296,11 +303,18 @@ mod tests {
         let expected_view_box = read_to_string("tests/view_box_update.txt")
             .expect("Could not open \"tests/view_box_update.txt\"");
 
-        assert_eq!(update.style, expected_style);
-        assert_eq!(update.information_group, expected_information);
-        assert_eq!(update.view_box, expected_view_box);
-        // println!("Update info: {}\n\n", update.information_group);
-        // println!("Update viewBox: {}\n\n", update.view_box);
+        #[cfg(feature = "print")]
+        {
+            println!("Update style: {}\n\n", update.style);
+            println!("Update info: {}\n\n", update.information_group);
+            println!("Update viewBox: {}\n\n", update.view_box);
+        }
+        #[cfg(not(feature = "print"))]
+        {
+            assert_eq!(update.style, expected_style);
+            assert_eq!(update.information_group, expected_information);
+            assert_eq!(update.view_box, expected_view_box);
+        }
     }
 
     #[test]
@@ -325,8 +339,10 @@ mod tests {
         let expected = read_to_string("tests/SVG3.svg")
             .expect("Could not read input test file \"tests/SVG3.svg\"");
 
-        assert_eq!(res, expected)
-        // println!("SVG3: {res}\n\n")
+        #[cfg(feature = "print")]
+        println!("SVG3: {res}\n\n");
+        #[cfg(not(feature = "print"))]
+        assert_eq!(res, expected);
     }
 
     #[test]
@@ -352,8 +368,10 @@ mod tests {
         let expected = read_to_string("tests/SVG4.svg")
             .expect("Could not read input test file \"tests/SVG4.svg\"");
 
-        assert_eq!(res, expected)
-        // println!("SVG4: {res}\n\n")
+        #[cfg(feature = "print")]
+        println!("SVG4: {res}\n\n");
+        #[cfg(not(feature = "print"))]
+        assert_eq!(res, expected);
     }
 
     #[test]
@@ -382,8 +400,10 @@ mod tests {
         let expected = read_to_string("tests/SVG5.svg")
             .expect("Could not read input test file \"tests/SVG5.svg\"");
 
-        assert_eq!(res, expected)
-        // println!("SVG5: {res}\n\n")
+        #[cfg(feature = "print")]
+        println!("SVG5: {res}\n\n");
+        #[cfg(not(feature = "print"))]
+        assert_eq!(res, expected);
     }
 
     #[test]
@@ -407,8 +427,10 @@ mod tests {
         let expected = read_to_string("tests/SVG6.svg")
             .expect("Could not read input test file \"tests/SVG6.svg\"");
 
-        assert_eq!(res, expected)
-        // println!("SVG6: {res}\n\n")
+        #[cfg(feature = "print")]
+        println!("SVG6: {res}\n\n");
+        #[cfg(not(feature = "print"))]
+        assert_eq!(res, expected);
     }
 
     #[test]
@@ -432,7 +454,9 @@ mod tests {
         let expected = read_to_string("tests/SVG7.svg")
             .expect("Could not read input test file \"tests/SVG6.svg\"");
 
-        assert_eq!(res, expected)
-        // println!("SVG7: {res}\n\n")
+        #[cfg(feature = "print")]
+        println!("SVG7: {res}\n\n");
+        #[cfg(not(feature = "print"))]
+        assert_eq!(res, expected);
     }
 }
