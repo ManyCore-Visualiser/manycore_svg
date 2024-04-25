@@ -14,7 +14,6 @@ use super::utils;
 
 static HORIZONTAL_OFFSET_FROM_LINK: CoordinateT = 5;
 static VERTICAL_OFFSET_FROM_LINK: CoordinateT = 1;
-static OFFSET_FROM_FIRST: CoordinateT = 20;
 static HALF_CONNECTION_LENGTH: CoordinateT = CONNECTION_LENGTH
     .saturating_add(MARKER_HEIGHT)
     .saturating_div(2);
@@ -429,9 +428,9 @@ impl TextInformation {
 
                 TextInformation::new(
                     link_x.saturating_add(HORIZONTAL_OFFSET_FROM_LINK),
-                    link_y
-                        .saturating_sub(delta_y)
-                        .saturating_add(OFFSET_FROM_FIRST),
+                    link_y.saturating_sub(delta_y).saturating_add(
+                        *processed_base_configuration.attribute_font_size_coordinate(),
+                    ),
                     *processed_base_configuration.attribute_font_size(),
                     "start",
                     "middle",
@@ -447,13 +446,12 @@ impl TextInformation {
                     link_x.saturating_add(delta_x),
                     link_y
                         .saturating_sub(VERTICAL_OFFSET_FROM_LINK)
-                        .saturating_sub(OFFSET_FROM_FIRST)
                         .saturating_sub(
                             *processed_base_configuration.attribute_font_size_coordinate(),
                         ),
                     *processed_base_configuration.attribute_font_size(),
                     "middle",
-                    "text-before-edge",
+                    "text-after-edge",
                     fill,
                     class,
                     display,
@@ -464,9 +462,9 @@ impl TextInformation {
 
                 TextInformation::new(
                     link_x.saturating_sub(HORIZONTAL_OFFSET_FROM_LINK),
-                    link_y
-                        .saturating_add(delta_y)
-                        .saturating_add(OFFSET_FROM_FIRST),
+                    link_y.saturating_add(delta_y).saturating_add(
+                        *processed_base_configuration.attribute_font_size_coordinate(),
+                    ),
                     *processed_base_configuration.attribute_font_size(),
                     "end",
                     "middle",
