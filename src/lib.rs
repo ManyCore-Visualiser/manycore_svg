@@ -101,6 +101,8 @@ pub struct SVG {
     #[serde(skip)]
     base_view_box: ViewBox,
     #[serde(skip)]
+    borders_view_box: ViewBox,
+    #[serde(skip)]
     base_configuration: BaseConfiguration,
     #[serde(skip)]
     processed_base_configuration: ProcessedBaseConfiguration,
@@ -159,6 +161,7 @@ impl SVG {
             // columns,
             top_left,
             base_view_box: view_box,
+            borders_view_box: view_box,
             base_configuration,
             processed_base_configuration: ProcessedBaseConfiguration::from(&base_configuration),
         }
@@ -231,15 +234,13 @@ impl SVG {
                         self.style = Style::base(); // CSS
 
                         // Expand viewBox for edges
-                        self.view_box.insert_edges(
-                            self.root
-                                .processing_group
-                                .g()
-                                .get(0)
-                                .ok_or(no_processing_group(0))?
-                                .core()
-                                .move_coordinates().0,
-                        );
+                        let ViewBox {
+                            x,
+                            y,
+                            width,
+                            height,
+                        } = self.borders_view_box;
+                        self.view_box.swap(x, y, width, height);
                     } else {
                         self.style = Style::default(); // CSS
                     }

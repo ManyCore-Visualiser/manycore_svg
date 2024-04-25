@@ -1,16 +1,16 @@
 use getset::{Getters, Setters};
 use serde::Serialize;
 
-use crate::{sinks_sources_layer::SINKS_SOURCES_GROUP_OFFSET, CoordinateT, Offsets, TopLeft};
+use crate::{CoordinateT, Offsets, TopLeft};
 
 /// Object representation of the SVG `viewBox` attribute. Allows for maths operations.
 #[derive(Getters, Setters, Clone, Copy, Debug, PartialEq, Eq)]
 #[getset(get = "pub", set = "pub")]
 pub struct ViewBox {
-    x: CoordinateT,
-    y: CoordinateT,
-    width: CoordinateT,
-    height: CoordinateT,
+    pub(crate) x: CoordinateT,
+    pub(crate) y: CoordinateT,
+    pub(crate) width: CoordinateT,
+    pub(crate) height: CoordinateT,
 }
 
 impl ViewBox {
@@ -47,20 +47,6 @@ impl ViewBox {
         *self = *from;
     }
 
-    /// Utility function to extend the [`ViewBox`] to accomodate for edge routers.
-    pub(crate) fn insert_edges(&mut self, core_0_x: CoordinateT) {
-        // There might be a task on the left side, so account for its size.
-        // If no task left_pad == SINKS_SOURCES_GROUP_OFFSET.
-        let left_pad =
-            SINKS_SOURCES_GROUP_OFFSET.saturating_sub(self.x.abs().saturating_add(core_0_x));
-        self.extend_left(left_pad);
-        // Account for right side
-        self.extend_right(SINKS_SOURCES_GROUP_OFFSET);
-
-        self.extend_top(SINKS_SOURCES_GROUP_OFFSET);
-        self.extend_bottom(SINKS_SOURCES_GROUP_OFFSET);
-    }
-
     /// Utility function to extend the [`ViewBox`] to the left and adjust the width accordingly.
     pub(crate) fn extend_left(&mut self, left: CoordinateT) {
         self.x = self.x.saturating_sub(left);
@@ -86,7 +72,7 @@ impl ViewBox {
     /// Utility function to extend whole [`ViewBox`] to fit provided [`Offsets`], if required.
     pub(crate) fn fit_offsets(&mut self, offsets: &Offsets) {
         let mut updated_view_box = *self;
-    
+
         // Left
         if self.x > *offsets.left() {
             updated_view_box.extend_left(offsets.left().abs().saturating_sub(self.x.abs()));
@@ -121,6 +107,19 @@ impl From<&ViewBox> for String {
             "{} {} {} {}",
             view_box.x, view_box.y, view_box.width, view_box.height
         )
+    }
+}
+
+impl From<&Offsets> for ViewBox {
+    fn from(offsets: &Offsets) -> Self {
+        let left = *offsets.left();
+        let top = *offsets.top();
+        Self {
+            x: left,
+            y: top,
+            width: offsets.right().saturating_add(left.abs()),
+            height: offsets.bottom().saturating_add(top.abs()),
+        }
     }
 }
 

@@ -5,8 +5,8 @@ use serde::Serialize;
 use std::cmp::min;
 
 use crate::{
-    BaseConfiguration, CoordinateT, ProcessingGroup, SVGError, TopLeft, BLOCK_DISTANCE,
-    BLOCK_LENGTH, CORE_ROUTER_STROKE_WIDTH, SVG, TASK_RECT_STROKE,
+    BaseConfiguration, CoordinateT, Offsets, ProcessingGroup, SVGError, TopLeft, ViewBox,
+    BLOCK_DISTANCE, BLOCK_LENGTH, CORE_ROUTER_STROKE_WIDTH, SVG, TASK_RECT_STROKE,
 };
 
 impl TryFrom<&SVG> for String {
@@ -69,6 +69,8 @@ impl SVG {
 
         let mut min_task_start = None;
         let mut has_bottom_task = false;
+
+        let mut borders_offsets = Offsets::new(0, 0, 0, 0);
 
         for (i, core) in cores.iter().enumerate() {
             // Realistically this conversion should never fail
@@ -135,6 +137,7 @@ impl SVG {
                         None => None,
                     },
                     &ret.processed_base_configuration,
+                    &mut borders_offsets,
                 );
             }
 
@@ -156,6 +159,10 @@ impl SVG {
                 *ret.processed_base_configuration.task_rect_bottom_padding(),
             );
         }
+
+        // Calculate borders viewBox.
+        let borders_view_box = ViewBox::from(&borders_offsets);
+        ret.borders_view_box = borders_view_box;
 
         Ok(ret)
     }

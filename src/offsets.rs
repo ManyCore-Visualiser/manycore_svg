@@ -5,7 +5,12 @@ use std::{
     ops::Sub,
 };
 
-use crate::{CoordinateT, SVGError, TextInformation, CHAR_V_PADDING};
+use crate::{
+    sinks_sources_layer::{
+        SinkSource, SINKS_SOURCES_SHORT_SIDE_LENGTH, SINKS_SOURCES_STROKE_WIDTH,
+    },
+    CoordinateT, SVGError, TextInformation, CHAR_V_PADDING,
+};
 
 /// Helper struct to calculate viewBox offsets.
 #[derive(Getters, Clone, Copy, Debug, Default)]
@@ -74,5 +79,24 @@ impl Offsets {
                 .y()
                 .saturating_add(*value.font_size().px() as CoordinateT),
         ))
+    }
+
+    /// Utility to generate viewBox offset from a [`SinkSource`] instance.
+    pub(crate) fn from_sinksource(value: &SinkSource) -> Self {
+        let top = value.rect().y();
+        let left = value.rect().x();
+        let right = left
+            .saturating_add(*value.rect().width())
+            .saturating_add(SINKS_SOURCES_STROKE_WIDTH);
+        let bottom = top
+            .saturating_add(SINKS_SOURCES_SHORT_SIDE_LENGTH)
+            .saturating_add(SINKS_SOURCES_STROKE_WIDTH);
+
+        Self {
+            left: left.saturating_sub(SINKS_SOURCES_STROKE_WIDTH),
+            top: top.saturating_sub(SINKS_SOURCES_STROKE_WIDTH),
+            right,
+            bottom,
+        }
     }
 }

@@ -1,24 +1,25 @@
 use std::{cmp::max, collections::HashMap};
 
 use const_format::concatcp;
+use getset::Getters;
 use manycore_parser::{BorderEntry, EdgePosition, SinkSourceDirection};
 use serde::Serialize;
 
 use crate::{
     style::{DEFAULT_FILL, EDGE_DATA_CLASS_NAME},
-    CoordinateT, ProcessedBaseConfiguration, TextInformation, CHAR_H_PADDING, HALF_ROUTER_OFFSET,
-    MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH, USE_FREEFORM_CLIP_PATH,
+    CoordinateT, Offsets, ProcessedBaseConfiguration, TextInformation, CHAR_H_PADDING,
+    HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH, USE_FREEFORM_CLIP_PATH,
 };
 
 // Side lengths
-const SINKS_SOURCES_SHORT_SIDE_LENGTH: CoordinateT = 70;
+pub(crate) const SINKS_SOURCES_SHORT_SIDE_LENGTH: CoordinateT = 70;
 static SINKS_SOURCES_HALF_SHORT_SIDE_LENGTH: CoordinateT =
     SINKS_SOURCES_SHORT_SIDE_LENGTH.saturating_div(2);
 static SINKS_SOURCES_SHORT_SIDE_LENGTH_STR: &'static str =
     concatcp!(SINKS_SOURCES_SHORT_SIDE_LENGTH);
 
 // Stroke
-const SINKS_SOURCES_STROKE_WIDTH: CoordinateT = 1;
+pub(crate) const SINKS_SOURCES_STROKE_WIDTH: CoordinateT = 1;
 static SINKS_SOURCES_STROKE_WIDTH_STR: &'static str = concatcp!(SINKS_SOURCES_STROKE_WIDTH);
 static SINKS_SOURCES_RX: &str = "15";
 
@@ -38,12 +39,6 @@ pub(crate) static EAST_SINKS_SOURCES_CONNECTION_DELTA: CoordinateT =
 pub(crate) static WEST_SINKS_SOURCES_CONNECTION_DELTA: CoordinateT =
     EAST_SINKS_SOURCES_CONNECTION_DELTA
         .saturating_add(ROUTER_OFFSET.saturating_div(4).saturating_mul(3));
-
-// Viewbox Offset
-pub(crate) static SINKS_SOURCES_GROUP_OFFSET: CoordinateT = SINKS_SOURCES_CONNECTION_LENGTH
-    .saturating_add(SINKS_SOURCES_SHORT_SIDE_LENGTH)
-    .saturating_add(SINKS_SOURCES_STROKE_WIDTH)
-    .saturating_add(MARKER_HEIGHT);
 
 static SINK_FILL: &str = "#fb923c";
 static SOURCE_FILL: &str = "#fbbf24";
@@ -76,8 +71,9 @@ impl TextInformation {
 }
 
 /// Object representation of an SVG `<rect>`, the "shell" of an edge router.
-#[derive(Serialize)]
-struct Rect {
+#[derive(Serialize, Getters)]
+#[getset(get = "pub")]
+pub(crate) struct Rect {
     #[serde(rename = "@x")]
     x: i32,
     #[serde(rename = "@y")]
@@ -169,8 +165,9 @@ impl From<&BorderEntry> for SinkSourceVariant {
 }
 
 /// Object representation of an SVG border router `<g>`.
-#[derive(Serialize)]
+#[derive(Serialize, Getters)]
 pub(crate) struct SinkSource {
+    #[getset(get = "pub")]
     rect: Rect,
     #[serde(skip_serializing_if = "Option::is_none")]
     text: Option<TextInformation>,
@@ -282,6 +279,27 @@ impl SinksSourcesGroup {
         }
     }
 
+    /// Utility to insert a [`SinkSource`] in the list and keep track of its offsets.
+    fn insert_router(
+        &mut self,
+        router_x: &CoordinateT,
+        router_y: &CoordinateT,
+        direction: &SinkSourceDirection,
+        variant: SinkSourceVariant,
+        processed_base_configuration: &ProcessedBaseConfiguration,
+        offsets: &mut Offsets,
+    ) {
+        let router = SinkSource::new(
+            router_x,
+            router_y,
+            &direction,
+            variant,
+            processed_base_configuration,
+        );
+        offsets.update(Offsets::from_sinksource(&router));
+        self.g.push(router);
+    }
+
     /// Generates and inserts all edge routers ([`SinkSource`]s) connected to the [`Router`] located at the given coordinates.
     pub(crate) fn insert(
         &mut self,
@@ -290,6 +308,7 @@ impl SinksSourcesGroup {
         router_y: &CoordinateT,
         core_borders: Option<&HashMap<SinkSourceDirection, BorderEntry>>,
         processed_base_configuration: &ProcessedBaseConfiguration,
+        offsets: &mut Offsets,
     ) {
         let mut variant;
         let mut direction;
@@ -300,142 +319,142 @@ impl SinksSourcesGroup {
             EdgePosition::Top => {
                 direction = SinkSourceDirection::North;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
             }
             EdgePosition::TopLeft => {
                 direction = SinkSourceDirection::North;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
 
                 direction = SinkSourceDirection::West;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
             }
             EdgePosition::TopRight => {
                 direction = SinkSourceDirection::North;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
 
                 direction = SinkSourceDirection::East;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
             }
             EdgePosition::Left => {
                 direction = SinkSourceDirection::West;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
             }
             EdgePosition::Right => {
                 direction = SinkSourceDirection::East;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
             }
             EdgePosition::Bottom => {
                 direction = SinkSourceDirection::South;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
             }
             EdgePosition::BottomLeft => {
                 direction = SinkSourceDirection::South;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
 
                 direction = SinkSourceDirection::West;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
             }
             EdgePosition::BottomRight => {
                 direction = SinkSourceDirection::South;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
 
                 direction = SinkSourceDirection::East;
                 variant = self.get_variant(core_borders, direction);
-
-                self.g.push(SinkSource::new(
+                self.insert_router(
                     router_x,
                     router_y,
                     &direction,
                     variant,
                     processed_base_configuration,
-                ));
+                    offsets,
+                );
             }
         }
     }

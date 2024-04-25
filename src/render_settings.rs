@@ -377,9 +377,9 @@ mod tests {
     #[test]
     fn handles_base_configuration() {
         let conf_file =
-            fs::File::open("tests/conf2.json").expect("Could not open \"tests/conf2.json\"");
+            fs::File::open("tests/conf3.json").expect("Could not open \"tests/conf3.json\"");
         let mut configuration: Configuration =
-            serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf2.json\"");
+            serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf3.json\"");
 
         let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
