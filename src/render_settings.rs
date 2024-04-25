@@ -268,13 +268,13 @@ mod tests {
             )
             .expect("Could not generate SVG update.");
 
-        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        let res = String::try_from(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG2.svg")
             .expect("Could not read input test file \"tests/SVG2.svg\"");
 
         #[cfg(feature = "print")]
-        println!("SVG2: {res}\n\n");
+        fs::write("tests-out/SVG2.svg", res);
         #[cfg(not(feature = "print"))]
         assert_eq!(res, expected);
     }
@@ -305,9 +305,9 @@ mod tests {
 
         #[cfg(feature = "print")]
         {
-            println!("Update style: {}\n\n", update.style);
-            println!("Update info: {}\n\n", update.information_group);
-            println!("Update viewBox: {}\n\n", update.view_box);
+            fs::write("tests-out/style_update.css", update.style);
+            fs::write("tests-out/information_update.xml", update.information_group);
+            fs::write("tests-out/view_box_update.txt", update.view_box);
         }
         #[cfg(not(feature = "print"))]
         {
@@ -334,13 +334,13 @@ mod tests {
             .update_configurable_information(&mut manycore, &mut configuration, &BASE_CONFIG)
             .expect("Could not generate SVG update");
 
-        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        let res = String::try_from(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG3.svg")
             .expect("Could not read input test file \"tests/SVG3.svg\"");
 
         #[cfg(feature = "print")]
-        println!("SVG3: {res}\n\n");
+        fs::write("tests-out/SVG3.svg", res);
         #[cfg(not(feature = "print"))]
         assert_eq!(res, expected);
     }
@@ -363,13 +363,13 @@ mod tests {
             .update_configurable_information(&mut manycore, &mut configuration, &BASE_CONFIG)
             .expect("Could not generate SVG update");
 
-        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        let res = String::try_from(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG4.svg")
             .expect("Could not read input test file \"tests/SVG4.svg\"");
 
         #[cfg(feature = "print")]
-        println!("SVG4: {res}\n\n");
+        fs::write("tests-out/SVG4.svg", res);
         #[cfg(not(feature = "print"))]
         assert_eq!(res, expected);
     }
@@ -395,13 +395,13 @@ mod tests {
             .update_configurable_information(&mut manycore, &mut configuration, &base_configuration)
             .expect("Could not generate SVG update");
 
-        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        let res = String::try_from(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG5.svg")
             .expect("Could not read input test file \"tests/SVG5.svg\"");
 
         #[cfg(feature = "print")]
-        println!("SVG5: {res}\n\n");
+        fs::write("tests-out/SVG5.svg", res);
         #[cfg(not(feature = "print"))]
         assert_eq!(res, expected);
     }
@@ -422,13 +422,13 @@ mod tests {
             .update_configurable_information(&mut manycore, &mut configuration, &BASE_CONFIG)
             .expect("Could not generate SVG update");
 
-        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        let res = String::try_from(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG6.svg")
             .expect("Could not read input test file \"tests/SVG6.svg\"");
 
         #[cfg(feature = "print")]
-        println!("SVG6: {res}\n\n");
+        fs::write("tests-out/SVG6.svg", res);
         #[cfg(not(feature = "print"))]
         assert_eq!(res, expected);
     }
@@ -449,13 +449,13 @@ mod tests {
             .update_configurable_information(&mut manycore, &mut configuration, &BASE_CONFIG)
             .expect("Could not generate SVG update");
 
-        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        let res = String::try_from(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG7.svg")
             .expect("Could not read input test file \"tests/SVG6.svg\"");
 
         #[cfg(feature = "print")]
-        println!("SVG7: {res}\n\n");
+        fs::write("tests-out/SVG7.svg", res);
         #[cfg(not(feature = "print"))]
         assert_eq!(res, expected);
     }

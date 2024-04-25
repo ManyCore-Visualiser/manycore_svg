@@ -5,18 +5,27 @@ use serde::Serialize;
 pub(crate) const DEFAULT_FILL: &str = "#e5e5e5";
 pub(crate) const BASE_FILL_CLASS_NAME: &'static str = "baseFill";
 pub(crate) const EDGE_DATA_CLASS_NAME: &'static str = "edgeData";
-static DEFAULT_STYLE: &str = concatcp!(
-    ".",
+
+const FONT_FACE: &str = concatcp!(
+    r#"
+@font-face {
+    font-family: "Roboto Mono";
+    src: url(data:font/truetype;charset=utf-8;base64,"#,
+    include_str!("assets/roboto_mono_base64.txt"),
+    r#") format("truetype");
+}"#
+);
+
+const BASE_STYLE: &str = concatcp!(
+    FONT_FACE,
+    "\n.",
     BASE_FILL_CLASS_NAME,
     "{fill: ",
     DEFAULT_FILL,
-    ";}",
-    ".",
-    EDGE_DATA_CLASS_NAME,
-    "{display: none;}"
+    ";}"
 );
 
-static BASE_STYLE: &str = concatcp!(".", BASE_FILL_CLASS_NAME, "{fill: ", DEFAULT_FILL, ";}");
+static DEFAULT_STYLE: &str = concatcp!(BASE_STYLE, "\n.", EDGE_DATA_CLASS_NAME, "{display: none;}");
 
 /// Object representation of SVG `<style>`.
 #[derive(Serialize, MutGetters, Getters)]

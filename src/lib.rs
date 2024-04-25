@@ -304,7 +304,7 @@ impl SVG {
 
 #[cfg(test)]
 mod tests {
-    use std::fs::read_to_string;
+    use std::fs;
 
     use manycore_parser::ManycoreSystem;
 
@@ -319,13 +319,13 @@ mod tests {
             .try_into()
             .expect("Could not convert Manycorer to SVG.");
 
-        let res = quick_xml::se::to_string(&svg).expect("Could not convert from SVG to string");
+        let res = String::try_from(&svg).expect("Could not convert from SVG to string");
 
-        let expected = read_to_string("tests/SVG1.svg")
+        let expected = fs::read_to_string("tests/SVG1.svg")
             .expect("Could not read input test file \"tests/SVG1.svg\"");
 
         #[cfg(feature = "print")]
-        println!("SVG1: {res}\n\n");
+        fs::write("tests-out/SVG1.svg", res);
         #[cfg(not(feature = "print"))]
         assert_eq!(res, expected);
     }

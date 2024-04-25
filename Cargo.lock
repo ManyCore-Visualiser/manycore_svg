@@ -53,21 +53,21 @@ source = "git+https://github.com/joe2k01/manycore_parser.git#da6f2aa55c64ca6791d
 dependencies = [
  "getset",
  "manycore_utils",
- "quick-xml",
+ "quick-xml 0.31.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_json",
 ]
 
 [[package]]
 name = "manycore_svg"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "const_format",
  "getset",
  "lazy_static",
  "manycore_parser",
  "manycore_utils",
- "quick-xml",
+ "quick-xml 0.31.0 (git+https://github.com/tafia/quick-xml.git)",
  "serde",
  "serde_json",
 ]
@@ -124,6 +124,15 @@ name = "quick-xml"
 version = "0.31.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1004a344b30a54e2ee58d66a71b32d2db2feb0a31f9a2d302bf0536f15de2a33"
+dependencies = [
+ "memchr",
+ "serde",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.31.0"
+source = "git+https://github.com/tafia/quick-xml.git#6e34a730853fe295d68dc28460153f08a5a12955"
 dependencies = [
  "memchr",
  "serde",

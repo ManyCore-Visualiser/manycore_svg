@@ -1,6 +1,7 @@
 /// [`SVG`] conversion utilities.
 use manycore_parser::{ManycoreSystem, WithID};
 use quick_xml::DeError;
+use serde::Serialize;
 use std::cmp::min;
 
 use crate::{
@@ -12,7 +13,14 @@ impl TryFrom<&SVG> for String {
     type Error = DeError;
 
     fn try_from(svg: &SVG) -> Result<Self, Self::Error> {
-        quick_xml::se::to_string(svg)
+        let mut buf = String::new();
+        let mut serialiser = quick_xml::se::Serializer::new(&mut buf);
+        serialiser.indent(' ', 4);
+        serialiser.set_quote_level(quick_xml::se::QuoteLevel::Minimal);
+
+        svg.serialize(serialiser)?;
+
+        Ok(buf)
     }
 }
 
