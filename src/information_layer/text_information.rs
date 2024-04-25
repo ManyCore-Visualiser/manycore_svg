@@ -59,6 +59,8 @@ pub struct TextInformation {
     font_size: FontSize,
     #[serde(rename = "@font-family")]
     font_family: &'static str,
+    #[serde(rename = "@font-weight")]
+    font_weight: &'static str,
     #[serde(rename = "@text-anchor")]
     text_anchor: &'static str,
     #[serde(rename = "@dominant-baseline")]
@@ -110,6 +112,7 @@ impl TextInformation {
             y,
             font_size: FontSize { px: font_size },
             font_family: "Roboto Mono",
+            font_weight: "bold",
             text_anchor,
             dominant_baseline,
             fill: match fill {
@@ -442,7 +445,12 @@ impl TextInformation {
 
                 TextInformation::new(
                     link_x.saturating_add(delta_x),
-                    link_y.saturating_add(VERTICAL_OFFSET_FROM_LINK),
+                    link_y
+                        .saturating_sub(VERTICAL_OFFSET_FROM_LINK)
+                        .saturating_sub(OFFSET_FROM_FIRST)
+                        .saturating_sub(
+                            *processed_base_configuration.attribute_font_size_coordinate(),
+                        ),
                     *processed_base_configuration.attribute_font_size(),
                     "middle",
                     "text-before-edge",

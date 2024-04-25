@@ -11,8 +11,6 @@ use crate::{
     ProcessedBaseConfiguration, SVGError, SVGErrorKind,
 };
 
-pub(crate) static FONT_SIZE_WITH_OFFSET: CoordinateT = 18;
-
 /// Binary search to fit input value in one of the 4 boundaries.
 pub(crate) fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) -> usize {
     // Bounds has always length 4
@@ -55,10 +53,9 @@ pub(crate) fn generate_with_id<T: WithID<u8> + WithXMLAttributes>(
     text_anchor: &'static str,
     css: &mut String,
     processed_base_configuration: &ProcessedBaseConfiguration,
-) {
+) -> Result<(), SVGError> {
     // Start by adding some padding between text and element border
     base_x = base_x.saturating_add(OFFSET_FROM_BORDER);
-    base_y = base_y.saturating_add(OFFSET_FROM_BORDER);
 
     // ID value is outside of attributes map
     if let Some(configuration) = configuration.get(ID_KEY) {
@@ -74,12 +71,15 @@ pub(crate) fn generate_with_id<T: WithID<u8> + WithXMLAttributes>(
                     None,
                     format!("{}: {}", display, target.id()),
                 ));
-                base_y = base_y.saturating_add(FONT_SIZE_WITH_OFFSET);
+                base_y = base_y
+                    .saturating_add(*processed_base_configuration.attribute_font_size_coordinate());
+                Ok(())
             }
-            _ => {
-                // ID should only ever be Text.
-            }
-        }
+            fc => Err(SVGError::new(SVGErrorKind::GenerationError(format!(
+                "Unsupported configuration for ID: {}",
+                fc.type_str()
+            )))),
+        }?
     }
 
     // Can we even do this? i.e. does the element have attributes?
@@ -110,7 +110,9 @@ pub(crate) fn generate_with_id<T: WithID<u8> + WithXMLAttributes>(
                                 ));
 
                                 // Increase y for next element, if any
-                                base_y = base_y.saturating_add(FONT_SIZE_WITH_OFFSET);
+                                base_y = base_y.saturating_add(
+                                    *processed_base_configuration.attribute_font_size_coordinate(),
+                                );
                             }
                             FieldConfiguration::Fill { colour_settings } => {
                                 // Do not compute if user requested override
@@ -160,7 +162,9 @@ pub(crate) fn generate_with_id<T: WithID<u8> + WithXMLAttributes>(
                                 ));
 
                                 // Increase y for next element, if any
-                                base_y = base_y.saturating_add(FONT_SIZE_WITH_OFFSET);
+                                base_y = base_y.saturating_add(
+                                    *processed_base_configuration.attribute_font_size_coordinate(),
+                                );
                             }
                             _ => {
                                 // Remaining variants are handled elsewhere/for other elements
@@ -179,6 +183,8 @@ pub(crate) fn generate_with_id<T: WithID<u8> + WithXMLAttributes>(
             format!("\n#{}{} {{fill: {};}}", target.variant(), target.id(), fill).as_str(),
         );
     }
+
+    Ok(())
 }
 
 /// Calculates the corresponding colour for an attribute value given some bounds.

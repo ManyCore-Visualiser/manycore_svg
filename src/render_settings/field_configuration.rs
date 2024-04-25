@@ -119,3 +119,16 @@ pub enum FieldConfiguration {
     /// This variant can be used to configure boolean properties, e.g. displaying border routers.
     Boolean { value: bool },
 }
+
+impl FieldConfiguration {
+    pub(crate) fn type_str(&self) -> &'static str {
+        match self {
+            FieldConfiguration::Boolean { .. } => "Boolean",
+            FieldConfiguration::ColouredText { .. } => "ColouredText",
+            FieldConfiguration::Coordinates { .. } => "Coordinates",
+            FieldConfiguration::Fill { .. } => "Fill",
+            FieldConfiguration::Routing { .. } => "Routing",
+            FieldConfiguration::Text { .. } => "Text",
+        }
+    }
+}

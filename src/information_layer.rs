@@ -75,7 +75,7 @@ impl InformationLayer {
             c,
             &mut ret,
             processed_base_configuration,
-        );
+        )?;
 
         // Core
         generate_with_id(
@@ -88,7 +88,7 @@ impl InformationLayer {
             "start",
             css,
             processed_base_configuration,
-        );
+        )?;
         // Clip path id
         ret.core_group.clip_path = format!("url(#{})", ClipPath::make_core_id(core.id()));
 
@@ -104,7 +104,7 @@ impl InformationLayer {
             "start",
             css,
             processed_base_configuration,
-        );
+        )?;
         // Clip path id
         ret.router_group.clip_path =
             format!("url(#{})", ClipPath::make_router_id(core.router().id()));

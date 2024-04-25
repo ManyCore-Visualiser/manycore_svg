@@ -67,6 +67,7 @@ impl BaseConfiguration {
 #[getset(get = "pub")]
 pub(crate) struct ProcessedBaseConfiguration {
     attribute_font_size: FontSizeT,
+    attribute_font_size_coordinate: CoordinateT,
     task_font_size: FontSizeT,
     task_rect_height: CoordinateT,
     task_rect_half_height: CoordinateT,
@@ -82,6 +83,8 @@ impl From<&BaseConfiguration> for ProcessedBaseConfiguration {
 
         Self {
             attribute_font_size: base_configuration.attribute_font_size,
+            attribute_font_size_coordinate: base_configuration.attribute_font_size.round()
+                as CoordinateT,
             task_font_size: base_configuration.task_font_size,
             task_rect_height,
             task_rect_half_height: task_rect_height.div(2),

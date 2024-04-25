@@ -4,7 +4,7 @@ use manycore_parser::COORDINATES_KEY;
 
 use crate::{
     CoordinateT, CoordinatesOrientation, FieldConfiguration, InformationLayer,
-    ProcessedBaseConfiguration, TextInformation, HALF_SIDE_LENGTH, SIDE_LENGTH,
+    ProcessedBaseConfiguration, SVGError, TextInformation, HALF_SIDE_LENGTH, SIDE_LENGTH,
 };
 
 /// Generates coordinates text.
@@ -17,21 +17,25 @@ pub(crate) fn make_coordinates(
     c: &CoordinateT,
     ret: &mut InformationLayer,
     processed_base_configuration: &ProcessedBaseConfiguration,
-) {
+) -> Result<(), SVGError> {
     if let Some(order_config) = core_config.get(COORDINATES_KEY) {
         // Text coordinates
         let x = core_x + HALF_SIDE_LENGTH;
         let y = core_y + SIDE_LENGTH;
 
         // (X, Y) text repesentation
-        // TODO: This is actually (Y, X), we want (X, Y)
         let (cx, cy) = match order_config {
             FieldConfiguration::Coordinates { orientation } => match orientation {
-                CoordinatesOrientation::B => (CoordinateT::from(rows) - r, c + 1),
-                CoordinatesOrientation::T => (r + 1, c + 1),
+                CoordinatesOrientation::B => Ok((c + 1, CoordinateT::from(rows) - r)),
+                CoordinatesOrientation::T => Ok((c + 1, r + 1)),
             },
-            _ => (r + 1, c + 1), // Don't know what happened. Wrong enum variant, default to top left.
-        };
+            fc => Err(SVGError::new(crate::SVGErrorKind::GenerationError(
+                format!(
+                    "Unsupported configuration for coordinates: {}",
+                    fc.type_str()
+                ),
+            ))),
+        }?;
 
         ret.coordinates = Some(TextInformation::new(
             x,
@@ -44,4 +48,6 @@ pub(crate) fn make_coordinates(
             format!("({},{})", cx, cy),
         ));
     }
+
+    Ok(())
 }
