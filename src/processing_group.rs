@@ -1,5 +1,6 @@
 use const_format::concatcp;
 use getset::{Getters, MutGetters, Setters};
+use manycore_parser::ElementIDT;
 use serde::Serialize;
 
 use crate::{
@@ -237,7 +238,7 @@ impl Router {
     pub(crate) fn new(
         row: &CoordinateT,
         column: &CoordinateT,
-        id: &u8,
+        id: &ElementIDT,
         top_left: &TopLeft,
     ) -> Self {
         let (move_x, move_y) = Self::get_move_coordinates(row, column, top_left);
@@ -308,7 +309,7 @@ impl Core {
     }
 
     /// Generates a new [`Core`] instance from the given parameters.
-    fn new(row: &CoordinateT, column: &CoordinateT, id: &u8, top_left: &TopLeft) -> Self {
+    fn new(row: &CoordinateT, column: &CoordinateT, id: &ElementIDT, top_left: &TopLeft) -> Self {
         let (move_x, move_y) = Self::get_move_coordinates(row, column, top_left);
 
         Self {
@@ -328,7 +329,7 @@ pub(crate) struct ProcessingGroup {
     /// Coordinates (row, column)
     coordinates: (CoordinateT, CoordinateT),
     #[serde(rename = "@id")]
-    id: u8,
+    id: ElementIDT,
     #[serde(rename = "path")]
     #[getset(get = "pub")]
     core: Core,
@@ -344,7 +345,7 @@ impl ProcessingGroup {
     pub(crate) fn new(
         row: &CoordinateT,
         column: &CoordinateT,
-        id: &u8,
+        id: &ElementIDT,
         allocated_task: &Option<u16>,
         top_left: &TopLeft,
         processed_base_configuration: &ProcessedBaseConfiguration,

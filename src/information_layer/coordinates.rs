@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use manycore_parser::COORDINATES_KEY;
+use manycore_parser::{SystemDimensionsT, COORDINATES_KEY};
 
 use crate::{
     CoordinateT, CoordinatesOrientation, FieldConfiguration, InformationLayer,
@@ -12,7 +12,7 @@ pub(crate) fn make_coordinates(
     core_config: &BTreeMap<String, FieldConfiguration>,
     core_x: &CoordinateT,
     core_y: &CoordinateT,
-    rows: u8,
+    rows: SystemDimensionsT,
     r: &CoordinateT,
     c: &CoordinateT,
     ret: &mut InformationLayer,

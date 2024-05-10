@@ -2,13 +2,11 @@ use std::{cmp::max, collections::HashMap};
 
 use const_format::concatcp;
 use getset::Getters;
-use manycore_parser::{BorderEntry, EdgePosition, SinkSourceDirection};
+use manycore_parser::{BorderEntry, EdgePosition, SinkSourceDirection, SystemDimensionsT};
 use serde::Serialize;
 
 use crate::{
-    style::{DEFAULT_FILL, EDGE_DATA_CLASS_NAME},
-    CoordinateT, Offsets, ProcessedBaseConfiguration, TextInformation, CHAR_H_PADDING,
-    HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH, USE_FREEFORM_CLIP_PATH,
+    style::{DEFAULT_FILL, EDGE_DATA_CLASS_NAME}, CoordinateT, Offsets, ProcessedBaseConfiguration, TextInformation, CHAR_H_PADDING, HALF_ROUTER_OFFSET, MARKER_HEIGHT, ROUTER_OFFSET, SIDE_LENGTH, UNSUPPORTED_PLATFORM, USE_FREEFORM_CLIP_PATH
 };
 
 // Side lengths
@@ -254,12 +252,12 @@ pub(crate) struct SinksSourcesGroup {
 impl SinksSourcesGroup {
     /// Generates a new [`SinksSourcesGroup`] instance with capacity for all border router,
     /// calculated fom the number of rows and columns.
-    pub(crate) fn new(rows: u8, columns: u8) -> Self {
+    pub(crate) fn new(rows: SystemDimensionsT, columns: SystemDimensionsT) -> Self {
         Self {
             id: SINK_SOURCES_ID,
             class: EDGE_DATA_CLASS_NAME,
             // Formula worksout because we ignore the corners. Obv, only on 2D matrix.
-            g: Vec::with_capacity(usize::from((rows + columns) * 2)),
+            g: Vec::with_capacity(usize::try_from((rows + columns) * 2).expect(UNSUPPORTED_PLATFORM)),
             clip_path: USE_FREEFORM_CLIP_PATH,
         }
     }

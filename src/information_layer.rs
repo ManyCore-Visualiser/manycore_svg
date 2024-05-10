@@ -1,4 +1,4 @@
-use manycore_parser::{RoutingMap, WithID};
+use manycore_parser::{RoutingMap, SystemDimensionsT, WithID};
 use serde::Serialize;
 
 use crate::{
@@ -48,7 +48,7 @@ use channel_data::*;
 impl InformationLayer {
     /// Generates a new [`InformationLayer`] instance.
     pub(crate) fn new(
-        rows: u8,
+        rows: SystemDimensionsT,
         configuration: &mut Configuration,
         core: &manycore_parser::Core,
         links_with_load: Option<&RoutingMap>,

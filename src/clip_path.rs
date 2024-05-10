@@ -1,4 +1,5 @@
 use const_format::concatcp;
+use manycore_parser::ElementIDT;
 use serde::Serialize;
 
 use crate::{CoordinateT, ROUTER_OFFSET, SIDE_LENGTH};
@@ -34,17 +35,17 @@ impl ClipPath {
     }
 
     /// Calculates the id for a core's clip path
-    pub(crate) fn make_core_id(id: &u8) -> String {
+    pub(crate) fn make_core_id(id: &ElementIDT) -> String {
         format!("clip-c-{id}")
     }
 
     /// Calculates the id for a router's clip path
-    pub(crate) fn make_router_id(id: &u8) -> String {
+    pub(crate) fn make_router_id(id: &ElementIDT) -> String {
         format!("clip-r-{id}")
     }
 
     /// Creates a new [`ClipPath`] instance from a core's position and id. Used to clip information layer.
-    pub(crate) fn for_core(id: u8, x: CoordinateT, y: CoordinateT) -> Self {
+    pub(crate) fn for_core(id: ElementIDT, x: CoordinateT, y: CoordinateT) -> Self {
         let full_y = y.saturating_add(SIDE_LENGTH);
         let full_x = x.saturating_add(SIDE_LENGTH);
 
@@ -61,7 +62,7 @@ impl ClipPath {
     }
 
     /// Creates a new [`ClipPath`] instance from a router's position and id. Used to clip information layer.
-    pub(crate) fn for_router(id: u8, x: CoordinateT, y: CoordinateT) -> Self {
+    pub(crate) fn for_router(id: ElementIDT, x: CoordinateT, y: CoordinateT) -> Self {
         let min_y = y.saturating_sub(ROUTER_OFFSET);
         let full_x = x.saturating_add(SIDE_LENGTH);
         let full_y = min_y.saturating_add(SIDE_LENGTH);

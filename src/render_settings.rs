@@ -4,6 +4,7 @@ use std::{
 };
 
 use getset::{Getters, MutGetters};
+use manycore_parser::ElementIDT;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -30,8 +31,8 @@ pub struct Configuration {
     core_config: BTreeMap<String, FieldConfiguration>,
     router_config: BTreeMap<String, FieldConfiguration>,
     channel_config: BTreeMap<String, FieldConfiguration>,
-    core_fills: BTreeMap<u8, String>,
-    router_fills: BTreeMap<u8, String>,
+    core_fills: BTreeMap<ElementIDT, String>,
+    router_fills: BTreeMap<ElementIDT, String>,
 }
 
 /// Object representation of user-defined base configuration.

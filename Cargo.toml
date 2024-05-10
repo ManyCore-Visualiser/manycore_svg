@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 const_format = "0.2.32"
 getset = "0.1.2"
-manycore_parser = { git = "https://github.com/joe2k01/manycore_parser.git", version = "0.5.1" }
+manycore_parser = { git = "https://github.com/joe2k01/manycore_parser.git", version = "0.5.1", branch = "type-test" }
 manycore_utils = { git = "https://github.com/joe2k01/manycore_utils.git", version = "0.1.0" }
 quick-xml = { git = "https://github.com/tafia/quick-xml.git", version = "0.31.0", features = ["serialize"] }
 serde = "1.0.196"

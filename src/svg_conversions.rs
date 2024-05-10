@@ -1,12 +1,12 @@
 /// [`SVG`] conversion utilities.
-use manycore_parser::{ManycoreSystem, WithID};
+use manycore_parser::{ManycoreSystem, SystemDimensionsT, WithID};
 use quick_xml::DeError;
 use serde::Serialize;
 use std::cmp::min;
 
 use crate::{
     BaseConfiguration, CoordinateT, Offsets, ProcessingGroup, SVGError, TopLeft, ViewBox,
-    BLOCK_DISTANCE, BLOCK_LENGTH, CORE_ROUTER_STROKE_WIDTH, SVG, TASK_RECT_STROKE,
+    BLOCK_DISTANCE, BLOCK_LENGTH, CORE_ROUTER_STROKE_WIDTH, SVG, TASK_RECT_STROKE, UNSUPPORTED_PLATFORM,
 };
 
 impl TryFrom<&SVG> for String {
@@ -62,7 +62,7 @@ impl SVG {
         );
 
         // Row tracker for iteration
-        let mut r: u8 = 0;
+        let mut r: SystemDimensionsT = 0;
 
         let cores = manycore.cores().list();
         let borders = manycore.borders();
@@ -75,9 +75,7 @@ impl SVG {
         for (i, core) in cores.iter().enumerate() {
             // Realistically this conversion should never fail
             // Calculate current column from iteration index
-            let c = u8::try_from(i % usize::try_from(columns).expect("8 bits must fit in a usize. I have no idea what you're trying to run this on, TI TMS 1000?")).expect(
-        "Somehow, modulus on an 8 bit number gave a number that does not fit in 8 bits (your ALU re-invented mathematics).",
-    );
+            let c = SystemDimensionsT::try_from(i % usize::try_from(columns).expect(UNSUPPORTED_PLATFORM))?;
 
             // Increment row when we wrap onto a new row
             if i > 0 && c == 0 {

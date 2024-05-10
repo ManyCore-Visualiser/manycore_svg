@@ -1,7 +1,7 @@
 use std::{collections::HashMap, fmt::Display};
 
 use getset::Getters;
-use manycore_parser::{Core, Directions, EdgePosition, WithID};
+use manycore_parser::{Core, Directions, EdgePosition, ElementIDT, WithID};
 use serde::Serialize;
 
 use crate::{
@@ -312,12 +312,12 @@ pub(crate) struct ConnectionsParentGroup {
     edge_connections: EdgeConnections,
     /// A double map to quickly retrieve a core's (router) connections in the SVG.
     #[serde(skip)]
-    core_connections_map: HashMap<u8, HashMap<DirectionType, ConnectionType>>,
+    core_connections_map: HashMap<ElementIDT, HashMap<DirectionType, ConnectionType>>,
 }
 
 impl ConnectionsParentGroup {
     /// Inserts an SVG core connection in the core_connections_map.
-    fn insert_in_map(&mut self, core_id: &u8, direction: DirectionType, element: ConnectionType) {
+    fn insert_in_map(&mut self, core_id: &ElementIDT, direction: DirectionType, element: ConnectionType) {
         self.core_connections_map
             .entry(*core_id)
             // Each core has 4 connections, so we preallocate 4 slots in the inner map.
@@ -328,7 +328,7 @@ impl ConnectionsParentGroup {
     /// Generates edge SVG connections for a given core.
     fn add_edge_connection(
         &mut self,
-        core_id: &u8,
+        core_id: &ElementIDT,
         direction: &Directions,
         r: &CoordinateT,
         c: &CoordinateT,
@@ -359,7 +359,7 @@ impl ConnectionsParentGroup {
     /// Generates inner SVG connections (so output only) for a given core.
     fn add_inner_connection(
         &mut self,
-        core_id: &u8,
+        core_id: &ElementIDT,
         direction: &Directions,
         r: &CoordinateT,
         c: &CoordinateT,

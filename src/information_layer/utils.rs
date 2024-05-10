@@ -3,7 +3,7 @@ use std::{
     collections::BTreeMap,
 };
 
-use manycore_parser::{Directions, WithID, WithXMLAttributes, COORDINATES_KEY, ID_KEY};
+use manycore_parser::{Directions, ElementIDT, WithID, WithXMLAttributes, COORDINATES_KEY, ID_KEY};
 
 use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER};
 use crate::{
@@ -43,11 +43,11 @@ pub(crate) fn binary_search_left_insertion_point(bounds: &[u64; 4], val: u64) ->
 }
 
 /// Generates [`InformationLayer`] content for a [`WithID`] element.
-pub(crate) fn generate_with_id<T: WithID<u8> + WithXMLAttributes>(
+pub(crate) fn generate_with_id<T: WithID<ElementIDT> + WithXMLAttributes>(
     mut base_x: CoordinateT,
     mut base_y: CoordinateT,
     configuration: &BTreeMap<String, FieldConfiguration>,
-    fill_override: &BTreeMap<u8, String>,
+    fill_override: &BTreeMap<ElementIDT, String>,
     target: &T,
     group: &mut ProcessingInformation,
     text_anchor: &'static str,
@@ -208,7 +208,7 @@ pub(crate) fn get_attribute_colour<'a>(
 pub(crate) fn get_connection_type<'a>(
     connections_group: &'a ConnectionsParentGroup,
     direction_type: &'a DirectionType,
-    core_id: &'a u8,
+    core_id: &'a ElementIDT,
 ) -> Result<&'a ConnectionType, SVGError> {
     connections_group
         .core_connections_map()
@@ -233,7 +233,7 @@ pub(crate) fn missing_connection(idx: &usize) -> SVGError {
 }
 
 /// Wrapper to generate error when we expected a channel and did not find one.
-pub(crate) fn missing_channel(core_id: &u8, direction: &Directions) -> SVGError {
+pub(crate) fn missing_channel(core_id: &ElementIDT, direction: &Directions) -> SVGError {
     SVGError::new(SVGErrorKind::ManycoreMismatch(format!(
         "Could not retrieve {} channel for Core {}",
         direction, core_id
@@ -241,7 +241,7 @@ pub(crate) fn missing_channel(core_id: &u8, direction: &Directions) -> SVGError 
 }
 
 /// Wrapper to generate error when we expected source loads and did not find any.
-pub(crate) fn missing_source_loads(core_id: &u8) -> SVGError {
+pub(crate) fn missing_source_loads(core_id: &ElementIDT) -> SVGError {
     SVGError::new(SVGErrorKind::ManycoreMismatch(format!(
         "Could not retrieve source loads for Core {}",
         core_id
@@ -249,7 +249,7 @@ pub(crate) fn missing_source_loads(core_id: &u8) -> SVGError {
 }
 
 /// Wrapper to generate error when we expected a source channel load and did not find one.
-pub(crate) fn missing_source_load(core_id: &u8, direction: &Directions) -> SVGError {
+pub(crate) fn missing_source_load(core_id: &ElementIDT, direction: &Directions) -> SVGError {
     SVGError::new(SVGErrorKind::ManycoreMismatch(format!(
         "Could not retrieve {} source channel load for Core {}",
         direction, core_id

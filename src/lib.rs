@@ -31,7 +31,7 @@ pub use render_settings::*;
 use sinks_sources_layer::SinksSourcesGroup;
 pub use view_box::*;
 
-use manycore_parser::{ManycoreSystem, BORDER_ROUTERS_KEY, ROUTING_KEY};
+use manycore_parser::{ManycoreSystem, SystemDimensionsT, BORDER_ROUTERS_KEY, ROUTING_KEY};
 
 use serde::Serialize;
 use style::Style;
@@ -40,6 +40,8 @@ use style::Style;
 pub type CoordinateT = i32;
 /// Type alias for SVG text font size.
 pub type FontSizeT = f32;
+
+pub(crate) const UNSUPPORTED_PLATFORM: &'static str = "manycore_svg supports only 64-bit platforms.";
 
 /// Object representation of the [`SVG`] main group. Everything goes in here.
 /// Cores, (border) routers, channels and information are all inner groups of this group.
@@ -87,7 +89,7 @@ pub struct SVG {
     #[getset(get_mut = "pub")]
     root: Root,
     #[serde(skip)]
-    rows: u8,
+    rows: SystemDimensionsT,
     // #[serde(skip)]
     // columns: u8,
     #[serde(skip)]
@@ -131,8 +133,8 @@ impl SVG {
     /// Creates a new [`SVG`] instance with the given parameters.
     fn new(
         number_of_cores: &usize,
-        rows: u8,
-        columns: u8,
+        rows: SystemDimensionsT,
+        columns: SystemDimensionsT,
         width: CoordinateT,
         height: CoordinateT,
         top_left: TopLeft,
