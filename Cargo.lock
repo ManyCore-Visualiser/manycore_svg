@@ -49,7 +49,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "manycore_parser"
 version = "0.5.1"
-source = "git+https://github.com/joe2k01/manycore_parser.git?branch=type-test#509069925ab5ffb90041d1a99309d3ae598e2b8d"
+source = "git+https://github.com/joe2k01/manycore_parser.git?branch=type-test#9f826547f98bc9cbcb039be8b3e56e5b89c08433"
 dependencies = [
  "getset",
  "manycore_utils",
@@ -122,7 +122,7 @@ dependencies = [
 [[package]]
 name = "quick-xml"
 version = "0.31.0"
-source = "git+https://github.com/tafia/quick-xml.git#2b2b773bd9bdcbb3f5e37adb10110df34c3bcff3"
+source = "git+https://github.com/tafia/quick-xml.git#4a4abf7f56f8974b101170991e829e5d2a51ff30"
 dependencies = [
  "memchr",
  "serde",
@@ -145,22 +145,22 @@ checksum = "f3cb5ba0dc43242ce17de99c180e96db90b235b8a9fdc9543c96d2209116bd9f"
 
 [[package]]
 name = "serde"
-version = "1.0.201"
+version = "1.0.202"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "780f1cebed1629e4753a1a38a3c72d30b97ec044f0aef68cb26650a3c5cf363c"
+checksum = "226b61a0d411b2ba5ff6d7f73a476ac4f8bb900373459cd00fab8512828ba395"
 dependencies = [
  "serde_derive",
 ]
 
 [[package]]
 name = "serde_derive"
-version = "1.0.201"
+version = "1.0.202"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5e405930b9796f1c00bee880d03fc7e0bb4b9a11afc776885ffe84320da2865"
+checksum = "6048858004bcff69094cd972ed40a32500f153bd3be9f716b2eed2e8217c4838"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.61",
+ "syn 2.0.63",
 ]
 
 [[package]]
@@ -187,9 +187,9 @@ dependencies = [
 
 [[package]]
 name = "syn"
-version = "2.0.61"
+version = "2.0.63"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c993ed8ccba56ae856363b1845da7266a7cb78e1d146c8a32d54b45a8b831fc9"
+checksum = "bf5be731623ca1a1fb7d8be6f261a3be6d3e2337b8a1f97be944d020c8fcb704"
 dependencies = [
  "proc-macro2",
  "quote",

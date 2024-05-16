@@ -90,7 +90,10 @@ impl SVG {
                 &r_coord,
                 &c_coord,
                 core.id(),
-                core.allocated_task(),
+                match core.allocated_task() {
+                    Some(task_id) => manycore.task_graph().tasks().get(task_id),
+                    None => None
+                },
                 &ret.top_left,
                 &ret.processed_base_configuration,
                 ret.defs.clip_paths_mut(),

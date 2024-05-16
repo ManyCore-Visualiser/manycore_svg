@@ -1,6 +1,6 @@
 use std::{
     collections::BTreeMap,
-    ops::{Div, Sub},
+    ops::{Div, Mul, Sub},
 };
 
 use getset::{Getters, MutGetters};
@@ -70,6 +70,7 @@ pub(crate) struct ProcessedBaseConfiguration {
     attribute_font_size: FontSizeT,
     attribute_font_size_coordinate: CoordinateT,
     task_font_size: FontSizeT,
+    task_half_font_size_coord: CoordinateT,
     task_rect_height: CoordinateT,
     task_rect_half_height: CoordinateT,
     task_rect_centre_offset: CoordinateT,
@@ -79,7 +80,7 @@ pub(crate) struct ProcessedBaseConfiguration {
 impl From<&BaseConfiguration> for ProcessedBaseConfiguration {
     fn from(base_configuration: &BaseConfiguration) -> Self {
         let task_rect_height =
-            (base_configuration.task_font_size.round() as CoordinateT) + CHAR_V_PADDING;
+            (base_configuration.task_font_size.mul(2.0).round() as CoordinateT) + CHAR_V_PADDING;
         let task_rect_centre_offset = task_rect_height.div(5);
 
         Self {
@@ -87,6 +88,8 @@ impl From<&BaseConfiguration> for ProcessedBaseConfiguration {
             attribute_font_size_coordinate: base_configuration.attribute_font_size.round()
                 as CoordinateT,
             task_font_size: base_configuration.task_font_size,
+            task_half_font_size_coord: base_configuration.task_font_size.div(2.0).round()
+                as CoordinateT,
             task_rect_height,
             task_rect_half_height: task_rect_height.div(2),
             task_rect_centre_offset,
@@ -105,9 +108,7 @@ mod tests {
     };
 
     use crate::{
-        BaseConfiguration, ColourSettings, Configuration, CoordinatesOrientation,
-        FieldConfiguration, LoadConfiguration, RoutingConfiguration, DEFAULT_ATTRIBUTE_FONT_SIZE,
-        DEFAULT_TASK_FONT_SIZE, SVG,
+        BaseConfiguration, ColourSettings, Configuration, CoordinatesOrientation, FieldConfiguration, LoadConfiguration, RoutingConfiguration, MAXIMUM_ATTRIBUTE_FONT_SIZE, MAXIMUM_TASK_FONT_SIZE, SVG
     };
 
     static BASE_CONFIG: BaseConfiguration = BaseConfiguration::default();
@@ -386,8 +387,8 @@ mod tests {
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
         let base_configuration = BaseConfiguration::new(
-            DEFAULT_ATTRIBUTE_FONT_SIZE * 2.0,
-            DEFAULT_TASK_FONT_SIZE * 2.0,
+            MAXIMUM_ATTRIBUTE_FONT_SIZE,
+            MAXIMUM_TASK_FONT_SIZE,
         );
 
         let mut svg: SVG = SVG::try_from(&manycore).expect("Could not convert Manycore to SVG.");

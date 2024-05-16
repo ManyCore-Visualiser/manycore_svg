@@ -1,3 +1,8 @@
+use std::{
+    cmp::max,
+    ops::{Add, Sub},
+};
+
 use const_format::concatcp;
 use getset::{Getters, MutGetters, Setters};
 use manycore_parser::ElementIDT;
@@ -5,7 +10,8 @@ use serde::Serialize;
 
 use crate::{
     style::BASE_FILL_CLASS_NAME, ClipPath, CoordinateT, FontSizeT, ProcessedBaseConfiguration,
-    SVGError, TextInformation, TopLeft, CHAR_H_PADDING, CONNECTION_LENGTH, MARKER_HEIGHT, USE_FREEFORM_CLIP_PATH,
+    SVGError, TextInformation, TopLeft, CHAR_H_PADDING, CONNECTION_LENGTH,
+    MARKER_HEIGHT, USE_FREEFORM_CLIP_PATH,
 };
 
 pub(crate) const SIDE_LENGTH: CoordinateT = 100;
@@ -145,7 +151,10 @@ impl TaskRect {
 #[derive(Serialize)]
 struct Task {
     rect: TaskRect,
-    text: TextInformation,
+    #[serde(rename = "text")]
+    task_text: TextInformation,
+    #[serde(rename = "text")]
+    cost_text: TextInformation,
 }
 
 impl Task {
@@ -153,20 +162,28 @@ impl Task {
     fn new(
         row: &CoordinateT,
         column: &CoordinateT,
-        task_id: &Option<u16>,
+        allocated_task: Option<&manycore_parser::Task>,
         top_left: &TopLeft,
         processed_base_configuration: &ProcessedBaseConfiguration,
     ) -> Result<Option<Self>, SVGError> {
-        match task_id {
+        match allocated_task {
             Some(task) => {
-                let text = format!("T{}", task);
+                let task_text = format!("T{}", task.id());
+                let cost_text = format!("[{}]", task.computation_cost());
 
                 // Get an approx text width
-                let text_width = TextInformation::calculate_length_util(
+                let task_text_width = TextInformation::calculate_length_util(
                     *processed_base_configuration.task_font_size(),
-                    text.len(),
+                    task_text.len(),
                     Some(CHAR_H_PADDING),
                 )?;
+                let cost_text_width = TextInformation::calculate_length_util(
+                    *processed_base_configuration.task_font_size(),
+                    cost_text.len(),
+                    Some(CHAR_H_PADDING),
+                )?;
+
+                let text_width = max(cost_text_width, task_text_width);
 
                 // Get centre coordinates
                 let (cx, cy) = Self::get_centre_coordinates(
@@ -177,17 +194,29 @@ impl Task {
                     processed_base_configuration,
                 );
 
+                println!("{cy} {task_text}");
+
                 Ok(Some(Self {
                     rect: TaskRect::new(cx, cy, text_width, processed_base_configuration),
-                    text: TextInformation::new(
+                    task_text: TextInformation::new(
                         cx,
-                        cy,
+                        cy.sub(processed_base_configuration.task_half_font_size_coord()),
                         *processed_base_configuration.task_font_size(),
                         "middle",
                         "central",
                         None,
                         None,
-                        text,
+                        task_text,
+                    ),
+                    cost_text: TextInformation::new(
+                        cx,
+                        cy.add(processed_base_configuration.task_half_font_size_coord()),
+                        *processed_base_configuration.task_font_size(),
+                        "middle",
+                        "central",
+                        None,
+                        None,
+                        cost_text,
                     ),
                 }))
             }
@@ -206,12 +235,12 @@ impl Task {
         let cx = column * BLOCK_LENGTH + column * BLOCK_DISTANCE - (text_width.saturating_div(2))
             + TASK_RECT_X_OFFSET
             + top_left.x();
-        let cy = processed_base_configuration.task_rect_centre_offset()
-            + row * BLOCK_LENGTH
-            + ROUTER_OFFSET
-            + SIDE_LENGTH
-            + row * BLOCK_DISTANCE
-            + top_left.y();
+        let cy = processed_base_configuration
+            .task_rect_centre_offset()
+            .add(row.saturating_mul(BLOCK_LENGTH.add(BLOCK_DISTANCE)))
+            .add(ROUTER_OFFSET)
+            .add(SIDE_LENGTH)
+            .add(top_left.y);
 
         (cx, cy)
     }
@@ -346,7 +375,7 @@ impl ProcessingGroup {
         row: &CoordinateT,
         column: &CoordinateT,
         id: &ElementIDT,
-        allocated_task: &Option<u16>,
+        allocated_task: Option<&manycore_parser::Task>,
         top_left: &TopLeft,
         processed_base_configuration: &ProcessedBaseConfiguration,
         clip_paths: &mut Vec<ClipPath>,
