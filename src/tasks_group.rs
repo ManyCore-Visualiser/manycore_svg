@@ -1,6 +1,6 @@
 use std::{
     cmp::max,
-    collections::BTreeMap,
+    collections::{btree_map::Values, BTreeMap},
     ops::{Add, Sub},
 };
 
@@ -339,6 +339,16 @@ impl PartialUpdate for TasksGroup {
         let tasks = quick_xml::se::to_string_with_root("g", &tasks)?;
 
         Ok(tasks)
+    }
+}
+
+impl<'a> IntoIterator for &'a TasksGroup {
+    type Item = &'a Task;
+
+    type IntoIter = Values<'a, u16, Task>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.tasks.values()
     }
 }
 

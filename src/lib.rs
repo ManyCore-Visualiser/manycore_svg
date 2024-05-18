@@ -266,22 +266,24 @@ impl SVG {
         }
 
         let mut offsets = Offsets::default();
-        // Compute all requested attributes at information layer
-        if not_empty_configuration {
-            // Should we update tasks too?
-            let toggle_task = configuration
-                .core_config_mut()
-                .remove(TASK_COST_KEY)
-                .map_or(
-                    !self.root.tasks_group.is_base(),
-                    |field_config| match field_config {
-                        FieldConfiguration::Boolean { value } => {
-                            value == self.root.tasks_group.is_base()
-                        }
-                        _ => !self.root.tasks_group.is_base(),
-                    },
-                );
 
+        // Should we update tasks too?
+        let toggle_task = configuration
+            .core_config_mut()
+            .remove(TASK_COST_KEY)
+            .map_or(
+                !self.root.tasks_group.is_base(),
+                |field_config| match field_config {
+                    FieldConfiguration::Boolean { value } => {
+                        value == self.root.tasks_group.is_base()
+                    }
+                    _ => !self.root.tasks_group.is_base(),
+                },
+            );
+
+        // If there is something to do...
+        if not_empty_configuration || toggle_task {
+            // Go through everything and apply changes
             for (i, core) in manycore.cores().list().iter().enumerate() {
                 let processing_group = self
                     .root
@@ -290,42 +292,45 @@ impl SVG {
                     .get(i)
                     .ok_or(no_processing_group(i))?;
 
-                self.root
-                    .information_group
-                    .groups_mut()
-                    .push(InformationLayer::new(
-                        self.rows,
-                        configuration,
-                        core,
-                        links_with_load.as_ref(),
-                        self.style.css_mut(),
-                        processing_group,
-                        &self.root.connections_group,
-                        routing_configuration.as_ref(),
-                        &mut offsets,
-                        &self.processed_base_configuration,
-                    )?);
-
-                match core.allocated_task() {
-                    Some(task_id) => {
-                        if toggle_task {
+                // Compute all requested attributes at information layer
+                if not_empty_configuration {
+                    self.root
+                        .information_group
+                        .groups_mut()
+                        .push(InformationLayer::new(
+                            self.rows,
+                            configuration,
+                            core,
+                            links_with_load.as_ref(),
+                            self.style.css_mut(),
+                            processing_group,
+                            &self.root.connections_group,
+                            routing_configuration.as_ref(),
+                            &mut offsets,
+                            &self.processed_base_configuration,
+                        )?);
+                }
+                // Recalculate tasks
+                if toggle_task {
+                    match core.allocated_task() {
+                        Some(task_id) => {
                             let allocated_task = manycore
                                 .task_graph()
                                 .tasks()
                                 .get(task_id)
                                 .ok_or_else(|| missing_task(core.id(), task_id))?;
 
-                            let updated_task = self.root.tasks_group.toggle_task(
+                            let update_task = self.root.tasks_group.toggle_task(
                                 allocated_task.id(),
                                 processing_group,
                                 &self.processed_base_configuration,
                                 &self.top_left,
                             )?;
 
-                            offsets.update(Offsets::from_task(updated_task));
+                            offsets.update(Offsets::from_task(update_task));
                         }
+                        None => {}
                     }
-                    None => {}
                 }
             }
 
@@ -333,6 +338,14 @@ impl SVG {
             if toggle_task {
                 self.root.tasks_group.toggle_variant();
             }
+        }
+
+        // We need to do this separately here because the base viewBox might still need extending.
+        // E.g. Border-routers -> off but no task toggle
+        if !toggle_task {
+            self.root.tasks_group.into_iter().for_each(|t| {
+                offsets.update(Offsets::from_task(t));
+            });
         }
 
         // Extend viewBox if required
