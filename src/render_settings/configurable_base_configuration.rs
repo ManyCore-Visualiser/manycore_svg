@@ -1,8 +1,9 @@
 use serde::Serialize;
 
 use crate::{
-    FontSizeT, DEFAULT_ATTRIBUTE_FONT_SIZE, DEFAULT_TASK_FONT_SIZE, MAXIMUM_ATTRIBUTE_FONT_SIZE,
-    MAXIMUM_TASK_FONT_SIZE, MINIMUM_ATTRIBUTE_FONT_SIZE, MINIMUM_TASK_FONT_SIZE,
+    tasks_group::DEFAULT_TASK_FONT_SIZE, tasks_group::MAXIMUM_TASK_FONT_SIZE, tasks_group::MINIMUM_TASK_FONT_SIZE,
+    FontSizeT, DEFAULT_ATTRIBUTE_FONT_SIZE, MAXIMUM_ATTRIBUTE_FONT_SIZE,
+    MINIMUM_ATTRIBUTE_FONT_SIZE,
 };
 
 /// Enum whose variants represents specific attribute configuration details for
@@ -17,6 +18,9 @@ pub(crate) enum ConfigurableBaseConfigurationAttributeSpecifics {
         max: FontSizeT,
     },
 }
+
+#[cfg(doc)]
+use crate::BaseConfiguration;
 
 /// This struct is used to inform the front-end of what fields are part
 /// of the [`BaseConfiguration`].

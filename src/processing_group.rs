@@ -1,16 +1,10 @@
-use std::{
-    cmp::max,
-    ops::{Add, Sub},
-};
-
 use const_format::concatcp;
 use getset::{Getters, MutGetters, Setters};
 use manycore_parser::ElementIDT;
 use serde::Serialize;
 
 use crate::{
-    style::BASE_FILL_CLASS_NAME, ClipPath, CoordinateT, FontSizeT, ProcessedBaseConfiguration,
-    SVGError, TextInformation, TopLeft, CHAR_H_PADDING, CONNECTION_LENGTH,
+    style::BASE_FILL_CLASS_NAME, ClipPath, CoordinateT, SVGError, TopLeft, CONNECTION_LENGTH,
     MARKER_HEIGHT, USE_FREEFORM_CLIP_PATH,
 };
 
@@ -22,7 +16,6 @@ pub(crate) static HALF_ROUTER_OFFSET: CoordinateT = ROUTER_OFFSET.saturating_div
 pub(crate) static BLOCK_DISTANCE: CoordinateT = CONNECTION_LENGTH
     .saturating_sub(ROUTER_OFFSET)
     .saturating_add(MARKER_HEIGHT);
-static TASK_RECT_X_OFFSET: CoordinateT = 10;
 
 // Example after concatenation with SIDE_LENGTH = 100 -> ROUTER_OFFSET = 75
 // l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z
@@ -57,13 +50,7 @@ static ROUTER_PATH: &'static str = concatcp!(
 );
 
 pub(crate) const CORE_ROUTER_STROKE_WIDTH: CoordinateT = 1;
-static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
-
-pub(crate) const DEFAULT_TASK_FONT_SIZE: FontSizeT = 22.0;
-pub(crate) static MINIMUM_TASK_FONT_SIZE: FontSizeT = 16.0;
-pub(crate) static MAXIMUM_TASK_FONT_SIZE: FontSizeT = 32.0;
-pub(crate) static TASK_RECT_STROKE: CoordinateT = 1;
-static TASK_RECT_FILL: &'static str = "#bfdbfe";
+pub(crate) static CORE_ROUTER_STROKE_WIDTH_STR: &'static str = concatcp!(CORE_ROUTER_STROKE_WIDTH);
 
 /// Wrapper around attributes shared by different elements.
 #[derive(Serialize, Setters, Debug)]
@@ -102,147 +89,6 @@ impl CommonAttributes {
             stroke_linecap: "butt",
             stroke_width: CORE_ROUTER_STROKE_WIDTH_STR,
         }
-    }
-}
-
-/// Object representation of the SVG `<rect>` that wraps a task id.
-#[derive(Serialize)]
-struct TaskRect {
-    #[serde(rename = "@x")]
-    x: CoordinateT,
-    #[serde(rename = "@y")]
-    y: CoordinateT,
-    #[serde(rename = "@width")]
-    width: CoordinateT,
-    #[serde(rename = "@height")]
-    height: CoordinateT,
-    #[serde(rename = "@rx")]
-    rx: &'static str,
-    #[serde(rename = "@fill")]
-    fill: &'static str,
-    #[serde(rename = "@stroke")]
-    stroke: &'static str,
-    #[serde(rename = "@stroke-width")]
-    stroke_width: &'static str,
-}
-
-impl TaskRect {
-    /// Generates a new [`TaskRect`] instance from the given parameters.
-    fn new(
-        centre_x: CoordinateT,
-        centre_y: CoordinateT,
-        text_width: CoordinateT,
-        processed_base_configuration: &ProcessedBaseConfiguration,
-    ) -> Self {
-        Self {
-            x: centre_x - (text_width.saturating_div(2)),
-            y: centre_y - *processed_base_configuration.task_rect_half_height(),
-            width: text_width,
-            height: *processed_base_configuration.task_rect_height(),
-            rx: "10",
-            fill: TASK_RECT_FILL,
-            stroke: "black",
-            stroke_width: CORE_ROUTER_STROKE_WIDTH_STR,
-        }
-    }
-}
-
-/// Helper struct to group [`TaskRect`] and its corresponding [`TextInformation`] together, forms the task bubble in the SVG.
-#[derive(Serialize)]
-struct Task {
-    rect: TaskRect,
-    #[serde(rename = "text")]
-    task_text: TextInformation,
-    #[serde(rename = "text")]
-    cost_text: TextInformation,
-}
-
-impl Task {
-    /// Generates a new [`Task`] instance from the given parameters.
-    fn new(
-        row: &CoordinateT,
-        column: &CoordinateT,
-        allocated_task: Option<&manycore_parser::Task>,
-        top_left: &TopLeft,
-        processed_base_configuration: &ProcessedBaseConfiguration,
-    ) -> Result<Option<Self>, SVGError> {
-        match allocated_task {
-            Some(task) => {
-                let task_text = format!("T{}", task.id());
-                let cost_text = format!("[{}]", task.computation_cost());
-
-                // Get an approx text width
-                let task_text_width = TextInformation::calculate_length_util(
-                    *processed_base_configuration.task_font_size(),
-                    task_text.len(),
-                    Some(CHAR_H_PADDING),
-                )?;
-                let cost_text_width = TextInformation::calculate_length_util(
-                    *processed_base_configuration.task_font_size(),
-                    cost_text.len(),
-                    Some(CHAR_H_PADDING),
-                )?;
-
-                let text_width = max(cost_text_width, task_text_width);
-
-                // Get centre coordinates
-                let (cx, cy) = Self::get_centre_coordinates(
-                    row,
-                    column,
-                    text_width,
-                    top_left,
-                    processed_base_configuration,
-                );
-
-                println!("{cy} {task_text}");
-
-                Ok(Some(Self {
-                    rect: TaskRect::new(cx, cy, text_width, processed_base_configuration),
-                    task_text: TextInformation::new(
-                        cx,
-                        cy.sub(processed_base_configuration.task_half_font_size_coord()),
-                        *processed_base_configuration.task_font_size(),
-                        "middle",
-                        "central",
-                        None,
-                        None,
-                        task_text,
-                    ),
-                    cost_text: TextInformation::new(
-                        cx,
-                        cy.add(processed_base_configuration.task_half_font_size_coord()),
-                        *processed_base_configuration.task_font_size(),
-                        "middle",
-                        "central",
-                        None,
-                        None,
-                        cost_text,
-                    ),
-                }))
-            }
-            None => Ok(None),
-        }
-    }
-
-    /// Calculates centre coordinates of a [`Task`] group by leveraging the provided approximate text width.
-    fn get_centre_coordinates(
-        row: &CoordinateT,
-        column: &CoordinateT,
-        text_width: CoordinateT,
-        top_left: &TopLeft,
-        processed_base_configuration: &ProcessedBaseConfiguration,
-    ) -> (CoordinateT, CoordinateT) {
-        let cx = column * BLOCK_LENGTH + column * BLOCK_DISTANCE - (text_width.saturating_div(2))
-            + TASK_RECT_X_OFFSET
-            + top_left.x();
-        let cy = processed_base_configuration
-            .task_rect_centre_offset()
-            .add(row.saturating_mul(BLOCK_LENGTH.add(BLOCK_DISTANCE)))
-            .add(ROUTER_OFFSET)
-            .add(SIDE_LENGTH)
-            .add(top_left.y);
-
-        (cx, cy)
     }
 }
 
@@ -365,8 +211,6 @@ pub(crate) struct ProcessingGroup {
     #[serde(rename = "path")]
     #[getset(get = "pub")]
     router: Router,
-    #[serde(rename = "g", skip_serializing_if = "Option::is_none")]
-    task: Option<Task>,
 }
 
 impl ProcessingGroup {
@@ -375,9 +219,7 @@ impl ProcessingGroup {
         row: &CoordinateT,
         column: &CoordinateT,
         id: &ElementIDT,
-        allocated_task: Option<&manycore_parser::Task>,
         top_left: &TopLeft,
-        processed_base_configuration: &ProcessedBaseConfiguration,
         clip_paths: &mut Vec<ClipPath>,
     ) -> Result<Self, SVGError> {
         // Core
@@ -399,22 +241,7 @@ impl ProcessingGroup {
             id: *id,
             core,
             router,
-            task: Task::new(
-                row,
-                column,
-                allocated_task,
-                top_left,
-                processed_base_configuration,
-            )?,
         })
-    }
-
-    /// Returns this [`ProcessingGroup`]'s [`Task`] `x` coordinate, if any.
-    pub(crate) fn task_start(&self) -> Option<CoordinateT> {
-        match &self.task {
-            Some(task) => Some(task.rect.x),
-            None => None,
-        }
     }
 }
 

@@ -2,13 +2,14 @@ use getset::Getters;
 use manycore_parser::Directions;
 use std::{
     cmp::{max, min},
-    ops::Sub,
+    ops::{Add, Sub},
 };
 
 use crate::{
     sinks_sources_layer::{
         SinkSource, SINKS_SOURCES_SHORT_SIDE_LENGTH, SINKS_SOURCES_STROKE_WIDTH,
     },
+    tasks_group::Task,
     CoordinateT, SVGError, TextInformation, CHAR_V_PADDING,
 };
 
@@ -97,6 +98,19 @@ impl Offsets {
             top: top.saturating_sub(SINKS_SOURCES_STROKE_WIDTH),
             right,
             bottom,
+        }
+    }
+
+    /// Utility to generate viewBox offset from a [`Task`] instance.
+    pub(crate) fn from_task(value: &Task) -> Self {
+        let left = value.rect().x();
+        let top = value.rect().y();
+
+        Self {
+            top: *top,
+            left: *left,
+            right: left.add(value.rect().width()),
+            bottom: top.add(value.rect().height()),
         }
     }
 }

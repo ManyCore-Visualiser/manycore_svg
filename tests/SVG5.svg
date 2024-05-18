@@ -93,15 +93,6 @@
             <g id="1">
                 <path id="c1" d="M-87,-426 l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
                 <path id="r1" d="M-12,-426 l0,-75 l100,0 l0,100 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
-                <g>
-                    <rect x="-192" y="-348" width="115" height="70" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
-                    <text x="-135" y="-329" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
-                        T3
-                    </text>
-                    <text x="-135" y="-297" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
-                        [80]
-                    </text>
-                </g>
             </g>
             <g id="2">
                 <path id="c2" d="M327,-426 l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
@@ -110,15 +101,6 @@
             <g id="3">
                 <path id="c3" d="M-501,-12 l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
                 <path id="r3" d="M-426,-12 l0,-75 l100,0 l0,100 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
-                <g>
-                    <rect x="-606" y="66" width="115" height="70" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
-                    <text x="-549" y="85" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
-                        T123
-                    </text>
-                    <text x="-549" y="117" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
-                        [42]
-                    </text>
-                </g>
             </g>
             <g id="4">
                 <path id="c4" d="M-87,-12 l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
@@ -127,15 +109,6 @@
             <g id="5">
                 <path id="c5" d="M327,-12 l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
                 <path id="r5" d="M402,-12 l0,-75 l100,0 l0,100 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
-                <g>
-                    <rect x="222" y="66" width="115" height="70" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
-                    <text x="279" y="85" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
-                        T4
-                    </text>
-                    <text x="279" y="117" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
-                        [60]
-                    </text>
-                </g>
             </g>
             <g id="6">
                 <path id="c6" d="M-501,402 l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
@@ -144,15 +117,6 @@
             <g id="7">
                 <path id="c7" d="M-87,402 l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
                 <path id="r7" d="M-12,402 l0,-75 l100,0 l0,100 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
-                <g>
-                    <rect x="-192" y="480" width="115" height="70" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
-                    <text x="-135" y="499" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
-                        T2
-                    </text>
-                    <text x="-135" y="531" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
-                        [40]
-                    </text>
-                </g>
             </g>
             <g id="8">
                 <path id="c8" d="M327,402 l0,100 l100,0 l0,-75 l-25,-25 l-75,0 Z" class="baseFill" fill-rule="evenodd" stroke="black" stroke-linecap="butt" stroke-width="1"/>
@@ -536,6 +500,32 @@
             </g>
             <g>
                 <rect x="741" y="329" width="70" height="70" rx="15" fill="#e5e5e5" stroke="black" stroke-width="1"/>
+            </g>
+        </g>
+        <g>
+            <g>
+                <rect x="-154" y="489" width="77" height="38" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
+                <text x="-116" y="508" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
+                    T2
+                </text>
+            </g>
+            <g>
+                <rect x="-154" y="-339" width="77" height="38" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
+                <text x="-116" y="-320" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
+                    T3
+                </text>
+            </g>
+            <g>
+                <rect x="260" y="75" width="77" height="38" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
+                <text x="298" y="94" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
+                    T4
+                </text>
+            </g>
+            <g>
+                <rect x="-606" y="75" width="115" height="38" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
+                <text x="-549" y="94" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
+                    T123
+                </text>
             </g>
         </g>
     </g>

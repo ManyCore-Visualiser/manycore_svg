@@ -10,11 +10,13 @@ mod information_group;
 mod information_layer;
 mod marker;
 mod offsets;
+mod partial_update;
 mod processing_group;
 mod render_settings;
 mod sinks_sources_layer;
 mod style;
 mod svg_conversions;
+mod tasks_group;
 mod view_box;
 
 pub use clip_path::*;
@@ -26,12 +28,16 @@ use information_group::*;
 use information_layer::*;
 use marker::*;
 use offsets::*;
+use partial_update::PartialUpdate;
 use processing_group::*;
 pub use render_settings::*;
 use sinks_sources_layer::SinksSourcesGroup;
+use tasks_group::{missing_task, TasksGroup};
 pub use view_box::*;
 
-use manycore_parser::{ManycoreSystem, SystemDimensionsT, BORDER_ROUTERS_KEY, ROUTING_KEY};
+use manycore_parser::{
+    ManycoreSystem, SystemDimensionsT, WithID, BORDER_ROUTERS_KEY, ROUTING_KEY, TASK_COST_KEY,
+};
 
 use serde::Serialize;
 use style::Style;
@@ -41,7 +47,8 @@ pub type CoordinateT = i32;
 /// Type alias for SVG text font size.
 pub type FontSizeT = f32;
 
-pub(crate) const UNSUPPORTED_PLATFORM: &'static str = "manycore_svg supports only 64-bit platforms.";
+pub(crate) const UNSUPPORTED_PLATFORM: &'static str =
+    "manycore_svg supports only 64-bit platforms.";
 
 /// Object representation of the [`SVG`] main group. Everything goes in here.
 /// Cores, (border) routers, channels and information are all inner groups of this group.
@@ -57,6 +64,8 @@ struct Root {
     information_group: InformationGroup,
     #[serde(rename = "g")]
     sinks_sources_group: SinksSourcesGroup,
+    #[serde(rename = "g")]
+    tasks_group: TasksGroup,
 }
 
 /// An Object representation of the [`ViewBox`] top left coordinate.
@@ -118,6 +127,7 @@ pub struct SVG {
 pub struct UpdateResult {
     style: String,
     information_group: String,
+    tasks_group: String,
     view_box: String,
     svg: Option<String>,
 }
@@ -132,15 +142,14 @@ fn no_processing_group(index: usize) -> SVGError {
 impl SVG {
     /// Creates a new [`SVG`] instance with the given parameters.
     fn new(
-        number_of_cores: &usize,
-        rows: SystemDimensionsT,
-        columns: SystemDimensionsT,
+        manycore: &ManycoreSystem,
         width: CoordinateT,
         height: CoordinateT,
         top_left: TopLeft,
         base_configuration: BaseConfiguration,
     ) -> Self {
         let view_box = ViewBox::new(width, height, &top_left);
+        let number_of_cores = manycore.cores().list().len();
 
         Self {
             width,
@@ -150,16 +159,17 @@ impl SVG {
             preserve_aspect_ratio: "xMidYMid meet",
             class: "mx-auto",
             view_box,
-            defs: Defs::new(number_of_cores),
+            defs: Defs::new(&number_of_cores),
             style: Style::default(),
             root: Root {
                 id: "mainGroup",
-                processing_group: ProcessingParentGroup::new(number_of_cores),
+                processing_group: ProcessingParentGroup::new(&number_of_cores),
                 connections_group: ConnectionsParentGroup::default(),
-                information_group: InformationGroup::new(number_of_cores),
-                sinks_sources_group: SinksSourcesGroup::new(rows, columns),
+                information_group: InformationGroup::new(&number_of_cores),
+                sinks_sources_group: SinksSourcesGroup::new(manycore.rows(), manycore.columns()),
+                tasks_group: TasksGroup::new(),
             },
-            rows,
+            rows: *manycore.rows(),
             // columns,
             top_left,
             base_view_box: view_box,
@@ -258,6 +268,20 @@ impl SVG {
         let mut offsets = Offsets::default();
         // Compute all requested attributes at information layer
         if not_empty_configuration {
+            // Should we update tasks too?
+            let toggle_task = configuration
+                .core_config_mut()
+                .remove(TASK_COST_KEY)
+                .map_or(
+                    !self.root.tasks_group.is_base(),
+                    |field_config| match field_config {
+                        FieldConfiguration::Boolean { value } => {
+                            value == self.root.tasks_group.is_base()
+                        }
+                        _ => !self.root.tasks_group.is_base(),
+                    },
+                );
+
             for (i, core) in manycore.cores().list().iter().enumerate() {
                 let processing_group = self
                     .root
@@ -281,6 +305,33 @@ impl SVG {
                         &mut offsets,
                         &self.processed_base_configuration,
                     )?);
+
+                match core.allocated_task() {
+                    Some(task_id) => {
+                        if toggle_task {
+                            let allocated_task = manycore
+                                .task_graph()
+                                .tasks()
+                                .get(task_id)
+                                .ok_or_else(|| missing_task(core.id(), task_id))?;
+
+                            let updated_task = self.root.tasks_group.toggle_task(
+                                allocated_task.id(),
+                                processing_group,
+                                &self.processed_base_configuration,
+                                &self.top_left,
+                            )?;
+
+                            offsets.update(Offsets::from_task(updated_task));
+                        }
+                    }
+                    None => {}
+                }
+            }
+
+            // Update tasks state
+            if toggle_task {
+                self.root.tasks_group.toggle_variant();
             }
         }
 
@@ -290,6 +341,7 @@ impl SVG {
         Ok(UpdateResult {
             style: self.style.css().clone(),
             information_group: self.root.information_group.update_string()?,
+            tasks_group: self.root.tasks_group.update_string()?,
             view_box: String::from(&self.view_box),
             // Include whole SVG if it's been updated. It will inherrently contain the updated data above
             svg: if has_new_base_config {
@@ -300,14 +352,14 @@ impl SVG {
         })
     }
 
-    /// Adds a [`ClipPath`] to the [`SVG`]'s [`Defs`]. Used in FreeForm exporting.
+    /// Adds a [`ClipPath`] to the [`SVG`]'s `<defs>`. Used in FreeForm exporting.
     pub fn add_freeform_clip_path(&mut self, polygon_points: String) {
         self.defs
             .clip_paths_mut()
             .push(ClipPath::new(polygon_points));
     }
 
-    /// Removes FreeForm exporting [`ClipPath`] from the [`SVG`]'s [`Defs`].
+    /// Removes FreeForm exporting [`ClipPath`] from the [`SVG`]'s `<defs>`.
     pub fn clear_freeform_clip_path(&mut self) {
         self.defs.clip_paths_mut().pop();
     }

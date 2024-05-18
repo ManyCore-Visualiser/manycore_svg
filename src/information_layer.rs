@@ -39,7 +39,7 @@ pub(crate) struct InformationLayer {
 mod utils;
 use utils::*;
 mod text_information;
-pub use text_information::*;
+pub(crate) use text_information::*;
 mod coordinates;
 use coordinates::make_coordinates;
 mod channel_data;

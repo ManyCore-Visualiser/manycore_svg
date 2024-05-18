@@ -55,6 +55,11 @@ impl Display for SVGError {
     }
 }
 
+/// Utility to create a generation error.
+pub(crate) fn generation_error(reason: String) -> SVGError {
+    SVGError::new(SVGErrorKind::GenerationError(reason))
+}
+
 impl Error for SVGError {}
 
 impl From<ManycoreError> for SVGError {

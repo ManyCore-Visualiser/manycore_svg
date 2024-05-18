@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use manycore_parser::{SystemDimensionsT, COORDINATES_KEY};
 
 use crate::{
-    CoordinateT, CoordinatesOrientation, FieldConfiguration, InformationLayer,
+    generation_error, CoordinateT, CoordinatesOrientation, FieldConfiguration, InformationLayer,
     ProcessedBaseConfiguration, SVGError, TextInformation, HALF_SIDE_LENGTH, SIDE_LENGTH,
 };
 
@@ -29,11 +29,9 @@ pub(crate) fn make_coordinates(
                 CoordinatesOrientation::B => Ok((c + 1, CoordinateT::from(rows) - r)),
                 CoordinatesOrientation::T => Ok((c + 1, r + 1)),
             },
-            fc => Err(SVGError::new(crate::SVGErrorKind::GenerationError(
-                format!(
-                    "Unsupported configuration for coordinates: {}",
-                    fc.type_str()
-                ),
+            fc => Err(generation_error(format!(
+                "Unsupported configuration for coordinates: {}",
+                fc.type_str()
             ))),
         }?;
 

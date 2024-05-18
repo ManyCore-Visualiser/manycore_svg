@@ -8,7 +8,8 @@ use manycore_parser::ElementIDT;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    CoordinateT, FontSizeT, CHAR_V_PADDING, DEFAULT_ATTRIBUTE_FONT_SIZE, DEFAULT_TASK_FONT_SIZE,
+    tasks_group::DEFAULT_TASK_FONT_SIZE, CoordinateT, FontSizeT, CHAR_V_PADDING,
+    DEFAULT_ATTRIBUTE_FONT_SIZE,
 };
 
 mod configurable_base_configuration;
@@ -62,7 +63,20 @@ impl BaseConfiguration {
     }
 }
 
-/// This struct is used to hold values derived from the user provided [`BaseConfiguration`]
+#[cfg(doc)]
+use crate::tasks_group::TaskRect;
+
+/// This struct contains derived configuration values for a [`TaskRect`].
+#[derive(Getters)]
+#[getset(get = "pub")]
+pub(crate) struct TaskRectConfiguration {
+    task_rect_height: CoordinateT,
+    task_rect_half_height: CoordinateT,
+    task_rect_centre_offset: CoordinateT,
+    task_rect_bottom_padding: CoordinateT,
+}
+
+/// This struct is used to hold values derived from the user provided [`BaseConfiguration`].
 /// to avoid repeated calculations.
 #[derive(Getters)]
 #[getset(get = "pub")]
@@ -71,17 +85,20 @@ pub(crate) struct ProcessedBaseConfiguration {
     attribute_font_size_coordinate: CoordinateT,
     task_font_size: FontSizeT,
     task_half_font_size_coord: CoordinateT,
-    task_rect_height: CoordinateT,
-    task_rect_half_height: CoordinateT,
-    task_rect_centre_offset: CoordinateT,
-    task_rect_bottom_padding: CoordinateT,
+    task_rect: TaskRectConfiguration,
+    task_rect_with_cost: TaskRectConfiguration,
 }
 
 impl From<&BaseConfiguration> for ProcessedBaseConfiguration {
     fn from(base_configuration: &BaseConfiguration) -> Self {
         let task_rect_height =
-            (base_configuration.task_font_size.mul(2.0).round() as CoordinateT) + CHAR_V_PADDING;
+            (base_configuration.task_font_size.round() as CoordinateT) + CHAR_V_PADDING;
         let task_rect_centre_offset = task_rect_height.div(5);
+
+        let task_rect_with_cost_height = (base_configuration.task_font_size.mul(2.0).round()
+            as CoordinateT)
+            + CHAR_V_PADDING.mul(3);
+        let task_rect_with_cost_centre_offset = task_rect_with_cost_height.div(5);
 
         Self {
             attribute_font_size: base_configuration.attribute_font_size,
@@ -90,10 +107,18 @@ impl From<&BaseConfiguration> for ProcessedBaseConfiguration {
             task_font_size: base_configuration.task_font_size,
             task_half_font_size_coord: base_configuration.task_font_size.div(2.0).round()
                 as CoordinateT,
-            task_rect_height,
-            task_rect_half_height: task_rect_height.div(2),
-            task_rect_centre_offset,
-            task_rect_bottom_padding: task_rect_height.sub(task_rect_centre_offset),
+            task_rect: TaskRectConfiguration {
+                task_rect_height,
+                task_rect_half_height: task_rect_height.div(2),
+                task_rect_centre_offset,
+                task_rect_bottom_padding: task_rect_height.sub(task_rect_centre_offset),
+            },
+            task_rect_with_cost: TaskRectConfiguration {
+                task_rect_height: task_rect_with_cost_height,
+                task_rect_half_height: task_rect_with_cost_height.div(2),
+                task_rect_centre_offset: task_rect_with_cost_centre_offset,
+                task_rect_bottom_padding: task_rect_height.sub(task_rect_with_cost_centre_offset),
+            },
         }
     }
 }
@@ -108,7 +133,9 @@ mod tests {
     };
 
     use crate::{
-        BaseConfiguration, ColourSettings, Configuration, CoordinatesOrientation, FieldConfiguration, LoadConfiguration, RoutingConfiguration, MAXIMUM_ATTRIBUTE_FONT_SIZE, MAXIMUM_TASK_FONT_SIZE, SVG
+        tasks_group::MAXIMUM_TASK_FONT_SIZE, BaseConfiguration, ColourSettings, Configuration,
+        CoordinatesOrientation, FieldConfiguration, LoadConfiguration, RoutingConfiguration,
+        MAXIMUM_ATTRIBUTE_FONT_SIZE, SVG,
     };
 
     static BASE_CONFIG: BaseConfiguration = BaseConfiguration::default();
@@ -386,10 +413,8 @@ mod tests {
         let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
             .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
 
-        let base_configuration = BaseConfiguration::new(
-            MAXIMUM_ATTRIBUTE_FONT_SIZE,
-            MAXIMUM_TASK_FONT_SIZE,
-        );
+        let base_configuration =
+            BaseConfiguration::new(MAXIMUM_ATTRIBUTE_FONT_SIZE, MAXIMUM_TASK_FONT_SIZE);
 
         let mut svg: SVG = SVG::try_from(&manycore).expect("Could not convert Manycore to SVG.");
 
@@ -454,11 +479,44 @@ mod tests {
         let res = String::try_from(&svg).expect("Could not convert from SVG to string");
 
         let expected = read_to_string("tests/SVG7.svg")
-            .expect("Could not read input test file \"tests/SVG6.svg\"");
+            .expect("Could not read input test file \"tests/SVG7.svg\"");
 
         #[cfg(feature = "print")]
         fs::write("tests-out/SVG7.svg", res);
         #[cfg(not(feature = "print"))]
         assert_eq!(res, expected);
+    }
+
+    #[test]
+    fn can_display_task_cost() {
+        let conf_file: fs::File =
+            fs::File::open("tests/conf8.json").expect("Could not open \"tests/conf8.json\"");
+        let mut configuration: Configuration =
+            serde_json::from_reader(conf_file).expect("Could not parse \"tests/conf8.json\"");
+
+        let mut manycore = ManycoreSystem::parse_file("tests/VisualiserOutput1.xml")
+            .expect("Could not read input test file \"tests/VisualiserOutput1.xml\"");
+
+        let mut svg: SVG = SVG::try_from(&manycore).expect("Could not convert Manycore to SVG.");
+
+        let base_config =
+            BaseConfiguration::new(MAXIMUM_ATTRIBUTE_FONT_SIZE, MAXIMUM_TASK_FONT_SIZE);
+        let _update_result = svg
+            .update_configurable_information(&mut manycore, &mut configuration, &base_config)
+            .expect("Could not generate SVG update");
+
+        let res = String::try_from(&svg).expect("Could not convert from SVG to string");
+
+        #[cfg(feature = "print")]
+        {
+            let _ = fs::write("tests-out/SVG8.svg", res).unwrap();
+            let _ = fs::write("tests-out/tasks_update.xml", _update_result.tasks_group).unwrap();
+        }
+        #[cfg(not(feature = "print"))]
+        {
+            let expected = read_to_string("tests/SVG8.svg")
+                .expect("Could not read input test file \"tests/SVG8.svg\"");
+            assert_eq!(res, expected);
+        }
     }
 }

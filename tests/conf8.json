@@ -1,0 +1,29 @@
+{
+    "coreConfig": {
+        "@coordinates": {
+            "type": "Coordinates",
+            "orientation": "T"
+        },
+        "@id": {
+            "type": "Text",
+            "display": "ID"
+        },
+        "@taskCost": {
+            "type": "Boolean",
+            "value": true
+        }
+    },
+    "routerConfig": {},
+    "channelConfig": {
+        "@borderRouters": {
+            "type": "Boolean",
+            "value": true
+        },
+        "@status": {
+            "type": "Text",
+            "display": "Status"
+        }
+    },
+    "coreFills": {},
+    "routerFills": {}
+}

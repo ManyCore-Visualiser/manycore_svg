@@ -2,7 +2,7 @@ use getset::MutGetters;
 use quick_xml::DeError;
 use serde::Serialize;
 
-use crate::InformationLayer;
+use crate::{partial_update::PartialUpdate, InformationLayer};
 
 #[derive(Serialize, MutGetters)]
 pub(crate) struct InformationGroup {
@@ -21,10 +21,10 @@ impl InformationGroup {
             id: "information",
         }
     }
+}
 
-    /// Generates a String to include in an SVG update by serialising [`InformationGroup`].
-    /// It returns the serialised [`InformationGroup`] without the main `<g>`.
-    pub(crate) fn update_string(&self) -> Result<String, DeError> {
+impl PartialUpdate for InformationGroup {
+    fn update_string(&self) -> Result<String, DeError> {
         let groups = quick_xml::se::to_string_with_root("g", &self.groups)?;
 
         Ok(groups)

@@ -7,8 +7,8 @@ use manycore_parser::{Directions, ElementIDT, WithID, WithXMLAttributes, COORDIN
 
 use super::{ProcessingInformation, TextInformation, OFFSET_FROM_BORDER};
 use crate::{
-    ConnectionType, ConnectionsParentGroup, CoordinateT, DirectionType, FieldConfiguration,
-    ProcessedBaseConfiguration, SVGError, SVGErrorKind,
+    generation_error, ConnectionType, ConnectionsParentGroup, CoordinateT, DirectionType,
+    FieldConfiguration, ProcessedBaseConfiguration, SVGError, SVGErrorKind,
 };
 
 /// Binary search to fit input value in one of the 4 boundaries.
@@ -75,10 +75,10 @@ pub(crate) fn generate_with_id<T: WithID<ElementIDT> + WithXMLAttributes>(
                     .saturating_add(*processed_base_configuration.attribute_font_size_coordinate());
                 Ok(())
             }
-            fc => Err(SVGError::new(SVGErrorKind::GenerationError(format!(
+            fc => Err(generation_error(format!(
                 "Unsupported configuration for ID: {}",
                 fc.type_str()
-            )))),
+            ))),
         }?
     }
 
@@ -87,7 +87,7 @@ pub(crate) fn generate_with_id<T: WithID<ElementIDT> + WithXMLAttributes>(
         // Iterate through the requested attributes.
         for k in configuration.keys() {
             match k.as_str() {
-                id_coordinates if id_coordinates == ID_KEY || id_coordinates == COORDINATES_KEY => {
+                handled if handled == ID_KEY || handled == COORDINATES_KEY => {
                     // These have been handled
                 }
                 valid_key => {

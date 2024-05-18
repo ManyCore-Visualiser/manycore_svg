@@ -5,8 +5,9 @@ use serde::Serialize;
 use std::cmp::min;
 
 use crate::{
+    tasks_group::{missing_task, TASK_RECT_STROKE},
     BaseConfiguration, CoordinateT, Offsets, ProcessingGroup, SVGError, TopLeft, ViewBox,
-    BLOCK_DISTANCE, BLOCK_LENGTH, CORE_ROUTER_STROKE_WIDTH, SVG, TASK_RECT_STROKE, UNSUPPORTED_PLATFORM,
+    BLOCK_DISTANCE, BLOCK_LENGTH, CORE_ROUTER_STROKE_WIDTH, SVG, UNSUPPORTED_PLATFORM,
 };
 
 impl TryFrom<&SVG> for String {
@@ -51,15 +52,7 @@ impl SVG {
         };
 
         // The SVG we'll return
-        let mut ret = SVG::new(
-            &manycore.cores().list().len(),
-            rows,
-            columns,
-            width,
-            height,
-            top_left,
-            base_configuration,
-        );
+        let mut ret = SVG::new(manycore, width, height, top_left, base_configuration);
 
         // Row tracker for iteration
         let mut r: SystemDimensionsT = 0;
@@ -75,7 +68,9 @@ impl SVG {
         for (i, core) in cores.iter().enumerate() {
             // Realistically this conversion should never fail
             // Calculate current column from iteration index
-            let c = SystemDimensionsT::try_from(i % usize::try_from(columns).expect(UNSUPPORTED_PLATFORM))?;
+            let c = SystemDimensionsT::try_from(
+                i % usize::try_from(columns).expect(UNSUPPORTED_PLATFORM),
+            )?;
 
             // Increment row when we wrap onto a new row
             if i > 0 && c == 0 {
@@ -90,31 +85,38 @@ impl SVG {
                 &r_coord,
                 &c_coord,
                 core.id(),
-                match core.allocated_task() {
-                    Some(task_id) => manycore.task_graph().tasks().get(task_id),
-                    None => None
-                },
                 &ret.top_left,
-                &ret.processed_base_configuration,
                 ret.defs.clip_paths_mut(),
             )?;
 
-            // Check if viewBox needs to be extended left
-            if c == 0 {
-                if let Some(task_start) = processing_group.task_start() {
+            // Add task
+            if let Some(task_id) = core.allocated_task() {
+                let allocated_task = manycore
+                    .task_graph()
+                    .tasks()
+                    .get(task_id)
+                    .ok_or_else(|| missing_task(core.id(), task_id))?;
+
+                let task = ret.root.tasks_group.add_task(
+                    &r_coord,
+                    &c_coord,
+                    allocated_task,
+                    &top_left,
+                    &ret.processed_base_configuration,
+                )?;
+
+                // Check if viewBox needs to be extended left
+                if c == 0 {
                     if let Some(min_task_start_value) = min_task_start {
                         // Get the minimum start, these are negative coordinates
-                        min_task_start = Some(min(min_task_start_value, task_start));
+                        min_task_start = Some(min(min_task_start_value, *task.rect().x()));
                     } else {
-                        min_task_start = Some(task_start);
+                        min_task_start = Some(*task.rect().x());
                     }
                 }
-            }
 
-            // Check if viewBox needs to be extended bottom
-            if r == (rows - 1) {
-                if let Some(_) = core.allocated_task() {
-                    // We don't need an actual value as the offset is derived from the font size
+                // Check if viewBox needs to be extended bottom
+                if r == (rows - 1) {
                     has_bottom_task = true;
                 }
             }
@@ -157,7 +159,9 @@ impl SVG {
         }
         if has_bottom_task {
             ret.extend_base_view_box_bottom(
-                *ret.processed_base_configuration.task_rect_bottom_padding(),
+                *ret.processed_base_configuration
+                    .task_rect()
+                    .task_rect_bottom_padding(),
             );
         }
 

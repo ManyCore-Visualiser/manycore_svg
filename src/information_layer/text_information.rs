@@ -1,6 +1,6 @@
 use std::ops::Div;
 
-use getset::Getters;
+use getset::{Getters, Setters};
 use manycore_parser::Directions;
 use serde::Serialize;
 
@@ -26,6 +26,7 @@ static THREE_QUARTERS_CONNECTION_LENGTH: CoordinateT = CONNECTION_LENGTH
     .saturating_div(4)
     .saturating_mul(3);
 pub(crate) static CHAR_V_PADDING: CoordinateT = 6;
+pub(crate) static HALF_CHAR_V_PADDING: CoordinateT = CHAR_V_PADDING.saturating_div(2);
 pub(crate) static CHAR_H_PADDING: FontSizeT = 2.0;
 
 pub(crate) const DEFAULT_ATTRIBUTE_FONT_SIZE: FontSizeT = 16.0;
@@ -53,13 +54,13 @@ impl Serialize for FontSize {
 }
 
 /// Object representation of an SVG `<text>` element.
-#[derive(Serialize, Getters)]
-pub struct TextInformation {
+#[derive(Serialize, Getters, Setters)]
+pub(crate) struct TextInformation {
     #[serde(rename = "@x")]
-    #[getset(get = "pub")]
+    #[getset(get = "pub", set = "pub")]
     x: CoordinateT,
     #[serde(rename = "@y")]
-    #[getset(get = "pub")]
+    #[getset(get = "pub", set = "pub")]
     y: CoordinateT,
     #[serde(rename = "@font-size")]
     #[getset(get = "pub")]

@@ -252,7 +252,7 @@ pub(crate) struct SinksSourcesGroup {
 impl SinksSourcesGroup {
     /// Generates a new [`SinksSourcesGroup`] instance with capacity for all border router,
     /// calculated fom the number of rows and columns.
-    pub(crate) fn new(rows: SystemDimensionsT, columns: SystemDimensionsT) -> Self {
+    pub(crate) fn new(rows: &SystemDimensionsT, columns: &SystemDimensionsT) -> Self {
         Self {
             id: SINK_SOURCES_ID,
             class: EDGE_DATA_CLASS_NAME,
