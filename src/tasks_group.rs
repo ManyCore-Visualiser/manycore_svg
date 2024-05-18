@@ -267,6 +267,8 @@ impl Task {
 
 #[derive(Serialize)]
 pub(crate) struct TasksGroup {
+    #[serde(rename = "@id")]
+    id: &'static str,
     #[serde(rename = "g", serialize_with = "serialise_btreemap")]
     tasks: BTreeMap<u16, Task>,
     #[serde(skip)]
@@ -277,6 +279,7 @@ impl TasksGroup {
     /// Creates a new [`TasksGroup`] instance with enough capacity for the provided number of tasks.
     pub(crate) fn new() -> Self {
         Self {
+            id: "tasks",
             tasks: BTreeMap::new(),
             variant: BaseVariant(true),
         }

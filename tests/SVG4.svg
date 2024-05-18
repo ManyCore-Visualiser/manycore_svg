@@ -355,7 +355,7 @@
                 <rect x="741" y="329" width="70" height="70" rx="15" fill="#e5e5e5" stroke="black" stroke-width="1"/>
             </g>
         </g>
-        <g>
+        <g id="tasks">
             <g>
                 <rect x="-130" y="492" width="53" height="28" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
                 <text x="-104" y="506" font-size="22px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">

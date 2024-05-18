@@ -379,7 +379,7 @@
                 <rect x="741" y="329" width="70" height="70" rx="15" fill="#e5e5e5" stroke="black" stroke-width="1"/>
             </g>
         </g>
-        <g>
+        <g id="tasks">
             <g>
                 <rect x="-192" y="467" width="115" height="82" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
                 <text x="-135" y="489" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">
