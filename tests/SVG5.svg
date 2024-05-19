@@ -502,7 +502,7 @@
                 <rect x="741" y="329" width="70" height="70" rx="15" fill="#e5e5e5" stroke="black" stroke-width="1"/>
             </g>
         </g>
-        <g id="tasks">
+        <g id="tasks" clip-path="url(#crop)">
             <g>
                 <rect x="-154" y="489" width="77" height="38" rx="10" fill="#bfdbfe" stroke="black" stroke-width="1"/>
                 <text x="-116" y="508" font-size="32px" font-family="Roboto Mono" font-weight="500" text-anchor="middle" dominant-baseline="central" fill="black">

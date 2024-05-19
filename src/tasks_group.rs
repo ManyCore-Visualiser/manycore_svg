@@ -15,6 +15,7 @@ use crate::{
     ProcessedBaseConfiguration, ProcessingGroup, SVGError, SVGErrorKind, TaskRectConfiguration,
     TextInformation, TopLeft, BLOCK_DISTANCE, BLOCK_LENGTH, CHAR_H_PADDING,
     CORE_ROUTER_STROKE_WIDTH_STR, HALF_CHAR_V_PADDING, ROUTER_OFFSET, SIDE_LENGTH,
+    USE_FREEFORM_CLIP_PATH,
 };
 
 pub(crate) const DEFAULT_TASK_FONT_SIZE: FontSizeT = 22.0;
@@ -273,6 +274,8 @@ pub(crate) struct TasksGroup {
     tasks: BTreeMap<u16, Task>,
     #[serde(skip)]
     variant: BaseVariant,
+    #[serde(rename = "@clip-path")]
+    clip_path: &'static str,
 }
 
 impl TasksGroup {
@@ -282,6 +285,7 @@ impl TasksGroup {
             id: "tasks",
             tasks: BTreeMap::new(),
             variant: BaseVariant(true),
+            clip_path: USE_FREEFORM_CLIP_PATH,
         }
     }
 
