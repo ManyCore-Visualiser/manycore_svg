@@ -49,7 +49,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "manycore_parser"
 version = "0.5.2"
-source = "git+https://github.com/joe2k01/manycore_parser.git#1d1b7ff7f91c06ff6131d05484f38738570df154"
+source = "git+https://github.com/joe2k01/manycore_parser.git#89fb4e3986428d9b55e9f826ca0533276b3c0ed7"
 dependencies = [
  "getset",
  "manycore_utils",
@@ -75,7 +75,7 @@ dependencies = [
 [[package]]
 name = "manycore_utils"
 version = "0.1.0"
-source = "git+https://github.com/joe2k01/manycore_utils.git#4362bd98a961d15d52162393215b19221f98a543"
+source = "git+https://github.com/joe2k01/manycore_utils.git#55deabe771e876cde3412e30b8f216feb3beb40c"
 dependencies = [
  "serde",
 ]
