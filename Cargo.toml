@@ -11,8 +11,8 @@ repository = "https://github.com/ManyCore-Visualiser/manycore_svg"
 [dependencies]
 const_format = "0.2.32"
 getset = "0.1.2"
-manycore_parser = { git = "https://github.com/joe2k01/manycore_parser.git", version = "0.5.2" }
-manycore_utils = { git = "https://github.com/joe2k01/manycore_utils.git", version = "0.1.0" }
+manycore_parser = { git = "https://github.com/manycore-visualiser/manycore_parser.git", version = "0.5.2" }
+manycore_utils = { git = "https://github.com/manycore-visualiser/manycore_utils.git", version = "0.1.0" }
 quick-xml = { git = "https://github.com/tafia/quick-xml.git", version = "0.31.0", features = ["serialize"] }
 serde = "1.0.196"
 serde_json = "1.0.113"
